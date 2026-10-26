@@ -29,6 +29,6 @@ python -m flashwatch.labels.crosscheck           # known events, SMVI, Drought M
 python -m flashwatch.forecast inspect data\raw\s2s\2025-04-01_daily.grib   # paste the output to Claude
 python -m flashwatch.forecast build              # data/fcst.zarr (once the S2S files are in)
 python -m flashwatch.eval.cv --models B0 B1      # leave-one-year-out CV of the baselines (~35 min)
-python -m flashwatch.eval.cv --models B0 B1 M1   # adds LightGBM, land only (hours)
+python -m flashwatch.eval.cv --models B0 B1 M1 --leads week1 week2 any28   # LightGBM, land only (hours)
 python -m pytest                                 # unit tests, incl. the as-of leakage tests
 ```

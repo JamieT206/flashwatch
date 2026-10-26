@@ -73,8 +73,8 @@ Until you answer: (a) + (b) with LightGBM.
   temperature, VPD and PET anomalies; forecast precipitation anomaly down, its lower-tercile
   probability up, forecast temperature and VPD up, forecast soil moisture down. Days since
   P>=40, Nino 3.4, season, aridity and growing-season rain are unconstrained.
-- Isotonic calibration per lead, fitted on inner out-of-fold predictions (4 year-groups
-  inside each outer fold's training years).
+- Isotonic calibration per lead, fitted on inner out-of-fold predictions (year-groups
+  inside each outer fold's training years; 2 groups pending Q4).
 - Each lead's model sees all four forecast weeks (not just weeks <= lead).
 - B1 fills missing inputs with training medians (the GBMs keep NaN).
 - B0 smooths onset rates over +/-2 weeks of year and the 3x3 neighbourhood, shrunk to the

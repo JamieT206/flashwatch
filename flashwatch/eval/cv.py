@@ -55,7 +55,8 @@ def fold_table(cube, fb: FeatureBuilder, ref_years, target_years, high=40, low=L
     return df
 
 
-def run_cv(cube, models=("B0", "B1"), cv_years=CV_YEARS, pool_years=YEARS, fb=None, ff=None, log=print):
+def run_cv(cube, models=("B0", "B1"), cv_years=CV_YEARS, pool_years=YEARS, fb=None, ff=None, log=print,
+           labels=LABELS):
     fb = fb or FeatureBuilder(cube, model_issue_dates(pool_years), pool_years)
     parts = []
     for h in cv_years:
@@ -64,7 +65,7 @@ def run_cv(cube, models=("B0", "B1"), cv_years=CV_YEARS, pool_years=YEARS, fb=No
         is_test = (df.year == h).to_numpy()
         train, test = df[~is_test], df[is_test]
         keep = test[["year", "issue", "iy", "ix", "woy", "rz_pct", *LABELS]].copy()
-        for label in LABELS:
+        for label in labels:
             for m in models:
                 keep[f"{m}_{label}"] = MODELS[m]().fit(train, label).predict(test).astype(np.float32)
         parts.append(keep)
@@ -75,9 +76,9 @@ def run_cv(cube, models=("B0", "B1"), cv_years=CV_YEARS, pool_years=YEARS, fb=No
     return pd.concat(parts, ignore_index=True)
 
 
-def report(oof: pd.DataFrame, models, n_boot: int = 1000) -> pd.DataFrame:
+def report(oof: pd.DataFrame, models, n_boot: int = 1000, labels=LABELS) -> pd.DataFrame:
     rows = []
-    for label in LABELS:
+    for label in labels:
         for m in models:
             s = score(oof[label], oof[f"{m}_{label}"], oof.get(f"B0_{label}"))
             if m != "B0" and f"B0_{label}" in oof:
@@ -91,6 +92,8 @@ def report(oof: pd.DataFrame, models, n_boot: int = 1000) -> pd.DataFrame:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--models", nargs="+", default=["B0", "B1"])
+    ap.add_argument("--leads", nargs="+", default=LABELS, choices=LABELS,
+                    help="e.g. --leads week1 week2 any28 to run the headline leads first")
     args = ap.parse_args()
     from flashwatch.cube import load_cube
     from flashwatch.ingest import nino
@@ -107,11 +110,11 @@ def main():
     import dataclasses
     cube = dataclasses.replace(cube, **{f: None for f in ("rzsm", "sfsm", "t2m", "vpd", "precip", "evap", "pet", "ssrd")})
     gc.collect()
-    oof = run_cv(cube, args.models, fb=fb, ff=ff)
+    oof = run_cv(cube, args.models, fb=fb, ff=ff, labels=args.leads)
     out = DATA / "oof"
     out.mkdir(parents=True, exist_ok=True)
-    oof.to_parquet(out / f"{'_'.join(args.models)}.parquet")
-    print(report(oof, args.models).to_string(index=False, float_format=lambda v: f"{v:.4f}"))
+    oof.to_parquet(out / f"{'_'.join(args.models)}_{'_'.join(args.leads)}.parquet")
+    print(report(oof, args.models, labels=args.leads).to_string(index=False, float_format=lambda v: f"{v:.4f}"))
 
 
 if __name__ == "__main__":

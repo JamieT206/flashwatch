@@ -4,7 +4,8 @@ is unambiguous, and isotonic calibration fitted on inner out-of-fold predictions
 
 Within each outer CV fold, the training years are split into K year-groups; K inner models
 give out-of-fold raw scores on every training row, an isotonic map is fitted on those, and
-the final model is refitted on all training rows. Test rows are never seen by either step.
+the final model is refitted on all training rows (K=2 by default: QUESTIONS.md Q4). Test rows
+are never seen by either step.
 """
 
 from __future__ import annotations
@@ -41,7 +42,7 @@ class GBM:
     forecast = False
     name = "M1"
 
-    def __init__(self, params=None, n_rounds=N_ROUNDS, inner_groups: int = 4, seed: int = 0):
+    def __init__(self, params=None, n_rounds=N_ROUNDS, inner_groups: int = 2, seed: int = 0):
         self.params = {**PARAMS, **(params or {}), "seed": seed}
         self.n_rounds, self.k, self.seed = n_rounds, inner_groups, seed
 
