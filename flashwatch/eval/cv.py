@@ -11,6 +11,7 @@ BSS against B0 and year-block bootstrap CIs. Test years are never touched here.
 from __future__ import annotations
 
 import argparse
+import gc
 from datetime import date
 
 import numpy as np
@@ -47,8 +48,8 @@ def fold_table(cube, fb: FeatureBuilder, ref_years, target_years, high=40, low=L
     n, iy, ix = np.nonzero(eligible)
     df = pd.DataFrame({"year": fb.issues.year.to_numpy()[n], "issue": fb.issues[n], "iy": iy, "ix": ix,
                        "woy": ((fb.issues.day_of_year.to_numpy()[n] - 1) // 7).clip(0, 52)})
-    for k, v in feats.items():
-        df[k] = v[n, iy, ix]
+    for k in list(feats):
+        df[k] = feats.pop(k)[n, iy, ix]           # pop: free each full grid once copied
     for k, v in labels.items():
         df[k] = v[n, iy, ix].astype(np.int8)
     return df
@@ -60,13 +61,17 @@ def run_cv(cube, models=("B0", "B1"), cv_years=CV_YEARS, pool_years=YEARS, fb=No
     for h in cv_years:
         ref = [y for y in cv_years if y != h]
         df = fold_table(cube, fb, ref, cv_years, ff=ff)
-        train, test = df[df.year != h], df[df.year == h].copy()
+        is_test = (df.year == h).to_numpy()
+        train, test = df[~is_test], df[is_test]
+        keep = test[["year", "issue", "iy", "ix", "woy", "rz_pct", *LABELS]].copy()
         for label in LABELS:
             for m in models:
-                test[f"{m}_{label}"] = MODELS[m]().fit(train, label).predict(test)
-        parts.append(test)
+                keep[f"{m}_{label}"] = MODELS[m]().fit(train, label).predict(test).astype(np.float32)
+        parts.append(keep)
         log(f"fold {h}: {len(train)} train rows, {len(test)} test rows, "
             f"week-2 base rate {100 * test.week2.mean():.2f}%")
+        del df, train, test
+        gc.collect()
     return pd.concat(parts, ignore_index=True)
 
 
@@ -97,6 +102,10 @@ def main():
         import xarray as xr
         from flashwatch.features.forecast import ForecastFeatures
         ff = ForecastFeatures(xr.open_zarr(FCST_STORE).load(), issues)
+    # The builders hold everything the folds need; keep only the masks from the raw cube.
+    import dataclasses
+    cube = dataclasses.replace(cube, **{f: None for f in ("rzsm", "sfsm", "t2m", "vpd", "precip", "evap", "pet", "ssrd")})
+    gc.collect()
     oof = run_cv(cube, args.models, fb=fb, ff=ff)
     out = DATA / "oof"
     out.mkdir(parents=True, exist_ok=True)

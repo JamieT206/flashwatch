@@ -37,7 +37,7 @@ def season_days(time: pd.DatetimeIndex, start=PCT_SEASON[0], end=PCT_SEASON[1]) 
 class FeatureBuilder:
     def __init__(self, cube: Cube, issues: pd.DatetimeIndex, pool_years, rz_counts=None, nino=None):
         """nino: monthly Nino 3.4 series (ingest.nino.load()); the feature is omitted if None."""
-        self.cube, self.issues = cube, pd.DatetimeIndex(issues)
+        self.issues = pd.DatetimeIndex(issues)
         self.nino = None if nino is None else np.array([monthly_as_of(nino, "nino", d) for d in self.issues])
         time = cube.time
         cutoff = pd.DatetimeIndex([as_of("era5land", d) for d in self.issues])
@@ -75,6 +75,7 @@ class FeatureBuilder:
         days = season_days(time)
         self.rz_counts = rz_counts or PercentileCounts(trailing_mean(cube.rzsm, 5), time, self.pool_years, days)
         self.sf_counts = PercentileCounts(trailing_mean(cube.sfsm, 5), time, self.pool_years, days)
+        self.shape = cube.shape
 
     def build(self, ref_years, P_rz: np.ndarray | None = None) -> dict[str, np.ndarray]:
         """Features (n_issue, lat, lon) under climatology from ref_years (each issue's own year
@@ -98,7 +99,7 @@ class FeatureBuilder:
         for n in ESI_WINDOWS:
             f[f"esi{n}"] = self.values[f"esi{n}"]
         doy = self.issues.day_of_year.to_numpy()
-        shape = (len(p),) + self.cube.shape
+        shape = (len(p),) + self.shape
         f["doy_sin"] = np.broadcast_to(np.sin(2 * np.pi * doy / 365.25)[:, None, None], shape)
         f["doy_cos"] = np.broadcast_to(np.cos(2 * np.pi * doy / 365.25)[:, None, None], shape)
         # Static climatologies over the reference years minus the issue's own year: a site
