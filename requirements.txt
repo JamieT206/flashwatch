@@ -1,0 +1,6 @@
+# Ingest (Day 1). Later stages add: zarr xarray netCDF4 cfgrib eccodes pandas pyarrow geopandas
+# rioxarray shapely lightgbm scikit-learn shap matplotlib earthaccess typer openai
+requests
+numpy
+cdsapi>=0.7.4
+earthengine-api
