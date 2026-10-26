@@ -87,8 +87,8 @@ class PercentileCounts:
         self.years = np.asarray(sorted(pool_years))
         self.pos = np.where(day_mask & np.isin(years, self.years))[0]
         J, C = len(self.years), flat.shape[1]
-        self.c2 = np.zeros((len(self.pos), J, C), dtype=np.int16)
-        self.n = np.zeros((len(self.pos), J, C), dtype=np.int16)
+        self.c2 = np.zeros((len(self.pos), J, C), dtype=np.int8)      # <= 2*32
+        self.n = np.zeros((len(self.pos), J, C), dtype=np.int8)
         row = {t: i for i, t in enumerate(self.pos)}
         for d in np.unique(doy[self.pos]):
             dist = np.abs(doy - d)
@@ -98,7 +98,7 @@ class PercentileCounts:
             pool = np.full((J, L, C), np.nan, dtype=np.float32)
             for j, g in enumerate(groups):
                 pool[j, :len(g)] = flat[g]
-            valid = np.isfinite(pool).sum(1).astype(np.int16)
+            valid = np.isfinite(pool).sum(1).astype(np.int8)
             for t in self.pos[doy[self.pos] == d]:
                 v = flat[t]
                 i = row[t]

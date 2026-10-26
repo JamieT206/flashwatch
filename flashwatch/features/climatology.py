@@ -30,9 +30,9 @@ class YearSums:
         yr = time.year.to_numpy()
         flat = R.reshape(len(time), -1)
         K, J, C = len(self.cal_days), len(self.years), flat.shape[1]
-        self.S = np.zeros((K, J, C))
-        self.SS = np.zeros((K, J, C))
-        self.N = np.zeros((K, J, C))
+        self.S = np.zeros((K, J, C), dtype=np.float32)
+        self.SS = np.zeros((K, J, C), dtype=np.float32)
+        self.N = np.zeros((K, J, C), dtype=np.int8)
         for k, d in enumerate(self.cal_days):
             dist = np.abs(doy - d)
             near = np.minimum(dist, 365 - dist) <= half_window
@@ -48,9 +48,9 @@ class YearSums:
         own_year (n,), against ref_years excluding each issue's own year."""
         ref = np.isin(self.years, list(ref_years))
         W = ref[None, :] & (self.years[None, :] != np.asarray(own_year)[:, None])   # (n, J)
-        S = np.einsum("nj,njc->nc", W, self.S[k_idx])
-        SS = np.einsum("nj,njc->nc", W, self.SS[k_idx])
-        N = np.einsum("nj,njc->nc", W, self.N[k_idx])
+        S = np.einsum("nj,njc->nc", W, self.S[k_idx], dtype=np.float64)
+        SS = np.einsum("nj,njc->nc", W, self.SS[k_idx], dtype=np.float64)
+        N = np.einsum("nj,njc->nc", W, self.N[k_idx], dtype=np.float64)
         with np.errstate(invalid="ignore", divide="ignore"):
             mean = S / N
             sd = np.sqrt(np.maximum(SS / N - mean ** 2, 0))
@@ -62,5 +62,5 @@ class YearSums:
         """Climatological mean per calendar day over ref_years: (K, ...)."""
         ref = np.isin(self.years, list(ref_years))
         with np.errstate(invalid="ignore", divide="ignore"):
-            m = self.S[:, ref].sum(1) / self.N[:, ref].sum(1)
+            m = self.S[:, ref].sum(1, dtype=np.float64) / self.N[:, ref].sum(1, dtype=np.float64)
         return m.reshape((len(self.cal_days),) + self.cell_shape)
