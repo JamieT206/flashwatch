@@ -43,3 +43,11 @@ def test_features_ignore_the_future(issue):
     f0 = toy_features(x, issue)
     f1 = toy_features(perturb_after(x, as_of("era5land", issue)), issue)
     assert np.array_equal(f0, f1)
+
+
+def test_monthly_as_of_waits_for_publication():
+    from flashwatch.features.asof import monthly_as_of
+    s = pd.Series([1.0, 2.0, 3.0], index=pd.to_datetime(["2010-04-01", "2010-05-01", "2010-06-01"]))
+    assert monthly_as_of(s, "nino", "2010-06-07") == 2.0     # May ends May 31, usable from Jun 7
+    assert monthly_as_of(s, "nino", "2010-06-06") == 1.0
+    assert monthly_as_of(s, "nino", "2010-07-15") == 3.0

@@ -84,8 +84,10 @@ def main():
     ap.add_argument("--models", nargs="+", default=["B0", "B1"])
     args = ap.parse_args()
     from flashwatch.cube import load_cube
+    from flashwatch.ingest import nino
     cube = load_cube()
-    oof = run_cv(cube, args.models)
+    fb = FeatureBuilder(cube, model_issue_dates(YEARS), YEARS, nino=nino.load())
+    oof = run_cv(cube, args.models, fb=fb)
     out = DATA / "oof"
     out.mkdir(parents=True, exist_ok=True)
     oof.to_parquet(out / f"{'_'.join(args.models)}.parquet")

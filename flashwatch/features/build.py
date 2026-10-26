@@ -5,7 +5,7 @@ FeatureBuilder(); build(ref_years) then returns one fold's features in seconds. 
 the issue year's own data goes through as_of(); the leakage test perturbs everything after
 the cutoff (and every non-reference year) and requires identical features.
 
-Not yet included (need extra downloads): Nino 3.4, soil water capacity, cropland fraction,
+Not yet included (need extra downloads): soil water capacity, cropland fraction,
 and the ECMWF forecast features.
 """
 
@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 
 from flashwatch.cube import Cube
-from flashwatch.features.asof import as_of
+from flashwatch.features.asof import as_of, monthly_as_of
 from flashwatch.features.climatology import YearSums, trailing_mean
 from flashwatch.labels.percentile import PercentileCounts, calendar_day
 
@@ -35,8 +35,10 @@ def season_days(time: pd.DatetimeIndex, start=PCT_SEASON[0], end=PCT_SEASON[1]) 
 
 
 class FeatureBuilder:
-    def __init__(self, cube: Cube, issues: pd.DatetimeIndex, pool_years, rz_counts=None):
+    def __init__(self, cube: Cube, issues: pd.DatetimeIndex, pool_years, rz_counts=None, nino=None):
+        """nino: monthly Nino 3.4 series (ingest.nino.load()); the feature is omitted if None."""
         self.cube, self.issues = cube, pd.DatetimeIndex(issues)
+        self.nino = None if nino is None else np.array([monthly_as_of(nino, "nino", d) for d in self.issues])
         time = cube.time
         cutoff = pd.DatetimeIndex([as_of("era5land", d) for d in self.issues])
         self.pos = time.get_indexer(cutoff)
@@ -109,4 +111,6 @@ class FeatureBuilder:
         with np.errstate(invalid="ignore", divide="ignore"):
             f["aridity"] = site_mean(self.annual_p) / site_mean(self.annual_pet)
         f["gs_precip"] = site_mean(self.gs_p)
+        if self.nino is not None:
+            f["nino34"] = np.broadcast_to(self.nino[:, None, None], shape)
         return {k: np.asarray(v, dtype=np.float32) for k, v in f.items()}
