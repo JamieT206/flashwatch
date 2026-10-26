@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from pathlib import Path
@@ -35,7 +36,9 @@ GROUPS = {
               "mars_param": "228228/169",
               "mars_step": "/".join(str(h) for h in range(0, 1105, 24))},
 }
-WORKERS = int(os.getenv("FW_S2S_WORKERS", "4"))
+# ECDS caps queued requests per user and dataset ("please request data sequentially").
+WORKERS = int(os.getenv("FW_S2S_WORKERS", "1"))
+QUEUE_FULL = "maximum number queued requests"
 log = get_logger("s2s")
 
 
@@ -109,7 +112,15 @@ def fetch(d: date, group: str, style: str) -> bool:
         part = target.with_name(name + ".part")
 
         def go():
-            client().retrieve("s2s-reforecasts", req, str(part))
+            while True:
+                try:
+                    client().retrieve("s2s-reforecasts", req, str(part))
+                    break
+                except Exception as e:  # noqa: BLE001
+                    if QUEUE_FULL not in str(e).lower():
+                        raise
+                    log.info("%s: ECDS queue full, waiting 2 min", name)
+                    time.sleep(120)
             os.replace(part, target)
             return True
 
@@ -123,7 +134,10 @@ def fetch(d: date, group: str, style: str) -> bool:
 def main(limit: int | None = None):
     OUT.mkdir(parents=True, exist_ok=True)
     style = probe(client())
-    tasks = [(d, g) for d in issue_dates() for g in GROUPS][:limit]
+    # Coarse-to-fine order (every 4th date first), so a partial run still spans the season.
+    dates = issue_dates()
+    order = dates[0::4] + dates[2::4] + dates[1::4] + dates[3::4]
+    tasks = [(d, g) for d in order for g in GROUPS][:limit]
     log.info("%d requests (%d issue dates x %d groups), %d at a time", len(tasks),
              len(issue_dates()), len(GROUPS), WORKERS)
     with ThreadPoolExecutor(WORKERS) as ex:

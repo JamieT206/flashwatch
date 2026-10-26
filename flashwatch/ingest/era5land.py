@@ -3,8 +3,7 @@
 One .npz per (variable, year) in data/raw/era5land/: `data` float32 (days, 52, 96), NaN where no
 land, and `dates` (YYYYMMDD strings). Also `land_frac.npz`: fraction of each cell covered by
 ERA5-Land land pixels. Uses reduceResolution(mean) at native resolution before reprojecting,
-so cells are true area means, not nearest-neighbour samples. A year that fails as one call is
-retried month by month.
+so cells are true area means, not nearest-neighbour samples. Pulled one month per call.
 """
 
 from __future__ import annotations
@@ -65,20 +64,16 @@ def year_task(var: str, year: int) -> bool:
         return True
     ee = init()
 
-    def whole_year():
-        return pull(ee, var, f"{year}-01-01", f"{year + 1}-01-01")
-
-    res = retry(whole_year, log, f"{var} {year}", tries=2, wait=20)
-    if res is None:
-        log.info("%s %d: falling back to monthly calls", var, year)
-        parts = []
-        for m in range(1, 13):
-            end = f"{year + 1}-01-01" if m == 12 else f"{year}-{m + 1:02d}-01"
-            part = retry(lambda: pull(ee, var, f"{year}-{m:02d}-01", end), log, f"{var} {year}-{m:02d}")
-            if part is None:
-                return False
-            parts.append(part)
-        res = (sum((p[0] for p in parts), []), np.concatenate([p[1] for p in parts]))
+    # Whole-year calls exceed Earth Engine's limits with reduceResolution, so pull by month.
+    parts = []
+    for m in range(1, 13):
+        end = f"{year + 1}-01-01" if m == 12 else f"{year}-{m + 1:02d}-01"
+        part = retry(lambda: pull(ee, var, f"{year}-{m:02d}-01", end), log, f"{var} {year}-{m:02d}",
+                     tries=4, wait=20)
+        if part is None:
+            return False
+        parts.append(part)
+    res = (sum((p[0] for p in parts), []), np.concatenate([p[1] for p in parts]))
     dates, data = res
     tmp = target.with_name(target.stem + ".part.npz")
     np.savez_compressed(tmp, data=data, dates=np.array(dates))
