@@ -67,3 +67,51 @@ def percentiles(x: np.ndarray, time: pd.DatetimeIndex, ref_years, target_years=N
             pct[(n == 0) | ~np.isfinite(v)] = np.nan
             out[t] = pct
     return out.reshape(x.shape)
+
+
+class PercentileCounts:
+    """Percentiles refittable per fold: computed once, exact for any reference-year set.
+
+    For each target day t and pool year j, stores 2*below + ties and the valid count of the
+    +/-half_window pool values in year j relative to x[t]. A fold's percentile for day t is
+    then sum_j(2*below+ties) / (2 * sum_j n) over its reference years minus t's own year,
+    which equals percentiles(x, time, ref_years) without touching the raw data again.
+    """
+
+    def __init__(self, x: np.ndarray, time: pd.DatetimeIndex, pool_years, day_mask: np.ndarray,
+                 half_window: int = 15):
+        flat = np.asarray(x, dtype=np.float32).reshape(len(time), -1)
+        years = time.year.to_numpy()
+        doy = calendar_day(time)
+        self.time, self.shape = time, x.shape
+        self.years = np.asarray(sorted(pool_years))
+        self.pos = np.where(day_mask & np.isin(years, self.years))[0]
+        J, C = len(self.years), flat.shape[1]
+        self.c2 = np.zeros((len(self.pos), J, C), dtype=np.int16)
+        self.n = np.zeros((len(self.pos), J, C), dtype=np.int16)
+        row = {t: i for i, t in enumerate(self.pos)}
+        for d in np.unique(doy[self.pos]):
+            dist = np.abs(doy - d)
+            near = np.minimum(dist, 365 - dist) <= half_window
+            groups = [np.where(near & (years == y))[0] for y in self.years]
+            L = max(len(g) for g in groups)
+            pool = np.full((J, L, C), np.nan, dtype=np.float32)
+            for j, g in enumerate(groups):
+                pool[j, :len(g)] = flat[g]
+            valid = np.isfinite(pool).sum(1).astype(np.int16)
+            for t in self.pos[doy[self.pos] == d]:
+                v = flat[t]
+                i = row[t]
+                self.c2[i] = 2 * (pool < v).sum(1) + (pool == v).sum(1)
+                self.n[i] = np.where(np.isfinite(v), valid, 0)
+
+    def fold(self, ref_years) -> np.ndarray:
+        """Percentiles (time, ...) for all target days under ref_years; NaN elsewhere."""
+        own = self.time.year.to_numpy()[self.pos]
+        W = np.isin(self.years, list(ref_years))[None, :] & (self.years[None, :] != own[:, None])
+        num = np.einsum("tj,tjc->tc", W, self.c2, dtype=np.float64)
+        den = np.einsum("tj,tjc->tc", W, self.n, dtype=np.float64)
+        out = np.full((len(self.time), self.c2.shape[2]), np.nan, dtype=np.float32)
+        with np.errstate(invalid="ignore", divide="ignore"):
+            out[self.pos] = np.where(den > 0, 50.0 * num / den, np.nan)
+        return out.reshape(self.shape)

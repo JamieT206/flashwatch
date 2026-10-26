@@ -8,3 +8,5 @@ zarr
 cdsapi>=0.7.4
 earthengine-api
 pytest
+scikit-learn
+pyarrow
