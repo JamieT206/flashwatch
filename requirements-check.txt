@@ -1,0 +1,9 @@
+requests
+earthaccess
+earthengine-api
+cdsapi
+ecmwf-api-client
+numpy
+xarray
+cfgrib
+eccodes
