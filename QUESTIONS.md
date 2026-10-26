@@ -40,6 +40,20 @@ Options:
 - (c) No tuning: the current sensible defaults (models/gbm.py PARAMS).
 Until you answer, I'm running with (c).
 
+### Q4. Compute budget for M1/M2, and your PC's RAM and core count (needs answer by Oct 28)
+Measured at real scale on a 4-core cloud VM (synthetic data of the true size: 17 folds,
+~6.4M training rows per fold): the baseline CV (B0, B1) takes 39 min and peaks at ~11 GB RAM
+(I've since cut the main contributor). One LightGBM fit takes 93 s, so M1's CV
+(17 folds x 5 leads x 5 fits) is ~11 h here; M2 is about the same again. Your PC will be
+faster (how many cores, and how much RAM?), but M1+M2 is still overnight work and leaves
+little room for reruns. Options, cheapest first:
+- (a) Run week 1, week 2 and any-28 first (the headline leads); weeks 3-4 after.
+- (b) Calibrate with 2 inner year-groups instead of 4 (3 fits instead of 5: ~40% faster).
+- (c) **Recommended if you agree to the deviation:** XGBoost `hist` on the RTX 4070 (CUDA
+  wheels exist for Windows; it supports monotone constraints). Probably 10x+ faster, which
+  makes tuning (Q3) affordable. The spec locks LightGBM, so this needs your OK.
+Until you answer: (a) + (b) with LightGBM.
+
 ## Defaults taken (Day 2 code)
 - D1 resolved: 2005-2024, CV 2005-2021, test 2022-2024 (the PDF spec still says 2023-2025).
   101 issue dates/season, verified against ECDS's constraints table.
