@@ -77,7 +77,7 @@ def year_task(var: str, year: int) -> bool:
     res = (sum((p[0] for p in parts), []), np.concatenate([p[1] for p in parts]))
     dates, data = res
     tmp = target.with_name(target.stem + ".part.npz")
-    np.savez_compressed(tmp, data=data, dates=np.array(dates))
+    np.savez_compressed(tmp, data=data, dates=np.array(dates, dtype="U8"))
     os.replace(tmp, target)
     log.info("done %s %d: %d days, %.0f%% valid", var, year, data.shape[0], 100 * np.isfinite(data).mean())
     return True
