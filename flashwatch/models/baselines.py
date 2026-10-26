@@ -65,4 +65,9 @@ class StateLogistic:
         return self.model.predict_proba(df[list(self.inputs)].fillna(self.fill))[:, 1]
 
 
-MODELS = {"B0": Climatology, "B1": StateLogistic}
+def _gbm(name):
+    from flashwatch.models import gbm
+    return {"M1": gbm.GBM, "M2": gbm.GBMForecast}[name]()
+
+
+MODELS = {"B0": Climatology, "B1": StateLogistic, "M1": lambda: _gbm("M1"), "M2": lambda: _gbm("M2")}

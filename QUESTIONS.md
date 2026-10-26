@@ -26,6 +26,20 @@ ECMWF attribution; **no ECMWF-derived data files** go in the repo or the demo bu
 want more caution, the fallback is to drop B2/M2 from the public demo, or use GEFSv12 (public domain).
 Your call on how much risk to carry.
 
+### Q3. Hyperparameter tuning: fully nested, or tuned once on the dev years? (needs answer by Oct 29)
+The spec asks for nested tuning (~30 trials per lead) inside the leave-one-year-out CV. At real
+scale a fold has ~6.4M training rows; one LightGBM fit is roughly a minute on 4 cores, and each
+model already needs 5 fits per lead per fold (4 inner fits for the isotonic calibration, plus
+the final fit). Fully nested tuning would be 17 folds x 5 leads x 30 trials x 5 fits, i.e. days.
+Options:
+- (a) **Recommended:** tune once per lead with grouped-by-year CV on the dev years (on
+  a 25% spatial thinning of cells), then freeze the hyperparameters for the outer LOYO CV. The
+  small optimistic bias in CV scores is stated in the model card; the test years (2022-2024)
+  stay fully clean, and they're the headline.
+- (b) Nested, but only ~8 trials on a small search space, on the thinned data.
+- (c) No tuning: the current sensible defaults (models/gbm.py PARAMS).
+Until you answer, I'm running with (c).
+
 ## Defaults taken (Day 2 code)
 - D1 resolved: 2005-2024, CV 2005-2021, test 2022-2024 (the PDF spec still says 2023-2025).
   101 issue dates/season, verified against ECDS's constraints table.
@@ -38,3 +52,22 @@ Your call on how much risk to carry.
 - "Under 20% vegetated land" mask: interim rule is ERA5-Land land fraction >= 0.2. I plan to
   replace it with MODIS land cover (MCD12Q1 via Earth Engine) vegetated fraction on Day 3.
 - Drought Monitor as-of latency 2 days (maps are valid Tuesday, released Thursday).
+
+## Defaults taken (Day 3-4 code)
+- Monotone constraints (models/gbm.py MONOTONE): probability may only fall with root-zone and
+  surface percentiles and their changes, precipitation anomalies, ET/PET; only rise with
+  temperature, VPD and PET anomalies; forecast precipitation anomaly down, its lower-tercile
+  probability up, forecast temperature and VPD up, forecast soil moisture down. Days since
+  P>=40, Nino 3.4, season, aridity and growing-season rain are unconstrained.
+- Isotonic calibration per lead, fitted on inner out-of-fold predictions (4 year-groups
+  inside each outer fold's training years).
+- Each lead's model sees all four forecast weeks (not just weeks <= lead).
+- B1 fills missing inputs with training medians (the GBMs keep NaN).
+- B0 smooths onset rates over +/-2 weeks of year and the 3x3 neighbourhood, shrunk to the
+  regional weekly rate with 20 pseudo-rows.
+- Forecast features: z-anomaly of the ensemble mean vs the reforecast climatology for the
+  same start date and week (fold reference years minus the own year), spread / climatological
+  SD, and the fraction of members below the climatological lower tercile (precipitation).
+- Nino 3.4: NOAA PSL ERSST v6 monthly anomaly; month m is treated as available 7 days after
+  it ends. ERSST values are revised over time, so hindcasts use slightly better values than
+  were available in real time (noted for the model card).
