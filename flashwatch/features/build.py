@@ -49,19 +49,21 @@ class FeatureBuilder:
         self.own_year = self.issues.year.to_numpy()
         self.pool_years = list(pool_years)
 
+        # One window series at a time: keep only its cutoff values and calendar sums.
         self.values, self.sums = {}, {}
-        series = {}
+
+        def add(name, R):
+            self.values[name] = R[self.pos]
+            self.sums[name] = YearSums(R, time, self.cal_days, self.pool_years)
+
         for stem, fieldname, n, sign in WINDOWS:
-            R = sign * trailing_mean(getattr(cube, fieldname), n)
-            series[f"{stem}{n}"] = R
+            add(f"{stem}{n}", sign * trailing_mean(getattr(cube, fieldname), n))
         for n in ESI_WINDOWS:
             e, p = trailing_mean(cube.evap, n), trailing_mean(cube.pet, n)
             with np.errstate(invalid="ignore", divide="ignore"):
                 r = np.where(np.abs(p) > 1e-5, e / p, np.nan)
-            series[f"esi{n}"] = np.clip(r, 0, 1.5).astype(np.float32)
-        for name, R in series.items():
-            self.values[name] = R[self.pos]
-            self.sums[name] = YearSums(R, time, self.cal_days, self.pool_years)
+            del e, p
+            add(f"esi{n}", np.clip(r, 0, 1.5).astype(np.float32))
 
         # Static climatologies: annual precipitation / PET (aridity) and Apr-Sep precipitation.
         yr = time.year.to_numpy()

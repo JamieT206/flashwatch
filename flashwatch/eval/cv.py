@@ -31,12 +31,15 @@ def model_issue_dates(years) -> pd.DatetimeIndex:
     return pd.DatetimeIndex([date(y, d.month, d.day) for y in years for d in issue_dates()])
 
 
-def fold_table(cube, fb: FeatureBuilder, ref_years, target_years, high=40, low=LOW) -> pd.DataFrame:
-    """Rows = eligible (issue, cell) pairs in target_years: features, labels and ids."""
+def fold_table(cube, fb: FeatureBuilder, ref_years, target_years, high=40, low=LOW, ff=None) -> pd.DataFrame:
+    """Rows = eligible (issue, cell) pairs in target_years: features, labels and ids.
+    ff: ForecastFeatures for the same issue dates (adds the f_* columns), or None."""
     P = fb.rz_counts.fold(ref_years)
     P[:, ~cube.land] = np.nan
     onset = onset_days(P, high=high, low=low, mask=cube.masked)
     feats = fb.build(ref_years, P_rz=P)
+    if ff is not None:
+        feats.update(ff.build(ref_years))
     labels = lead_labels(onset, cube.time, fb.issues)
     keep_issue = np.isin(fb.issues.year, list(target_years))
     with np.errstate(invalid="ignore"):
@@ -51,12 +54,12 @@ def fold_table(cube, fb: FeatureBuilder, ref_years, target_years, high=40, low=L
     return df
 
 
-def run_cv(cube, models=("B0", "B1"), cv_years=CV_YEARS, pool_years=YEARS, fb=None, log=print):
+def run_cv(cube, models=("B0", "B1"), cv_years=CV_YEARS, pool_years=YEARS, fb=None, ff=None, log=print):
     fb = fb or FeatureBuilder(cube, model_issue_dates(pool_years), pool_years)
     parts = []
     for h in cv_years:
         ref = [y for y in cv_years if y != h]
-        df = fold_table(cube, fb, ref, cv_years)
+        df = fold_table(cube, fb, ref, cv_years, ff=ff)
         train, test = df[df.year != h], df[df.year == h].copy()
         for label in LABELS:
             for m in models:
@@ -86,8 +89,15 @@ def main():
     from flashwatch.cube import load_cube
     from flashwatch.ingest import nino
     cube = load_cube()
-    fb = FeatureBuilder(cube, model_issue_dates(YEARS), YEARS, nino=nino.load())
-    oof = run_cv(cube, args.models, fb=fb)
+    issues = model_issue_dates(YEARS)
+    fb = FeatureBuilder(cube, issues, YEARS, nino=nino.load())
+    ff = None
+    from flashwatch.forecast import FCST_STORE
+    if FCST_STORE.exists():
+        import xarray as xr
+        from flashwatch.features.forecast import ForecastFeatures
+        ff = ForecastFeatures(xr.open_zarr(FCST_STORE).load(), issues)
+    oof = run_cv(cube, args.models, fb=fb, ff=ff)
     out = DATA / "oof"
     out.mkdir(parents=True, exist_ok=True)
     oof.to_parquet(out / f"{'_'.join(args.models)}.parquet")

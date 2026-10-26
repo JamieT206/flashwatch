@@ -1,4 +1,4 @@
-# Later stages add: pyarrow geopandas rioxarray shapely lightgbm scikit-learn
+# Later stages add: geopandas rioxarray shapely lightgbm
 # shap matplotlib earthaccess typer openai
 requests
 numpy
@@ -11,3 +11,4 @@ pytest
 scikit-learn
 pyarrow
 eccodes
+scipy
