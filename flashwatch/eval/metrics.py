@@ -62,3 +62,20 @@ def year_bootstrap(df: pd.DataFrame, stat, n: int = 1000, seed: int = 0, year_co
         draws.append(stat(pd.concat([groups[y] for y in pick], ignore_index=True)))
     lo, hi = np.nanpercentile(draws, [2.5, 97.5])
     return float(stat(df)), float(lo), float(hi)
+
+
+def year_bootstrap_bss(years, y, p, p_ref, n: int = 1000, seed: int = 0):
+    """Year-block bootstrap CI of BSS(p vs p_ref) from per-year squared-error sums.
+
+    Same resampling as year_bootstrap, but O(years) per draw instead of copying every row,
+    which matters at ~7M rows. Returns (point estimate, 2.5%, 97.5%).
+    """
+    df = pd.DataFrame({"yr": np.asarray(years), "e": (np.asarray(p, float) - y) ** 2,
+                       "r": (np.asarray(p_ref, float) - y) ** 2})
+    g = df.groupby("yr")[["e", "r"]].sum()
+    e, r = g.e.to_numpy(), g.r.to_numpy()
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, len(g), size=(n, len(g)))
+    draws = 1 - e[idx].sum(1) / r[idx].sum(1)
+    lo, hi = np.percentile(draws, [2.5, 97.5])
+    return float(1 - e.sum() / r.sum()), float(lo), float(hi)

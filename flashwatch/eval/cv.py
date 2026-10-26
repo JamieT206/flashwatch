@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 
 from flashwatch.config import CV_YEARS, DATA, YEARS
-from flashwatch.eval.metrics import bss, score, year_bootstrap
+from flashwatch.eval.metrics import score, year_bootstrap_bss
 from flashwatch.features.build import FeatureBuilder
 from flashwatch.labels.onset import LEADS, lead_labels, onset_days
 from flashwatch.models.baselines import MODELS
@@ -81,7 +81,8 @@ def report(oof: pd.DataFrame, models, n_boot: int = 1000) -> pd.DataFrame:
         for m in models:
             s = score(oof[label], oof[f"{m}_{label}"], oof.get(f"B0_{label}"))
             if m != "B0" and f"B0_{label}" in oof:
-                _, lo, hi = year_bootstrap(oof, lambda d: bss(d[label], d[f"{m}_{label}"], d[f"B0_{label}"]), n_boot)
+                _, lo, hi = year_bootstrap_bss(oof.year, oof[label].to_numpy(float), oof[f"{m}_{label}"],
+                                               oof[f"B0_{label}"], n_boot)
                 s["bss_lo"], s["bss_hi"] = lo, hi
             rows.append({"lead": label, "model": m, **s})
     return pd.DataFrame(rows)

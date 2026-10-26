@@ -39,3 +39,15 @@ def test_fold_table_and_cv_end_to_end(cube):
     assert set(oof.year) == set(YEARS[:4])
     rep = report(oof, ("B0", "B1"), n_boot=20)
     assert len(rep) == 2 * len(LABELS) and rep.brier.between(0, 1).all()
+
+
+def test_bss_bootstrap_matches_row_bootstrap():
+    from flashwatch.eval.metrics import year_bootstrap_bss
+    rng = np.random.default_rng(1)
+    df = pd.DataFrame({"year": np.repeat(range(12), 300)})
+    df["y"] = (rng.uniform(size=len(df)) < 0.1).astype(float)
+    df["p"] = np.clip(0.1 + 0.3 * (df.y - 0.1) + rng.normal(0, 0.05, len(df)), 0, 1)
+    df["r"] = 0.1
+    fast = year_bootstrap_bss(df.year, df.y, df.p, df.r, n=300, seed=3)
+    slow = year_bootstrap(df, lambda d: bss(d.y, d.p, d.r), n=300, seed=3)
+    assert np.allclose(fast, slow)
