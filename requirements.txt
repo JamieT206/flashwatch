@@ -1,4 +1,4 @@
-# Later stages add: cfgrib eccodes pyarrow geopandas rioxarray shapely lightgbm scikit-learn
+# Later stages add: pyarrow geopandas rioxarray shapely lightgbm scikit-learn
 # shap matplotlib earthaccess typer openai
 requests
 numpy
@@ -10,3 +10,4 @@ earthengine-api
 pytest
 scikit-learn
 pyarrow
+eccodes
