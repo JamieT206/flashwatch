@@ -49,9 +49,16 @@ def tuned(model: str, label: str) -> dict | None:
     return json.loads(TUNED_FILE.read_text()).get(model, {}).get(label)
 
 
+# Built but left out of the models (fast-loop ablations, Oct 28; DESIGN.md P9, F5):
+# once-per-year or once-per-day global numbers let the model memorise particular years
+# (removing them: week-1 skill 3.9% -> 4.4%; MJO alone -0.4 points), and directional
+# neighbour boxes add nothing over the all-round neighbourhood (difference 0.0).
+EXCLUDED = ("nino34", "gmst12", "year_num", "mjo_", "nbrW_", "nbrE_", "nbrN_", "nbrS_")
+
+
 def feature_columns(df: pd.DataFrame, forecast: bool) -> list[str]:
     cols = [c for c in df.columns if c not in ID_COLUMNS and not c.startswith(LABEL_PREFIXES)
-            and not c.startswith(("B0_", "B1_", "M1_", "M2_", "B2_"))]
+            and not c.startswith(("B0_", "B1_", "M1_", "M2_", "B2_")) and not c.startswith(EXCLUDED)]
     return [c for c in cols if forecast or not c.startswith("f_")]
 
 
@@ -77,7 +84,7 @@ class GBM:
     name = "M1"
 
     def __init__(self, params=None, n_rounds=None, inner_groups: int = 4, seed: int = 0,
-                 calibration: str = "crossfit", calibrator: str = "isotonic"):
+                 calibration: str = "crossfit", calibrator: str = "platt"):
         """calibration (DESIGN.md A7): 'refit' fits the isotonic map on the inner models' OOF
         scores and applies it to a final model refitted on all rows; 'crossfit' keeps the inner
         models and predicts the mean of iso(inner model) over them, so the map is applied to the
