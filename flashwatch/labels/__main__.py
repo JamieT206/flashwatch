@@ -26,8 +26,9 @@ from flashwatch.labels.percentile import percentiles, running_mean
 
 OUT = DATA / "labels"
 # Target soil depth (DESIGN.md T1): ERA5-Land layers 0-7, 7-28, 28-100 cm, weighted by thickness
-# within the depth. 0-40 cm takes 12 of layer 3's 72 cm. 0-100 is the spec's reference.
-DEPTHS = {"0-100": (7, 21, 72), "0-40": (7, 21, 12), "0-28": (7, 21, 0), "0-7": (7, 0, 0)}
+# within the depth (layer 3 assumed uniform over 28-100 cm: 0-40 takes 12 of its 72 cm, 0-50 takes 22).
+# 0-100 is the spec's reference.
+DEPTHS = {"0-100": (7, 21, 72), "0-50": (7, 21, 22), "0-40": (7, 21, 12), "0-28": (7, 21, 0), "0-7": (7, 0, 0)}
 REFERENCE_DEPTH = "0-100"
 SEASON_PAD = ("03-05", "11-30")   # issue dates Apr 1-Oct 15, +28 d labels, -20/+10 d onset rule, -5 d latency
 

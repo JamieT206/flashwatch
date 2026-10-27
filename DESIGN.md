@@ -1,76 +1,121 @@
 # FlashWatch: design decisions and work plan
 
 Working rule (James, Oct 28): get the whole pipeline running with **light training and short
-cycles**, iterate the design while training stays light, and train heavily only once the design
+cycles**, improve the design while training stays light, and only train heavily once the design
 is in place. Decisions fall in two groups:
 
 - **A. Decide now, under light training.** Things we can be confident about without much compute:
-  the target, what is in and out of the training data, feature families, the evaluation protocol.
-  Decided on label/data evidence wherever possible, not on model skill (no target or feature
-  shopping on CV scores; each decision records what it was based on).
+  the target, which rows go into training, the features, how we evaluate. Where possible these are
+  decided on evidence about the labels and data themselves, not on which version scores best (picking
+  the target or features by score would make our cross-validation numbers look better than they
+  really are). Each decision records what it was based on.
 - **B. Open until the late burst.** Things that may look different with more compute behind them
-  and **don't change what we build**: model library, hyperparameters, ensembling, seeds. Settled in
-  one intensive burst at ~70% of the way through (**Nov 2, Sydney**), with the decision rule written
-  down before the burst; then freeze, then score the test years once.
-  Exception: if an open question could send us down a dead end (it changes the data pipeline or
-  what we build), do a heavier run now instead of leaving it open.
+  and **don't change what we build**: which boosting library, tuning settings, ensembling, random
+  seeds. All settled in one intensive burst at about 70% of the way through (**Nov 2, Sydney**),
+  using a decision rule written down before the burst; then freeze the model and score the test
+  years once. Exception: if an open question could lead us into a dead end (it changes the data
+  pipeline or what we build), run a heavier test now rather than leaving it open.
 
-Iteration loop: `python -m flashwatch.eval.cv --models B0 B1 M1 --leads week1 week2 any28 --fast --tag <variant>`
-(6 held-out years incl. 2012, every other cell, LightGBM lr 0.1 x 150 rounds; 6.8 min per cycle on Oct 28).
+Iteration loop (about 7-8 minutes per run):
+`python -m flashwatch.eval.cv --models B0 M1 --leads week1 week2 any28 --fast --tag <name>` then
+`python -m flashwatch.eval.compare base=<file> new=<file>`. "Fast" means 6 held-out years
+(including 2012), every other grid cell, and light LightGBM training (learning rate 0.1, 150 trees).
+
+Plain-language glossary: **Brier score** = mean squared error of the probabilities (lower is
+better). **BSS** (Brier skill score) = how much better than the climatology baseline B0, e.g. 0.04
+means 4% lower Brier. **Calibration slope** = whether the probabilities are spread out the right
+amount: 1 is right, above 1 means too timid (should be more extreme), below 1 too bold.
+**OOF** = out-of-fold, i.e. predictions for a year the model was not trained on.
 
 ---
 
 ## A. Decided, or to decide now
 
-| # | Topic | Status | Decision / current default | Based on |
-| --- | --- | --- | --- | --- |
-| A1 | Study period and splits | Decided | 2005-2024 on one ECMWF cycle; CV 2005-2021 LOYO; test 2022-2024 opened once | ECDS constraints (D1) |
-| A2 | Target: onset rule | **To align (T1 result in: recommend 0-40 cm)** | 40->20 percentile drop, P>=40 within d-20..d-5, stays <=20 for 10 days; root zone 0-100 cm (layers 1-3, 7/21/72) | Spec. 2012 check shows 0-100 cm onsets come in May, before the Jun-Jul window: see T1 |
-| A3 | Target: horizons | Decided | Week 1-4 and any onset in days 1-28 | Spec |
-| A4 | Training rows | **To align** | Eligible if P(issue - 5 d) > 20; 101 issue dates Apr 1 - Oct 15; land fraction >= 0.2; snow/frozen masked | Spec; see T2-T4 |
-| A5 | Leakage rules | Decided | Features only via `features.asof`; fold climatologies from training years; perturbation test per feature family | Spec |
-| A6 | Reference forecast | Decided | B0 tuned by year-grouped CV (heavy shrinkage to seasonal regional rate) | Q6a, Oct 28 |
-| A7 | Calibration structure | **To decide now** | Isotonic on inner OOF (2 year-groups). M1 is under-confident (slope 1.5-2.0) | Fast CV Oct 28. Structural, so not left for the burst |
-| A8 | Feature families | **In progress** | ~30 observed + forecast features (HANDOVER 6.2). Deep feature work: see F-list | |
-| A9 | M3 (U-Net/ConvLSTM) | **To decide now** | Recommend cut: a different pipeline and a dead-end risk at this timescale; spatial context goes in as GBM features (F5) instead | |
-| A10 | Per-lead models vs one model with lead as a feature | To decide now | Per lead | Changes the training table, so not a burst item |
-| A11 | Glimmer narrative LoRA | Decided | In plan (Q1); SMAP cut first | Q1 |
+| # | Topic | Status | Decision / current default |
+| --- | --- | --- | --- |
+| A1 | Study period and splits | Decided, plus robustness checks (P1) | 2005-2024; cross-validation leaves out one year at a time over 2005-2021; 2022-2024 kept back as the test, opened once |
+| A2 | Target definition | **Leaning 0-40 cm** (literature standard); more checks (T1) | Onset = soil moisture percentile drops from 40+ to 20 or below within 20 days and stays at or below 20 for 10 days |
+| A3 | Forecast horizons | Decided for now; test the "accuracy cliff" (P2) | Week 1, 2, 3, 4 and "any onset in the next 28 days" |
+| A4 | Which rows go into training | See T2-T4 | Explained below |
+| A5 | Leakage rules | Decided | Features read data only as it would have been available on the issue date; every feature family has an automatic test |
+| A6 | Baseline (B0) | Decided | Climatology, smoothing tuned on the dev years (Q6) |
+| A7 | Calibration method | **Testing now** | See below |
+| A8 | Features | In progress | F-list below |
+| A9 | M3 (deep-learning map model) | **Cut for now; on the "later" list (L1)** | Spatial context goes in as features instead (F5) |
+| A10 | One model per horizon vs one model for all horizons | **Recommend one per horizon** | Explained below |
+| A11 | Glimmer narrative fine-tune | Decided | In plan (Q1) |
 
-### Target questions to align on (A2, A4)
-- **T1. Soil depth.** 0-100 cm is dominated by 28-100 cm (72% weight) and reacts slowly; flash
-  drought definitions in the literature mostly use shallower layers (e.g. 0-40 cm). Option: compare
-  0-28 cm, 0-100 cm and a blend on **label evidence only** (agreement with SMVI and USDM worsening,
-  known-event timing, episode coherence), then pick before any more model runs. ~5 min per variant.
+**A4. Which rows go into training, in plain terms.** One row = one grid cell on one forecast issue
+date. A row is included only if: (1) the cell is **not already in drought** on the issue date (soil
+moisture above the 20th percentile; a cell already below it can't have an *onset*); (2) the issue
+date is one of the dates the ECMWF forecasts exist for (every other day, Apr 1 - Oct 15); (3) the
+cell is mostly land; and onset days with snow or frozen soil don't count as onsets.
 
-  **T1 result (Oct 28; label evidence only, all years, thresholds 40/20; no model run on the variants):**
+**A7. Calibration.** Our model's probabilities are too timid: when it says 7.5% the true rate is
+about 9%, and when it says 0.5% the true rate is 0.2%. Likely cause: the step that converts raw
+scores into probabilities is learned from weaker practice models (each trained on half the years)
+and then applied to the stronger final model. First fix tested ("crossfit": use the practice models
+themselves for prediction, 4 of them) helps a little (slope 1.35-1.69, from 1.51-1.95; skill up
+slightly). Still testing: 4 practice models with the old method, and no conversion step at all.
 
-  | Depth (cm) | Onset cell-days | Base rate wk1 / any28 | SMVI overlap (obs / chance) | USDM 2+ worsening, large episodes | USDM 1+ within 8 wk (obs / chance) | In 10+ cell episodes | Known-event box share in window (2012 / 2017 / 2022 / 2023) |
-  | --- | --- | --- | --- | --- | --- | --- | --- |
-  | 0-100 (spec) | 46,172 | 1.7% / 6.0% | 0.131 / 0.065 (2.0x) | 0.041 / 0.015 (2.7x, n=170) | 0.478 / 0.217 | 0.86 | 0.03 / 0.20 / 0.39 / 0.36 |
-  | **0-40** | 91,841 | 3.2% / 11.0% | 0.150 / 0.073 (2.1x) | 0.039 / 0.009 (4.3x, n=285) | 0.491 / 0.240 | 0.93 | 0.17 / 0.54 / 0.76 / 0.59 |
-  | 0-28 | 109,379 | 3.7% / 13.1% | 0.146 / 0.076 (1.9x) | 0.029 / 0.007 (4.1x, n=307) | 0.499 / 0.238 | 0.94 | 0.24 / 0.62 / 0.80 / 0.76 |
-  | 0-7 | 127,895 | 4.0% / 14.2% | 0.169 / 0.090 (1.9x) | 0.026 / 0.009 (2.9x, n=346) | 0.511 / 0.242 | 0.95 | 0.32 / 0.87 / 0.76 / 0.84 |
+**A10. One model per horizon, or one for all?** Today we train five separate models: one answers
+"onset in week 1?", another "onset in week 2?", and so on. The alternative is a single model with
+"how many weeks ahead" as an input column: every row appears five times, once per horizon. That
+shares patterns between horizons and keeps the answers consistent (e.g. never more likely in week 3
+alone than in the whole 28 days), but the training table becomes five times bigger and slower, and
+it can blur what is special about each horizon. It changes the shape of the training data, so it
+isn't a burst item. Recommendation: **keep one per horizon** (simpler, faster, standard), and fix any
+inconsistencies between horizons afterwards if they show up.
 
-  - 0-100 cm is the outlier: it misses most of the documented events in their windows and has the
-    least coherent episodes. Its deep layer (72% weight) lags the drying.
-  - 0-7 cm finds the most, but every independent check per onset is weakest relative to chance
-    (rain-driven surface noise), and it isn't root zone.
-  - 0-40 and 0-28 are close. 0-40 has the best SMVI and USDM 2+ ratios and is the standard flash
-    drought definition in the literature (0-40 cm, 40th -> 20th percentile; Ford & Labosier 2017).
-  - Timing: in all depths, 2012's onsets in the central-US box are mostly **March-May** (median first
-    onset May 14-19 at 0-40), i.e. the 2012 drying began in the warm spring, earlier than the
-    Jun-Jul window we pre-specified. In every depth the USDM worsening follows onset by a median 13-14 days.
-  - Base rate roughly doubles at 0-40 (3.2% per week): more positives, tighter CIs.
-  - **Recommendation: switch the target to 0-40 cm** (layers 1-2 plus 12/72 of layer 3, a proxy since
-    ERA5-Land's layer 3 spans 28-100 cm). Waiting on James. Ready to switch: `load_cube(depth=...)`,
-    `eval.cv --depth 0-40`, `labels --depth 0-40`.
-- **T2. Eligibility.** P > 20 at issue drops cells already in drought (92% of the 2012 box by Jun 1).
-  Right for an onset product; worth saying so explicitly in the write-up.
-- **T3. Season.** Apr 1 - Oct 15 issue dates. Onsets in Sep-Nov are frequent (cross-check counts);
-  keep, since late-season flash drought matters for winter wheat planting.
-- **T4. Masks.** Land fraction >= 0.2 interim; MODIS vegetated fraction planned. Irrigated cells
-  (Nebraska, Kansas) are not irrigated in ERA5-Land, so labels and features agree; flag for impact framing.
-- **T5. Recovery/false-start exclusion.** The 10-day persistence condition already drops brief dips.
+### Target questions (A2, A4)
+
+- **T1. Soil depth.** Compared on label evidence only (no model scores):
+
+  | Depth (cm) | Onsets (cell-days) | Weekly rate | SMVI agreement vs chance | Drought Monitor big worsening vs chance | Share of onsets in clusters of 10+ cells | Known events caught in their windows (2012 / 2017 / 2022 / 2023) |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | 0-100 (spec) | 46,172 | 1.7% | 2.0x | 2.7x | 0.86 | 3% / 20% / 39% / 36% |
+  | **0-40** | 91,841 | 3.2% | 2.1x | 4.3x | 0.93 | 17% / 54% / 76% / 59% |
+  | 0-28 | 109,379 | 3.7% | 1.9x | 4.1x | 0.94 | 24% / 62% / 80% / 76% |
+  | 0-7 | 127,895 | 4.0% | 1.9x | 2.9x | 0.95 | 32% / 87% / 76% / 84% |
+
+  - 0-100 cm reacts slowly (72% of its weight is the 28-100 cm layer) and misses most documented events.
+  - 0-7 cm finds the most onsets but agrees least with the independent sources (rain makes the surface noisy).
+  - 0-40 cm agrees best with the independent sources and is the standard definition in the
+    literature (Ford & Labosier 2017: 40th -> 20th percentile within 20 days, 0-40 cm).
+  - In every depth, the Drought Monitor worsens a median 13-14 days after our onset.
+  - 2012 dried out early: most onsets in the central-US box are March-May at every depth.
+  - **James (Oct 28): align with the literature, so lean 0-40; also test 0-28, 0-50 and 0-100.**
+    0-50 is running now. ERA5-Land's third layer spans 28-100 cm, so 0-40 and 0-50 assume moisture
+    is even within it (a proxy).
+  - **Crop sense-check (to do):** root depths and critical periods of the main crops (corn: deep roots,
+    critical at silking in July; soybeans: pod fill in August; winter wheat: planting Sep-Oct, heading
+    May). Possible later step: crop-specific targets (e.g. a deeper layer in July-August for corn, a
+    shallower one in autumn for wheat planting). On the "later" list (L4) unless it turns out cheap.
+- **T2. Already-dry cells.** Cells already below the 20th percentile are left out (92% of the 2012
+  box was by Jun 1). Right for an onset forecast; we say so in the write-up.
+- **T3. Season: go wide** (James). More off-season rows also help find false alarms. Limit: ECMWF
+  forecasts only exist for Apr 1 - Oct 15 start dates, so M2 (with forecasts) stays there, but M1
+  (land only) can train on a wider window (e.g. Mar 1 - Nov 30). Date is already a feature
+  (day of year). Test P3: one model with date as a feature vs separate models per part of the season.
+- **T4. Masks.** Test P4: drop the snow/frozen and land-fraction masks to see how much we are
+  predicting rainfall shortfalls vs the soil's ability to hold water. Irrigation: ERA5-Land doesn't
+  model it, so labels and features are consistent; flag in the impact story.
+- **T5. Short dips don't count.** Our onset rule requires soil moisture to *stay* at or below the
+  20th percentile for 10 days after the drop. So a dry spell that a storm ends within days is not
+  counted as an onset, and we don't need a separate rule to remove false starts.
+
+---
+
+## P. Planned tests (phase 2, on the fast loop unless noted)
+
+| # | Test | Why |
+| --- | --- | --- |
+| P1 | Other ways of splitting years: leave out 3-year blocks; "forward" (train only on earlier years, predict the next) | Droughts follow multi-year climate patterns (El Nino / La Nina, Pacific decadal swings), so neighbouring years may not be independent; forward splits also mimic real use |
+| P2 | How far ahead can we see? M1 at weeks 1-8 | Find the accuracy cliff and set the horizons there. M1 needs no extra data. M2 beyond 4 weeks would need the ECMWF days 29-46 we trimmed from the download (~2x queue time) |
+| P3 | Date as a feature vs separate models per season segment | James, T3 |
+| P4 | Drop masks | T4 |
+| P5 | Target depth with a model (0-28 / 0-40 / 0-50 / 0-100) | Only after the label-evidence choice, as a check |
+| P6 | Year effects (F10) | How much is left unexplained by year, and is it a trend or a few odd years? |
 
 ---
 
@@ -78,82 +123,96 @@ Iteration loop: `python -m flashwatch.eval.cv --models B0 B1 M1 --leads week1 we
 
 | # | Question | Candidates | Tooling ready |
 | --- | --- | --- | --- |
-| B1 | GBM library | LightGBM (current), XGBoost (GPU), CatBoost | LightGBM only |
-| B2 | Hyperparameters and rounds | Random search per lead on dev years (Q3a) | `models.tune` |
-| B3 | Inner calibration groups | 2 vs 4 (if the A7 fix keeps inner models) | `GBM(inner_groups=...)` |
-| B4 | Ensembling | Seed bagging; M1+M2 blend; stacking with B2 | No |
-| B5 | Model ladder for the headline | M1, M2, B2 (raw ECMWF, recalibrated) | M1/M2 yes, B2 no |
-| B6 | Training rows used | Full grid vs thinned (does thinning cost skill?) | `--thin` |
+| B1 | Boosting library | LightGBM (current), XGBoost (GPU), CatBoost | LightGBM only |
+| B2 | Tuning settings | Random search per horizon on the dev years (Q3a) | `models.tune` |
+| B3 | Number of practice models for calibration | 2 vs 4 (depends on A7) | yes |
+| B4 | Ensembling | Several seeds averaged; blend M1 and M2; combine with B2 | No |
+| B5 | Which models make the headline | M1, M2, B2 (raw ECMWF, recalibrated) | M1/M2 yes, B2 no |
+| B6 | Use all grid cells or every other one | Does thinning cost skill? | `--thin` |
 
-Burst decision rule (to write before Nov 2): pick by mean Brier over the full 17-fold CV per lead,
-prefer the simpler option unless the paired year-bootstrap CI excludes zero.
+Burst decision rule (to finalise before Nov 2): choose by Brier score over the full 17-year
+cross-validation per horizon; keep the simpler option unless the improvement is clearly real
+(the 95% range across resampled years excludes zero).
 
 ---
 
-## F. Feature generation backlog (A8)
+## L. Later, if time allows
 
-Status: [x] built, [ ] idea. Every new family gets a perturbation test.
+- L1. M3: deep-learning model on the map (U-Net/ConvLSTM).
+- L2. Interactive map: click a location and watch two charts animate, the FlashWatch forecast
+  [x] weeks out and the actual soil moisture catching up behind it.
+- L3. A full website (beyond the static replay page).
+- L4. Crop-specific targets (T1).
+
+---
+
+## F. Feature backlog (A8)
+
+[x] built, [ ] idea. Every new family is covered by the automatic leakage test.
 
 **F1. Soil moisture dynamics**
-- [x] root-zone and surface percentiles; 5/10/20-day changes; days since P >= 40; 5-day root-zone z
-- [ ] rate of decline and acceleration (second difference) over several windows
-- [ ] days-to-threshold: (P - 20) / current decline rate, capped
-- [ ] surface minus root-zone percentile (drying from the top down)
-- [ ] recent drydown e-folding time (how fast this cell loses water after rain)
+- [x] percentiles (root zone, surface); 5/10/20-day changes; days since last at 40th percentile+
+- [x] acceleration (is the drop speeding up?); days until the 20th percentile at the current rate;
+  surface minus root-zone percentile (drying from the top down); highest percentile in the last 15 days
+- [ ] how fast this cell typically dries after rain (drydown timescale)
+- [ ] the 0-100 cm percentile as a "deep storage" feature if the target moves to 0-40
 
 **F2. Atmospheric demand**
-- [x] 14/30-day z of temperature, VPD, PET, solar; ET/PET (raw and z)
-- [ ] Rapid Change Index of ET/PET (Otkin et al.): standardised multi-week declines
-- [ ] hot-day counts and heat-wave persistence; VPD x soil moisture interaction ("drydown pressure")
-- [ ] EDDI-style demand percentile on our grid (from ERA5-Land PET)
+- [x] 14/30-day anomalies of temperature, vapour pressure deficit (air dryness), potential evaporation, sunshine; evaporation / potential evaporation
+- [x] hot days (daily mean above 25 C) in the last 14 days
+- [ ] Rapid Change Index (Otkin et al.): how fast evaporation is falling behind demand over several weeks
+- [ ] air dryness x soil moisture ("drying pressure"); evaporative demand percentile (EDDI-style)
 
-**F3. Precipitation**
-- [x] 14/30/60-day z
-- [ ] dry-spell length; days since > 5 mm; fraction of normal; SPI-like multi-scale
+**F3. Rainfall**
+- [x] 14/30/60-day anomalies; days since more than 2 mm and 10 mm of rain (dry spell length)
+- [ ] fraction of normal; multi-timescale standardised precipitation
 
-**F4. Vegetation and land surface**
-- [ ] MODIS NDVI/EVI anomaly and its 16-day change (Earth Engine, latency ~ 2-3 weeks)
-- [ ] MODIS LST anomaly; LST - air temperature (ESI-like stress)
-- [ ] growing degree days since Apr 1 (crop stage)
+**F4. Vegetation and land surface**: MODIS greenness anomaly and change; land surface temperature anomaly; growing degree days (crop stage)
 
-**F5. Spatial context** (replaces M3)
-- [ ] neighbourhood means of percentiles and changes (3x3, 7x7); upwind/west neighbours
-- [ ] fraction of neighbours with an onset in the last 14 days (drought spreads)
-- [ ] distance to the nearest USDM D1+ edge, as of issue
+**F5. Spatial context** (instead of M3): neighbourhood averages; share of neighbours already in onset (drought spreads); distance to the nearest Drought Monitor D1+ area
 
 **F6. Large-scale drivers**
-- [x] Nino 3.4
-- [ ] MJO (RMM phase and amplitude, daily), PNA, PDO, AO (monthly indices, as-of)
-- [ ] regional-mean soil moisture anomaly (Plains-wide dryness)
+- [x] El Nino index (Nino 3.4)
+- [ ] MJO (a tropical pattern that moves round the globe over 30-60 days and affects weather 2-4 weeks out), PNA, PDO, AO
+- [ ] **climate-change state** (James): global mean surface temperature anomaly over the previous 12 months (NASA GISTEMP or NOAA, monthly, as available on the issue date)
+- [ ] Plains-wide average soil moisture anomaly
 
-**F7. Static**
-- [x] aridity, growing-season rain (fold climatology)
-- [ ] soil water holding capacity (SoilGrids), cropland fraction (USDA CDL), irrigated fraction
+**F7. Static**: aridity, growing-season rain [x]; soil water holding capacity, cropland share, irrigated share [ ]
 
-**F8. Forecast (M2)**
-- [x] per-week ensemble z, spread ratio, P(lower tercile) for precip, temperature, VPD, soil moisture
-- [ ] forecast soil moisture translated to percentile vs reforecast climatology (closest to the target)
-- [ ] accumulated forecast precipitation deficit over weeks 1-k
+**F8. ECMWF forecast (M2)**: weekly forecast anomalies [x]; forecast soil moisture as a percentile (same units as the target) [ ]; forecast rainfall deficit added up over weeks [ ]
 
-**F9. Other observed sources**
-- [ ] USDM category and 4-week change at the cell, as of issue (strong, public, 2-day latency)
-- [ ] ESI (NOAA/USDA), EDDI (NOAA PSL) as direct features where coverage allows
+**F9. Other sources**: Drought Monitor category and its 4-week change at the cell; ESI and EDDI (NOAA drought indices)
+
+**F10. Year (diagnostic, James)**
+- [ ] year as a number (does risk trend over time?)
+- [ ] year as a category: diagnostic only. In leave-one-year-out testing the held-out year's own
+  category is never seen in training, so it can't help predictions. We fit it on all dev years to
+  measure how much each year differs, then look at whether those year effects trend or are just a few odd years.
 
 ---
 
-## V. Report and visualisation (start now)
+## G. Agent (Meta model)
 
-The demo is 25% of the score and a striking visual story probably matters more than tables.
+Needs a real job, not decoration (25% of the score is the use of Meta's tools). Current idea (James):
+**weekly alert emails** drafted for county extension offices and farmers when drought risk is
+rising: the risk level, why (top drivers), what to watch and practical actions. Each email is
+checked number by number against the model outputs before it goes out, and the agent keeps score of
+its past alerts. In the demo, emails are drafted and shown, not actually sent. Meta API credits not
+granted yet (Oct 28); fallback is the open-weight Glimmer model run locally.
+
+---
+
+## V. Report and visualisation
+
+The demo is 25% of the score, and a striking visual story probably matters more than tables.
 Plan the story first, then make sure the pipeline writes the data it needs.
 
-- **Hero: 2023 replay.** Animated map, week by week: FlashWatch week-2 probability as a field,
-  onsets appearing as they happen, USDM D1+ outlines arriving later. Message: "we saw it N weeks earlier".
-- **Lead-time race.** Per episode, FlashWatch first alert vs USDM's first worsening (distribution of lead days).
-- **Skill map.** BSS by region (tests pre-registered expectation 4, west vs east).
-- **Reliability and skill-by-lead** with CIs, against B0, B1, raw ECMWF.
-- **"Why this week" driver map**: SHAP top drivers by region, feeding the agent's advisories.
-- **County advisory cards** from the Meta model with its own track-record scorecard.
-- Format: a static scrollytelling page (MapLibre + pre-rendered tiles/frames), the 3-min video cut from it.
-- Pipeline needs: per-cell, per-issue OOF probabilities for dev years (have), test-year predictions
-  after the freeze, episode tables, USDM rasters (have), SHAP values per cell-issue.
-- Dev-year version first (2012 from OOF predictions) so the page is built before the freeze.
+- **Hero: 2023 replay.** Animated map, week by week: FlashWatch week-2 probability as a glowing
+  field, onsets appearing as they happen, Drought Monitor outlines arriving later. "We saw it N weeks earlier."
+- **Lead-time race.** For each episode, FlashWatch's first alert vs the Drought Monitor's first worsening.
+- **Skill map.** Where the model is better than climatology (tests the west-vs-east expectation).
+- **Reliability and skill by horizon**, with uncertainty ranges, against B0, B1 and raw ECMWF.
+- **"Why this week" map**: top drivers by region, which also feed the agent's emails.
+- **County alert cards** from the agent, with its own track record.
+- Format: a static scrollytelling page; the 3-minute video cut from it. Interactive click-map: L2.
+- Build it first on 2012 (dev-year predictions), so the page exists before the model is frozen.
