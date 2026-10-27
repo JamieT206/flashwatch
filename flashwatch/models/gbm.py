@@ -53,17 +53,37 @@ def feature_columns(df: pd.DataFrame, forecast: bool) -> list[str]:
     return [c for c in cols if forecast or not c.startswith("f_")]
 
 
+class Platt:
+    """Logistic recalibration on the log-odds of a probability (same interface as IsotonicRegression)."""
+
+    @staticmethod
+    def _logit(p):
+        p = np.clip(np.asarray(p, float), 1e-6, 1 - 1e-6)
+        return np.log(p / (1 - p))[:, None]
+
+    def fit(self, p, y):
+        from sklearn.linear_model import LogisticRegression
+        self.lr = LogisticRegression(C=1e6, max_iter=1000).fit(self._logit(p), np.asarray(y, int))
+        return self
+
+    def predict(self, p):
+        return self.lr.predict_proba(self._logit(p))[:, 1]
+
+
 class GBM:
     forecast = False
     name = "M1"
 
     def __init__(self, params=None, n_rounds=None, inner_groups: int = 4, seed: int = 0,
-                 calibration: str = "crossfit"):
+                 calibration: str = "crossfit", calibrator: str = "isotonic"):
         """calibration (DESIGN.md A7): 'refit' fits the isotonic map on the inner models' OOF
         scores and applies it to a final model refitted on all rows; 'crossfit' keeps the inner
         models and predicts the mean of iso(inner model) over them, so the map is applied to the
-        same models it was fitted on; 'none' returns raw LightGBM probabilities (diagnostic)."""
-        assert calibration in ("refit", "crossfit", "none")
+        same models it was fitted on; 'none' returns raw LightGBM probabilities (diagnostic).
+        calibrator: 'isotonic' (step function; flat beyond the scores seen) or 'platt' (logistic
+        on the log-odds of the raw score; can stretch past them)."""
+        assert calibration in ("refit", "crossfit", "none") and calibrator in ("isotonic", "platt")
+        self.calibrator = calibrator
         self.use_tuned = params is None and n_rounds is None
         self.params = {**PARAMS, **(params or {}), "seed": seed}
         self.n_rounds, self.k, self.seed, self.calibration = n_rounds or N_ROUNDS, inner_groups, seed, calibration
@@ -93,7 +113,10 @@ class GBM:
             b = self._fit_raw(df[~inner], label)
             raw[inner] = b.predict(df.loc[inner, self.cols].to_numpy(np.float32))
             inner_models.append(b)
-        self.iso = IsotonicRegression(out_of_bounds="clip", y_min=0, y_max=1).fit(raw, df[label].to_numpy())
+        if self.calibrator == "platt":
+            self.iso = Platt().fit(raw, df[label].to_numpy())
+        else:
+            self.iso = IsotonicRegression(out_of_bounds="clip", y_min=0, y_max=1).fit(raw, df[label].to_numpy())
         self.boosters = inner_models if self.calibration == "crossfit" else [self._fit_raw(df, label)]
         return self
 

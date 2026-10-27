@@ -115,6 +115,7 @@ def main():
     ap.add_argument("--tag", default="", help="suffix for the OOF file, to keep design variants apart")
     ap.add_argument("--calibration", choices=["refit", "crossfit", "none"], help="GBM calibration (DESIGN.md A7)")
     ap.add_argument("--inner-groups", type=int, help="GBM inner calibration year-groups")
+    ap.add_argument("--calibrator", choices=["isotonic", "platt"], help="GBM calibration map (DESIGN.md A7)")
     ap.add_argument("--depth", default="0-40", help="target soil depth (DESIGN.md T1; 0-40 since Oct 28)")
     ap.add_argument("--drop", nargs="+", default=[], help="feature names/prefixes to leave out (ablation)")
     args = ap.parse_args()
@@ -136,7 +137,8 @@ def main():
     cube = dataclasses.replace(cube, **{f: None for f in ("rzsm", "sfsm", "t2m", "vpd", "precip", "evap", "pet", "ssrd")})
     gc.collect()
     t0 = time.time()
-    gbm_kw = {k: v for k, v in (("calibration", args.calibration), ("inner_groups", args.inner_groups)) if v}
+    gbm_kw = {k: v for k, v in (("calibration", args.calibration), ("inner_groups", args.inner_groups),
+                                ("calibrator", args.calibrator)) if v}
     oof = run_cv(cube, args.models, fb=fb, ff=ff, labels=args.leads, holdout=holdout, thin=thin, light=args.fast,
                  gbm_kw=gbm_kw, drop=args.drop)
     out = DATA / "oof"

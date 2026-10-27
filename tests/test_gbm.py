@@ -63,3 +63,11 @@ def test_calibration_modes():
         p = m.predict(test)
         assert len(m.boosters) == (3 if mode == "crossfit" else 1)
         assert ((p - y) ** 2).mean() < ((y.mean() - y) ** 2).mean() and abs(p.mean() - y.mean()) < 0.01
+
+
+def test_platt_calibrator():
+    df = toy()
+    train, test = df[df.year < 2011], df[df.year >= 2011]
+    y = test.week1.to_numpy()
+    p = GBM(n_rounds=60, calibrator="platt").fit(train, "week1").predict(test)
+    assert ((p - y) ** 2).mean() < ((y.mean() - y) ** 2).mean() and abs(p.mean() - y.mean()) < 0.01

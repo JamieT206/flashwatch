@@ -33,6 +33,31 @@ TO_THRESHOLD_MAX = 60         # days-to-threshold cap (also used when not declin
 NBR_RADIUS = 3                # F5 neighbourhood: 7 x 7 cells (~175 km)
 
 
+# Directional boxes (DESIGN.md F5, James): rows (dy) and columns (dx) relative to the cell.
+# Row index increases southwards (lat descending), column index eastwards. 1-6 cells (~25-150 km)
+# along the direction, +/-2 cells across it.
+DIRECTIONS = {"W": ((-2, 2), (-6, -1)), "E": ((-2, 2), (1, 6)), "N": ((-6, -1), (-2, 2)), "S": ((1, 6), (-2, 2))}
+
+
+def box_mean(a: np.ndarray, dy: tuple[int, int], dx: tuple[int, int]) -> np.ndarray:
+    """Mean of a over the cells at row offsets dy[0]..dy[1] and column offsets dx[0]..dx[1]
+    from each cell (last two axes), ignoring NaN and cells off the grid."""
+    ny, nx = a.shape[-2:]
+    pad = 6
+    big = np.full(a.shape[:-2] + (ny + 2 * pad, nx + 2 * pad), np.nan, np.float64)
+    big[..., pad:pad + ny, pad:pad + nx] = a
+    num = np.zeros(a.shape, np.float64)
+    den = np.zeros(a.shape, np.float64)
+    for oy in range(dy[0], dy[1] + 1):
+        for ox in range(dx[0], dx[1] + 1):
+            v = big[..., pad + oy:pad + oy + ny, pad + ox:pad + ox + nx]
+            ok = np.isfinite(v)
+            num += np.where(ok, v, 0)
+            den += ok
+    with np.errstate(invalid="ignore", divide="ignore"):
+        return np.where(den > 0, num / den, np.nan)
+
+
 def nbr_mean(a: np.ndarray, r: int = NBR_RADIUS) -> np.ndarray:
     """Mean over the (2r+1)^2 neighbourhood in the last two axes, ignoring NaN (incl. the cell)."""
     from scipy.ndimage import uniform_filter
@@ -157,6 +182,10 @@ class FeatureBuilder:
             newly = np.where(np.isnan(P0) | np.isnan(P14), np.nan, ((P0 <= 20) & (P14 > 20)).astype(np.float32))
         f["nbr_share_dry"] = nbr_mean(dry)
         f["nbr_share_newly_dry"] = nbr_mean(newly)
+        # Directional: does drought upwind (west) matter more than downwind (east)?
+        for d, (dy, dx) in DIRECTIONS.items():
+            f[f"nbr{d}_rz_pct"] = box_mean(P0, dy, dx)
+            f[f"nbr{d}_share_dry"] = box_mean(dry, dy, dx)
         for name, ys in self.sums.items():
             f[f"{name}_z"] = ys.zscore(self.values[name], self.k_idx, self.own_year, ref)
         for n in ESI_WINDOWS:

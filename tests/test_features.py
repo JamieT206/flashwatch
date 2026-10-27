@@ -91,3 +91,14 @@ def test_index_features_ignore_values_published_after_issue(cube):
         for k in ("gmst12", "mjo_pc1", "mjo_amplitude"):
             np.testing.assert_array_equal(f0[k][i], f1[k][0], err_msg=f"{k} leaks at {issue.date()}")
         assert abs(f1["mjo_pc1"][0].flat[0]) < 90 and abs(f1["gmst12"][0].flat[0]) < 90
+
+
+def test_box_mean_directions():
+    from flashwatch.features.build import DIRECTIONS, box_mean
+    a = np.zeros((1, 20, 20))
+    a[0, 10, 4] = 30.0                                     # 6 columns west of (10, 10)
+    w = box_mean(a, *DIRECTIONS["W"])[0, 10, 10]
+    e = box_mean(a, *DIRECTIONS["E"])[0, 10, 10]
+    assert w == 1.0 and e == 0.0                           # 30 cells in the west box, one of them 30
+    edge = box_mean(np.ones((1, 5, 5)), *DIRECTIONS["W"])[0, 2, 0]
+    assert np.isnan(edge)                                  # nothing to the west of the first column
