@@ -99,6 +99,16 @@ is now close to BSS vs a seasonal base rate, i.e. an honest (harder) reference.
   smoothing/shrinkage for 1-2% events), so its Brier is worse than it should be and BSS vs B0
   flatters every model. B0 still has the best PR-AUC at weeks 2-4 (the spatial pattern is real).
   See Q6.
+- **First M1 (fast CV, Oct 28; tuned B0; 6 held-out years, every other cell, light LightGBM;
+  6.8 min per cycle).** BSS vs B0 [95% year-bootstrap CI]: week 1 M1 0.043 [0.035, 0.048] vs B1
+  0.014; week 2 M1 0.012 [0.007, 0.016] vs B1 -0.002; any-28 M1 0.025 [0.008, 0.040] vs B1 -0.012.
+  PR-AUC week 1 0.085 (M1) vs 0.052 (B1) vs 0.037 (B0); base rate 1.9%. Preliminary support for
+  pre-registered expectation 1 (M1 beats B1 at weeks 1-2), to be confirmed in the full CV.
+  **M1 is under-confident**: reliability slope 1.5-2.0 (intercept > 0), i.e. its probabilities
+  should be more spread out. Likely causes: isotonic map fitted on inner models trained on half
+  the years (weaker than the final model), and light training. First design item to look at.
+  Tuned B0 shows slope 2.5-2.7 here: its near-flat predictions make the slope unstable (and
+  year-specific base rates vary); Brier is what matters for the reference.
 - Cross-checks: SMVI overlap 13.1% vs 6.5% chance (2,812 episodes); USDM 2+ category worsening
   4.1% vs 1.5% chance (170 large episodes). Known events: 2023 one 1,910-cell episode (onset
   ~May 27, 36% of box); 2022 39%; 2017 20%; **2012 3% in the Jun-Jul window** because the
