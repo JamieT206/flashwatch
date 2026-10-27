@@ -204,25 +204,24 @@ static soil water capacity and cropland features, the test-year scoring script.
 
 ## 5. What to do next (in order)
 
-1. **Check downloads** (section 4.2). Fix and re-run failures. Run `python -m flashwatch.ingest nino`.
-2. **Set up and test on Windows**: `git pull`, `pip install -r requirements.txt`, `python -m pytest`.
-   Fix any Windows-only failures (paths, eccodes).
-3. **When ERA5-Land completes (232 files)**: `python -m flashwatch.obs`, then
-   `python -m flashwatch.labels --variants`. **Report the real base rates and episode counts** (the
-   spec guessed 1-3% per eligible cell-week). Sanity-check: onsets by year (2012 and 2023 should
-   stand out), maps of onset counts.
-4. `python -m flashwatch.labels.crosscheck` and fill the Day-2 cross-check table for James
-   (known events, SMVI overlap vs chance, USDM worsening vs chance, threshold sensitivity).
-5. `python -m flashwatch.eval.cv --models B0 B1`: first real scores; check B1 vs B0 and calibration.
-6. **First S2S file**: `python -m flashwatch.forecast inspect data\raw\s2s\2025-04-01_accum.grib`
-   (and a `_daily`) and fix `forecast.py` if keys differ. `build` once all (or the coarse half) are in.
-7. M1 CV on the headline leads (`--models B0 B1 M1 --leads week1 week2 any28`), per Q3/Q4 answers.
-   **Gate (Day 4)**: if M1 doesn't beat B1 at week 2, narrow the headline to week 1 and the 28-day window.
-8. Day 5: M2 and B2, ablation M2 - M1 with paired year-bootstrap CIs, **freeze the model**, score the
-   test years once.
-9. Replace the interim vegetated-land mask (ERA5-Land land fraction >= 0.2) with MODIS MCD12Q1 via
-   Earth Engine; add static soil water capacity and cropland fraction.
-10. Days 6-10 per the schedule (section 7): SHAP drivers per county, agent, replay, demo, write-up.
+**Status Oct 28 evening (Sydney):** steps 1-5 of the old list are done (downloads except S2S, Windows
+setup, obs.zarr, labels, cross-checks, baselines). The working plan now lives in **`DESIGN.md`**
+(decide-now vs open-until-burst, planned tests P1-P9, feature backlog, visual plan); read it next.
+Current defaults: target 0-40 cm (T1), crossfit calibration with 4 practice models and a Platt map
+(A7), global index and directional features excluded (P9, F5). Iterate with
+`python -m flashwatch.eval.cv --models B0 B1 M1 --leads week1 week2 any28 --fast --tag <name>` and
+`python -m flashwatch.eval.compare a=<oof stem> b=<oof stem>` (~8 min per run). James's rule: light
+training while the design moves; heavy burst ~Nov 2 Sydney (DESIGN.md B).
+
+1. **S2S download**: packed and trimmed (section 4.2a). Check it is alive every session
+   (`python -m flashwatch.ingest status`; it once died silently). Then `python -m flashwatch.forecast build`.
+2. Feature backlog (DESIGN.md F), each on the fast loop against the current baseline. Drought Monitor
+   features (`--usdm`) on trial.
+3. Planned tests P1-P9 (DESIGN.md P).
+4. M2 once fcst.zarr is complete; B2 (raw ECMWF) not built.
+5. Visual story (DESIGN.md V), built first on dev-year OOF predictions.
+6. Agent (DESIGN.md G): weekly alert emails, number-checked.
+7. Burst (Nov 2), freeze, test years once, replay, video, write-up.
 
 ---
 
