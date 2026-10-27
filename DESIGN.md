@@ -75,8 +75,10 @@ the default. The remaining timidity (slope 1.3-1.7) is noted; B3 tests more prac
 shares patterns between horizons and keeps the answers consistent (e.g. never more likely in week 3
 alone than in the whole 28 days), but the training table becomes five times bigger and slower, and
 it can blur what is special about each horizon. It changes the shape of the training data, so it
-isn't a burst item. Recommendation: **keep one per horizon** (simpler, faster, standard), and fix any
-inconsistencies between horizons afterwards if they show up.
+isn't a burst item. **Decided (James, Oct 28): one per horizon**, with a check that the raw outputs
+make sense together. Check (0-40 cm baseline): week-1 probability exceeds the 28-day probability in
+3.5% of rows and week 2 in 2.0%, by small margins; week 1 and 28-day correlate 0.80. Not absurd; a
+simple cap (no single week above the 28-day value) would tidy it if needed.
 
 ### Target questions (A2, A4)
 
@@ -104,6 +106,9 @@ inconsistencies between horizons afterwards if they show up.
     critical at silking in July; soybeans: pod fill in August; winter wheat: planting Sep-Oct, heading
     May). Possible later step: crop-specific targets (e.g. a deeper layer in July-August for corn, a
     shallower one in autumn for wheat planting). On the "later" list (L4) unless it turns out cheap.
+    James: if root depths are similar, crop-specific mostly means different critical windows plus where
+    each crop is planted. They are broadly similar (mature corn, soybean and wheat roots all reach about
+    1-1.5 m, with most water drawn from the top ~60 cm), so yes. See L5 (crop impact).
 - **T2. Already-dry cells.** Cells already below the 20th percentile are left out (92% of the 2012
   box was by Jun 1). Right for an onset forecast; we say so in the write-up.
 - **T3. Season: go wide** (James). More off-season rows also help find false alarms. Limit: ECMWF
@@ -115,7 +120,8 @@ inconsistencies between horizons afterwards if they show up.
   model it, so labels and features are consistent; flag in the impact story.
 - **T5. Short dips don't count.** Our onset rule requires soil moisture to *stay* at or below the
   20th percentile for 10 days after the drop. So a dry spell that a storm ends within days is not
-  counted as an onset, and we don't need a separate rule to remove false starts.
+  counted as an onset, and we don't need a separate rule to remove false starts. James: fine for
+  now; ideally link to actual farm outcomes later (L5).
 
 ---
 
@@ -128,7 +134,10 @@ inconsistencies between horizons afterwards if they show up.
 | P3 | Date as a feature vs separate models per season segment | James, T3 |
 | P4 | Drop masks | T4 |
 | P5 | Target depth with a model (0-28 / 0-40 / 0-50 / 0-100) | Only after the label-evidence choice, as a check |
-| P6 | Year effects (F10) | How much is left unexplained by year, and is it a trend or a few odd years? |
+| P6 | Year effects (F10) | How much is left unexplained by year, and is it a trend or a few odd years? (Year as a category: later, L7) |
+| P7 | Predict "drought day" (presence) instead of onset | James has had interesting results modelling presence vs onset. "Was yesterday a drought day" will dominate; the interesting part is what else adds skill. Second priority |
+| P8 | Testing on held-out *places* within the same years | Second priority (James). Caution: flash droughts are mostly large. At 0-40 cm the median episode is 2 cells, but 72% of onset cell-days are in episodes of 100+ cells and 23% in episodes of 1,000+ (the largest covers 4,087 of 4,992 land cells). Held-out regions would have to be big blocks, or neighbouring training cells would give the answer away |
+| P9 | Year-level features (El Nino, global temperature, year, MJO) | Oct 28 finding: the top 1% of week-2 predictions were 84% from 2015 (record El Nino, a value outside the training range). With 16 training years, a once-per-year number lets the model memorise years. Running with and without them now |
 
 ---
 
@@ -156,6 +165,13 @@ cross-validation per horizon; keep the simpler option unless the improvement is 
   [x] weeks out and the actual soil moisture catching up behind it.
 - L3. A full website (beyond the static replay page).
 - L4. Crop-specific targets (T1).
+- L5. **Crop impact** (James): "X% of the corn crop is under flash-drought threat; yields likely
+  down Y% on last year in A and B". Needs where each crop is planted (USDA Cropland Data Layer via
+  Earth Engine, or NASS county acreage) and a simple link from drought exposure in the crop's critical
+  window to yield (NASS county yields, 2005-2021; we have a NASS key). Strong for the impact score
+  and for non-specialists; worth pulling forward if time allows.
+- L6. More ECMWF lead time (days 29-46), downloaded two weeks at a time, to see how far ahead M2 can go (A3).
+- L7. Year as a category (diagnostic, F10).
 
 ---
 
@@ -188,6 +204,8 @@ any-28 2.5% -> 3.4%; all three improvements clearly real (95% range excludes zer
 
 **F5. Spatial context** (instead of M3)
 - [x] 7x7-cell neighbourhood (~175 km): average percentile and 10-day change; share of neighbours already below the 20th percentile; share that crossed below it in the last 14 days (drought spreads)
+- [x] directional boxes (James): west, east, north and south of the cell (1-6 cells along the direction,
+  +/-2 across): average percentile and share already in drought. Tests whether drought upwind (west) matters more
 - [ ] distance to the nearest Drought Monitor D1+ area
 
 **F6. Large-scale drivers**
@@ -205,7 +223,7 @@ any-28 2.5% -> 3.4%; all three improvements clearly real (95% range excludes zer
 
 **F10. Year (diagnostic, James)**
 - [x] year as a number (does risk trend over time?)
-- [ ] year as a category: diagnostic only. In leave-one-year-out testing the held-out year's own
+- [ ] (later, L7) year as a category: diagnostic only. In leave-one-year-out testing the held-out year's own
   category is never seen in training, so it can't help predictions. We fit it on all dev years to
   measure how much each year differs, then look at whether those year effects trend or are just a few odd years.
 
