@@ -25,7 +25,7 @@ Iteration loop: `python -m flashwatch.eval.cv --models B0 B1 M1 --leads week1 we
 | # | Topic | Status | Decision / current default | Based on |
 | --- | --- | --- | --- | --- |
 | A1 | Study period and splits | Decided | 2005-2024 on one ECMWF cycle; CV 2005-2021 LOYO; test 2022-2024 opened once | ECDS constraints (D1) |
-| A2 | Target: onset rule | **To align** | 40->20 percentile drop, P>=40 within d-20..d-5, stays <=20 for 10 days; root zone 0-100 cm (layers 1-3, 7/21/72) | Spec. 2012 check shows 0-100 cm onsets come in May, before the Jun-Jul window: see T1 |
+| A2 | Target: onset rule | **To align (T1 result in: recommend 0-40 cm)** | 40->20 percentile drop, P>=40 within d-20..d-5, stays <=20 for 10 days; root zone 0-100 cm (layers 1-3, 7/21/72) | Spec. 2012 check shows 0-100 cm onsets come in May, before the Jun-Jul window: see T1 |
 | A3 | Target: horizons | Decided | Week 1-4 and any onset in days 1-28 | Spec |
 | A4 | Training rows | **To align** | Eligible if P(issue - 5 d) > 20; 101 issue dates Apr 1 - Oct 15; land fraction >= 0.2; snow/frozen masked | Spec; see T2-T4 |
 | A5 | Leakage rules | Decided | Features only via `features.asof`; fold climatologies from training years; perturbation test per feature family | Spec |
@@ -41,6 +41,29 @@ Iteration loop: `python -m flashwatch.eval.cv --models B0 B1 M1 --leads week1 we
   drought definitions in the literature mostly use shallower layers (e.g. 0-40 cm). Option: compare
   0-28 cm, 0-100 cm and a blend on **label evidence only** (agreement with SMVI and USDM worsening,
   known-event timing, episode coherence), then pick before any more model runs. ~5 min per variant.
+
+  **T1 result (Oct 28; label evidence only, all years, thresholds 40/20; no model run on the variants):**
+
+  | Depth (cm) | Onset cell-days | Base rate wk1 / any28 | SMVI overlap (obs / chance) | USDM 2+ worsening, large episodes | USDM 1+ within 8 wk (obs / chance) | In 10+ cell episodes | Known-event box share in window (2012 / 2017 / 2022 / 2023) |
+  | --- | --- | --- | --- | --- | --- | --- | --- |
+  | 0-100 (spec) | 46,172 | 1.7% / 6.0% | 0.131 / 0.065 (2.0x) | 0.041 / 0.015 (2.7x, n=170) | 0.478 / 0.217 | 0.86 | 0.03 / 0.20 / 0.39 / 0.36 |
+  | **0-40** | 91,841 | 3.2% / 11.0% | 0.150 / 0.073 (2.1x) | 0.039 / 0.009 (4.3x, n=285) | 0.491 / 0.240 | 0.93 | 0.17 / 0.54 / 0.76 / 0.59 |
+  | 0-28 | 109,379 | 3.7% / 13.1% | 0.146 / 0.076 (1.9x) | 0.029 / 0.007 (4.1x, n=307) | 0.499 / 0.238 | 0.94 | 0.24 / 0.62 / 0.80 / 0.76 |
+  | 0-7 | 127,895 | 4.0% / 14.2% | 0.169 / 0.090 (1.9x) | 0.026 / 0.009 (2.9x, n=346) | 0.511 / 0.242 | 0.95 | 0.32 / 0.87 / 0.76 / 0.84 |
+
+  - 0-100 cm is the outlier: it misses most of the documented events in their windows and has the
+    least coherent episodes. Its deep layer (72% weight) lags the drying.
+  - 0-7 cm finds the most, but every independent check per onset is weakest relative to chance
+    (rain-driven surface noise), and it isn't root zone.
+  - 0-40 and 0-28 are close. 0-40 has the best SMVI and USDM 2+ ratios and is the standard flash
+    drought definition in the literature (0-40 cm, 40th -> 20th percentile; Ford & Labosier 2017).
+  - Timing: in all depths, 2012's onsets in the central-US box are mostly **March-May** (median first
+    onset May 14-19 at 0-40), i.e. the 2012 drying began in the warm spring, earlier than the
+    Jun-Jul window we pre-specified. In every depth the USDM worsening follows onset by a median 13-14 days.
+  - Base rate roughly doubles at 0-40 (3.2% per week): more positives, tighter CIs.
+  - **Recommendation: switch the target to 0-40 cm** (layers 1-2 plus 12/72 of layer 3, a proxy since
+    ERA5-Land's layer 3 spans 28-100 cm). Waiting on James. Ready to switch: `load_cube(depth=...)`,
+    `eval.cv --depth 0-40`, `labels --depth 0-40`.
 - **T2. Eligibility.** P > 20 at issue drops cells already in drought (92% of the 2012 box by Jun 1).
   Right for an onset product; worth saying so explicitly in the write-up.
 - **T3. Season.** Apr 1 - Oct 15 issue dates. Onsets in Sep-Nov are frequent (cross-check counts);

@@ -111,12 +111,13 @@ def main():
     ap.add_argument("--tag", default="", help="suffix for the OOF file, to keep design variants apart")
     ap.add_argument("--calibration", choices=["refit", "crossfit", "none"], help="GBM calibration (DESIGN.md A7)")
     ap.add_argument("--inner-groups", type=int, help="GBM inner calibration year-groups")
+    ap.add_argument("--depth", default="0-100", help="target soil depth, e.g. 0-40 (DESIGN.md T1)")
     args = ap.parse_args()
     holdout = args.holdout or (FAST_HOLDOUT if args.fast else None)
     thin = args.thin or (2 if args.fast else 1)
     from flashwatch.cube import load_cube
     from flashwatch.ingest import nino
-    cube = load_cube()
+    cube = load_cube(depth=args.depth)
     issues = model_issue_dates(YEARS)
     fb = FeatureBuilder(cube, issues, YEARS, nino=nino.load())
     ff = None
@@ -135,7 +136,8 @@ def main():
                  gbm_kw=gbm_kw)
     out = DATA / "oof"
     out.mkdir(parents=True, exist_ok=True)
-    name = "_".join(args.models + args.leads) + ("_fast" if args.fast else "") + (f"_{args.tag}" if args.tag else "")
+    name = ("_".join(args.models + args.leads) + ("_fast" if args.fast else "")
+            + ("" if args.depth == "0-100" else f"_d{args.depth}") + (f"_{args.tag}" if args.tag else ""))
     oof.to_parquet(out / f"{name}.parquet")
     print(f"CV took {(time.time() - t0) / 60:.1f} min; OOF in {out / name}.parquet")
     print(report(oof, args.models, labels=args.leads).to_string(index=False, float_format=lambda v: f"{v:.4f}"))

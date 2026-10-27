@@ -25,7 +25,7 @@ def vpd_kpa(t2m_k: np.ndarray, d2m_k: np.ndarray) -> np.ndarray:
 @dataclass
 class Cube:
     time: pd.DatetimeIndex
-    rzsm: np.ndarray                 # root-zone (0-100 cm) volumetric soil moisture
+    rzsm: np.ndarray                 # target-depth soil moisture (0-100 cm unless load_cube(depth=...))
     sfsm: np.ndarray                 # surface layer (0-7 cm)
     t2m: np.ndarray                  # K
     vpd: np.ndarray                  # kPa
@@ -42,14 +42,18 @@ class Cube:
         return self.rzsm.shape[1:]
 
 
-def load_cube(years=YEARS, min_land=0.2) -> Cube:
+def load_cube(years=YEARS, min_land=0.2, depth: str = "0-100") -> Cube:
+    """depth: the target soil depth (DESIGN.md T1); rzsm, its percentiles, the onset labels and
+    the rz_* features all follow it."""
+    from flashwatch.labels.__main__ import REFERENCE_DEPTH, soil_moisture
     from flashwatch.labels.onset import mask_days
     from flashwatch.obs import open_obs
 
     ds = open_obs().sel(time=slice(f"{years[0]}-01-01", f"{years[-1]}-12-31"))
     v = lambda name: ds[name].values.astype(np.float32)  # noqa: E731
     t2m = v("temperature_2m")
-    return Cube(time=pd.DatetimeIndex(ds.time.values), rzsm=v("rzsm"),
+    rz = v("rzsm") if depth == REFERENCE_DEPTH else soil_moisture(ds, depth).astype(np.float32)
+    return Cube(time=pd.DatetimeIndex(ds.time.values), rzsm=rz,
                 sfsm=v("volumetric_soil_water_layer_1"), t2m=t2m,
                 vpd=vpd_kpa(t2m, v("dewpoint_temperature_2m")), precip=v("total_precipitation_sum"),
                 evap=v("total_evaporation_sum"), pet=v("potential_evaporation_sum"),
