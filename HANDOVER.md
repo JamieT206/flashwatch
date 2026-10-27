@@ -360,6 +360,7 @@ out-of-fold evaluation, the as-of leakage test, the 2023 replay.
 | `HANDOVER.md` | This document |
 | `CLAUDE.md` | Short standing instructions for Claude Code in this repo |
 | `QUESTIONS.md` | Open questions for James and the defaults taken |
+| `DESIGN.md` | Design decisions (decide now vs open until the burst), feature backlog, visual plan |
 | `README.md` | Run instructions (Day 1 downloads; Day 2+ pipeline order) |
 | `FlashWatch Design Spec.pdf` | Spec snapshot, Oct 17 (test years out of date) |
 | `docs/hackathon-rules.pdf` | Official rules and waiver |
