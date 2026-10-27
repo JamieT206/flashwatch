@@ -68,7 +68,7 @@ want the dropped fields for anything (e.g. the demo), say so; they'd cost about 
 ## Day-2 results (real data, Oct 28)
 - Reference labels (40/20): 46,172 onset cell-days, 3,409 episodes (median 2 cells; 170 with 50+
   cells); 8.09M eligible cell-issue rows. Base rates: week 1 1.69%, week 2 1.61%, week 3 1.42%,
-  week 4 1.30%, any-28 6.01% (spec guessed 1-3% per cell-week). Wettest-to-driest ranking puts
+  week 4 1.30%, any-28 6.01% (spec guessed 1-3% per cell-week). Onsets by year put
   2023 (4,408) and 2012 (4,351) on top, as expected.
 - Variants: 30/20 gives 73,274 onsets (week 1 2.52%); 40/10 gives 12,650 (week 1 0.43%).
 
