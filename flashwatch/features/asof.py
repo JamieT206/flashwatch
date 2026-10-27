@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 
 # Days between a field's valid date and its availability (spec, Features table).
-LATENCY_DAYS = {"era5land": 5, "smap": 3, "s2s": 0, "usdm": 2, "static": 0, "nino": 7}
+LATENCY_DAYS = {"era5land": 5, "smap": 3, "s2s": 0, "usdm": 2, "static": 0, "nino": 7, "gistemp": 15, "mjo": 2}
 
 
 def as_of(source: str, issue_date) -> pd.Timestamp:

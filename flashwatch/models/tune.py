@@ -91,11 +91,11 @@ def main():
     from flashwatch.cube import load_cube
     from flashwatch.eval.cv import fold_table, model_issue_dates
     from flashwatch.features.build import FeatureBuilder
-    from flashwatch.ingest import nino
+    from flashwatch.ingest import indices, nino
 
     cube = load_cube()
     issues = model_issue_dates(YEARS)
-    fb = FeatureBuilder(cube, issues, YEARS, nino=nino.load())
+    fb = FeatureBuilder(cube, issues, YEARS, nino=nino.load(), **indices.load_all())
     ff = None
     if args.forecast:
         import xarray as xr

@@ -121,10 +121,10 @@ def main():
     holdout = args.holdout or (FAST_HOLDOUT if args.fast else None)
     thin = args.thin or (2 if args.fast else 1)
     from flashwatch.cube import load_cube
-    from flashwatch.ingest import nino
+    from flashwatch.ingest import indices, nino
     cube = load_cube(depth=args.depth)
     issues = model_issue_dates(YEARS)
-    fb = FeatureBuilder(cube, issues, YEARS, nino=nino.load())
+    fb = FeatureBuilder(cube, issues, YEARS, nino=nino.load(), **indices.load_all())
     ff = None
     from flashwatch.forecast import FCST_STORE
     if FCST_STORE.exists():

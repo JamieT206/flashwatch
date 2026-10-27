@@ -30,6 +30,18 @@ SINCE_RAIN_MAX = 90           # dry-spell features are capped here
 WET_DAY = {2: 0.002, 10: 0.010}   # mm threshold -> m/day (ERA5-Land units)
 HOT_K = 298.15                # daily mean above 25 C
 TO_THRESHOLD_MAX = 60         # days-to-threshold cap (also used when not declining)
+NBR_RADIUS = 3                # F5 neighbourhood: 7 x 7 cells (~175 km)
+
+
+def nbr_mean(a: np.ndarray, r: int = NBR_RADIUS) -> np.ndarray:
+    """Mean over the (2r+1)^2 neighbourhood in the last two axes, ignoring NaN (incl. the cell)."""
+    from scipy.ndimage import uniform_filter
+    ok = np.isfinite(a)
+    size = (1,) * (a.ndim - 2) + (2 * r + 1, 2 * r + 1)
+    num = uniform_filter(np.where(ok, a, 0).astype(np.float64), size=size, mode="constant")
+    den = uniform_filter(ok.astype(np.float64), size=size, mode="constant")
+    with np.errstate(invalid="ignore", divide="ignore"):
+        return np.where(den > 1e-9, num / den, np.nan)
 
 
 def days_since(event: np.ndarray, cap: int) -> np.ndarray:
@@ -49,10 +61,17 @@ def season_days(time: pd.DatetimeIndex, start=PCT_SEASON[0], end=PCT_SEASON[1]) 
 
 
 class FeatureBuilder:
-    def __init__(self, cube: Cube, issues: pd.DatetimeIndex, pool_years, rz_counts=None, nino=None):
-        """nino: monthly Nino 3.4 series (ingest.nino.load()); the feature is omitted if None."""
+    def __init__(self, cube: Cube, issues: pd.DatetimeIndex, pool_years, rz_counts=None, nino=None,
+                 gistemp=None, mjo=None):
+        """nino: monthly Nino 3.4 series (ingest.nino.load()); gistemp: monthly global temperature
+        anomaly (ingest.indices.load_gistemp()); mjo: daily MJO table (ingest.indices.load_mjo()).
+        Each feature is omitted if its input is None."""
+        from flashwatch.ingest.indices import daily_as_of, gistemp_12m
         self.issues = pd.DatetimeIndex(issues)
         self.nino = None if nino is None else np.array([monthly_as_of(nino, "nino", d) for d in self.issues])
+        self.gmst12 = None if gistemp is None else np.array(
+            [monthly_as_of(gistemp_12m(gistemp), "gistemp", d) for d in self.issues])
+        self.mjo = None if mjo is None else dict(zip(mjo.columns, daily_as_of(mjo, "mjo", self.issues).T))
         time = cube.time
         cutoff = pd.DatetimeIndex([as_of("era5land", d) for d in self.issues])
         self.pos = time.get_indexer(cutoff)
@@ -128,6 +147,16 @@ class FeatureBuilder:
         for mm, v in self.dry.items():
             f[f"dry_days_{mm}mm"] = v
         f["hot_days14"] = self.hot14
+        # F5 spatial context: the 7 x 7 neighbourhood's state, incl. cells already in drought
+        # (which are not rows themselves). "Newly dry": crossed below 20 in the last 14 days.
+        P0, P14 = P_rz[p], P_rz[p - 14]
+        f["nbr_rz_pct"] = nbr_mean(P0)
+        f["nbr_rz_pct_chg10"] = nbr_mean(P0 - P_rz[p - 10])
+        with np.errstate(invalid="ignore"):
+            dry = np.where(np.isnan(P0), np.nan, (P0 <= 20).astype(np.float32))
+            newly = np.where(np.isnan(P0) | np.isnan(P14), np.nan, ((P0 <= 20) & (P14 > 20)).astype(np.float32))
+        f["nbr_share_dry"] = nbr_mean(dry)
+        f["nbr_share_newly_dry"] = nbr_mean(newly)
         for name, ys in self.sums.items():
             f[f"{name}_z"] = ys.zscore(self.values[name], self.k_idx, self.own_year, ref)
         for n in ESI_WINDOWS:
@@ -150,4 +179,11 @@ class FeatureBuilder:
         f["gs_precip"] = site_mean(self.gs_p)
         if self.nino is not None:
             f["nino34"] = np.broadcast_to(self.nino[:, None, None], shape)
+        if self.gmst12 is not None:
+            f["gmst12"] = np.broadcast_to(self.gmst12[:, None, None], shape)
+        if self.mjo is not None:
+            for k, v in self.mjo.items():
+                f[f"mjo_{k}"] = np.broadcast_to(v[:, None, None], shape)
+        # F10: calendar year as a number (trend); the year-as-category diagnostic is separate.
+        f["year_num"] = np.broadcast_to(self.issues.year.to_numpy(np.float32)[:, None, None], shape)
         return {k: np.asarray(v, dtype=np.float32) for k, v in f.items()}

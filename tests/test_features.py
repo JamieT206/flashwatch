@@ -72,3 +72,22 @@ def test_feature_sanity(fb):
     assert np.nanmin(f["rz_pct"]) >= 0 and np.nanmax(f["rz_pct"]) <= 100
     assert np.isfinite(f["t2m30_z"]).mean() > 0.95
     assert f["rz_days_since_p40"].max() <= 61
+
+
+def test_index_features_ignore_values_published_after_issue(cube):
+    """MJO (daily, 2-day latency) and GISTEMP 12-month mean (monthly, 15-day latency): changing
+    anything published after the issue date must not change the features."""
+    days = pd.date_range("2000-01-01", "2007-12-31", freq="D")
+    rng = np.random.default_rng(1)
+    mjo = pd.DataFrame(rng.normal(size=(len(days), 4)), index=days, columns=["pc1", "pc2", "amplitude", "angle"])
+    months = pd.date_range("1999-01-01", "2007-12-01", freq="MS")
+    gis = pd.Series(rng.normal(size=len(months)), index=months)
+    f0 = FeatureBuilder(cube, ISSUES, YEARS, gistemp=gis, mjo=mjo).build(YEARS)
+    for i, issue in enumerate(ISSUES):
+        mjo1, gis1 = mjo.copy(), gis.copy()
+        mjo1[mjo1.index > as_of("mjo", issue)] = 99.0
+        gis1[gis1.index + pd.offsets.MonthEnd(0) > as_of("gistemp", issue)] = 99.0
+        f1 = FeatureBuilder(cube, ISSUES[i:i + 1], YEARS, gistemp=gis1, mjo=mjo1).build(YEARS)
+        for k in ("gmst12", "mjo_pc1", "mjo_amplitude"):
+            np.testing.assert_array_equal(f0[k][i], f1[k][0], err_msg=f"{k} leaks at {issue.date()}")
+        assert abs(f1["mjo_pc1"][0].flat[0]) < 90 and abs(f1["gmst12"][0].flat[0]) < 90
