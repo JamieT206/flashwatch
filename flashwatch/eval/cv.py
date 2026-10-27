@@ -60,9 +60,10 @@ def fold_table(cube, fb: FeatureBuilder, ref_years, target_years, high=40, low=L
 
 
 def run_cv(cube, models=("B0", "B1"), cv_years=CV_YEARS, pool_years=YEARS, fb=None, ff=None, log=print,
-           labels=LABELS, holdout=None, thin=1, light=False, gbm_kw=None):
+           labels=LABELS, holdout=None, thin=1, light=False, gbm_kw=None, drop=()):
     """holdout: the held-out years to run (default all of cv_years; training always uses the
-    rest of cv_years). thin: keep every thin-th cell in each direction. light: LIGHT GBMs."""
+    rest of cv_years). thin: keep every thin-th cell in each direction. light: LIGHT GBMs.
+    drop: feature names or prefixes left out of the models (ablations)."""
     fb = fb or FeatureBuilder(cube, model_issue_dates(pool_years), pool_years)
     kw = {m: ({**(LIGHT if light else {}), **(gbm_kw or {})} if m.startswith("M") else {}) for m in models}
     parts = []
@@ -72,6 +73,9 @@ def run_cv(cube, models=("B0", "B1"), cv_years=CV_YEARS, pool_years=YEARS, fb=No
         df = fold_table(cube, fb, ref, cv_years, ff=ff)
         if thin > 1:
             df = df[(df.iy % thin == 0) & (df.ix % thin == 0)]
+        if drop:
+            df = df.drop(columns=[c for c in df.columns if c.startswith(tuple(drop)) and c not in LABELS
+                                  and c not in ("year", "issue", "iy", "ix", "woy", "rz_pct")])
         is_test = (df.year == h).to_numpy()
         train, test = df[~is_test], df[is_test]
         keep = test[["year", "issue", "iy", "ix", "woy", "rz_pct", *LABELS]].copy()
@@ -112,6 +116,7 @@ def main():
     ap.add_argument("--calibration", choices=["refit", "crossfit", "none"], help="GBM calibration (DESIGN.md A7)")
     ap.add_argument("--inner-groups", type=int, help="GBM inner calibration year-groups")
     ap.add_argument("--depth", default="0-100", help="target soil depth, e.g. 0-40 (DESIGN.md T1)")
+    ap.add_argument("--drop", nargs="+", default=[], help="feature names/prefixes to leave out (ablation)")
     args = ap.parse_args()
     holdout = args.holdout or (FAST_HOLDOUT if args.fast else None)
     thin = args.thin or (2 if args.fast else 1)
@@ -133,7 +138,7 @@ def main():
     t0 = time.time()
     gbm_kw = {k: v for k, v in (("calibration", args.calibration), ("inner_groups", args.inner_groups)) if v}
     oof = run_cv(cube, args.models, fb=fb, ff=ff, labels=args.leads, holdout=holdout, thin=thin, light=args.fast,
-                 gbm_kw=gbm_kw)
+                 gbm_kw=gbm_kw, drop=args.drop)
     out = DATA / "oof"
     out.mkdir(parents=True, exist_ok=True)
     name = ("_".join(args.models + args.leads) + ("_fast" if args.fast else "")
