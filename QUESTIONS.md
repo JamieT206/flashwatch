@@ -53,6 +53,24 @@ little room for reruns. Options, cheapest first:
   wheels exist for Windows; it supports monotone constraints). Probably 10x+ faster, which
   makes tuning (Q3) affordable. The spec locks LightGBM, so this needs your OK.
 Until you answer: (a) + (b) with LightGBM.
+**Update Oct 28 (local session):** the PC has an i7-14700KF (20 cores, 28 threads), 32 GB RAM
+and the RTX 4070. At 5x the cores of the cloud VM, M1's CV should take a few hours with LightGBM,
+so I now **recommend staying on LightGBM** (no deviation) and spending the headroom on Q3 (a).
+I'll confirm with a timed fit after the B0/B1 run.
+
+### Q5. S2S download: trimmed to what the features use (FYI; default already applied)
+The ECMWF queue made one-date requests ~3 h each (15 of 202 files in 26 h). To pack more dates per
+request under ECDS's cost limit, new requests carry days 1-28 only, and t2m, d2m, 0-100 cm soil
+moisture and precipitation only. Dropped: days 29-46, solar radiation, 0-20 cm soil moisture and
+temperature, none of which any feature or B2 uses. Estimated finish ~Oct 30 (Sydney). If you
+want the dropped fields for anything (e.g. the demo), say so; they'd cost about 2x the queue time.
+
+## Day-2 results (real data, Oct 28)
+- Reference labels (40/20): 46,172 onset cell-days, 3,409 episodes (median 2 cells; 170 with 50+
+  cells); 8.09M eligible cell-issue rows. Base rates: week 1 1.69%, week 2 1.61%, week 3 1.42%,
+  week 4 1.30%, any-28 6.01% (spec guessed 1-3% per cell-week). Wettest-to-driest ranking puts
+  2023 (4,408) and 2012 (4,351) on top, as expected.
+- Variants: 30/20 gives 73,274 onsets (week 1 2.52%); 40/10 gives 12,650 (week 1 0.43%).
 
 ## Defaults taken (Day 2 code)
 - D1 resolved: 2005-2024, CV 2005-2021, test 2022-2024 (the PDF spec still says 2023-2025).
