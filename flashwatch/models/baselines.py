@@ -6,36 +6,58 @@ built by eval.cv.fold_table: iy, ix (cell indices, never features), woy, and the
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
 
+B0_FILE = Path(__file__).resolve().parents[1] / "config" / "b0_params.json"
+
+
+def tuned_b0(label: str) -> dict | None:
+    return json.loads(B0_FILE.read_text()).get(label) if B0_FILE.exists() else None
+
+
+def b0_rate(pos: np.ndarray, cnt: np.ndarray, k: float, tw: int, sr: int) -> np.ndarray:
+    """Smoothed, shrunk onset rate from (week of year, iy, ix) counts of onsets and rows."""
+    from scipy.ndimage import convolve, convolve1d
+
+    def smooth(a):
+        w = (tw + 1 - np.abs(np.arange(-tw, tw + 1))).astype(float)
+        a = convolve1d(a, w, axis=0, mode="wrap")
+        return convolve(a, np.ones((1, 2 * sr + 1, 2 * sr + 1)), mode="constant")
+
+    sp, sc = smooth(pos), smooth(cnt)
+    regional = sp.sum((1, 2)) / np.maximum(sc.sum((1, 2)), 1)
+    return (sp + k * regional[:, None, None]) / (sc + k)
+
+
 class Climatology:
-    """B0: onset rate per cell and week of year, smoothed over +/-2 weeks and the 3x3
-    neighbourhood, then shrunk towards the regional rate for that week (k pseudo-rows)."""
+    """B0: onset rate per cell and week of year, smoothed over +/-tw weeks (triangular weights)
+    and the (2 sr + 1)^2 neighbourhood, then shrunk towards the regional rate for that week
+    (k pseudo-rows). Built without arguments it uses the per-lead values chosen by
+    python -m flashwatch.models.tune_b0 (config/b0_params.json; QUESTIONS.md Q6a), else
+    tw=2, sr=1, k=20."""
 
     name = "B0"
 
-    def __init__(self, k: float = 20.0):
-        self.k = k
+    def __init__(self, k: float | None = None, tw: int | None = None, sr: int | None = None):
+        self.use_tuned = k is None and tw is None and sr is None
+        self.k, self.tw, self.sr = k or 20.0, 2 if tw is None else tw, 1 if sr is None else sr
 
     def fit(self, df: pd.DataFrame, label: str):
+        if self.use_tuned:
+            t = tuned_b0(label)
+            if t:
+                self.k, self.tw, self.sr = t["k"], t["tw"], t["sr"]
         ny, nx = df.iy.max() + 1, df.ix.max() + 1
         pos = np.zeros((53, ny, nx))
         cnt = np.zeros((53, ny, nx))
         np.add.at(pos, (df.woy.to_numpy(), df.iy.to_numpy(), df.ix.to_numpy()), df[label].to_numpy())
         np.add.at(cnt, (df.woy.to_numpy(), df.iy.to_numpy(), df.ix.to_numpy()), 1)
-
-        def smooth(a):
-            w = np.array([1, 2, 3, 2, 1], float)
-            a = sum(wi * np.roll(a, s, axis=0) for wi, s in zip(w, range(-2, 3)))
-            pad = np.pad(a, ((0, 0), (1, 1), (1, 1)))
-            return sum(pad[:, 1 + dy:1 + dy + a.shape[1], 1 + dx:1 + dx + a.shape[2]]
-                       for dy in (-1, 0, 1) for dx in (-1, 0, 1))
-
-        sp, sc = smooth(pos), smooth(cnt)
-        regional = sp.sum((1, 2)) / np.maximum(sc.sum((1, 2)), 1)
-        self.rate = (sp + self.k * regional[:, None, None]) / (sc + self.k)
+        self.rate = b0_rate(pos, cnt, self.k, self.tw, self.sr)
         self.default = float(df[label].mean())
         return self
 

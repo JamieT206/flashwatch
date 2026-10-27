@@ -75,15 +75,16 @@ moisture and precipitation only. Dropped: days 29-46, solar radiation, 0-20 cm s
 temperature, none of which any feature or B2 uses. Estimated finish ~Oct 30 (Sydney). If you
 want the dropped fields for anything (e.g. the demo), say so; they'd cost about 2x the queue time.
 
-### Q6. B0 (the BSS reference) is miscalibrated: strengthen its smoothing? (needs answer by Oct 29)
-B0's reliability slope is 0.34-0.49 in CV: the per-cell, per-week-of-year onset rates are too
-noisy. Every BSS in the headline is "vs B0", so a weak B0 inflates all skill claims. Options:
-- (a) **Recommended:** fix B0's shrinkage before any M1 score is seen: choose its pseudo-row
-  count k (and smoothing width) by the same year-grouped CV on the dev years, minimising Brier.
-  Still a climatology (no state information), just a fair one.
-- (b) Keep B0 as specified and also report BSS vs a recalibrated B0 (isotonic inside each fold).
-- (c) Keep as is.
-Until you answer: (a) is not applied; M1 tuning runs meanwhile (it doesn't depend on B0).
+### Q6. B0 (the BSS reference) is miscalibrated: strengthen its smoothing? **RESOLVED Oct 28: (a)**
+Done before any M1 score was read. `python -m flashwatch.models.tune_b0` grid-searches B0's time
+half-width tw, spatial radius sr and shrinkage k per lead (4 year-groups of 2005-2021, pooled
+Brier, reference labels); `config/b0_params.json` holds the result, which B0 now uses.
+Result: heavy shrinkage to the regional week-of-year rate wins (week 1-2: tw=8, sr=1,
+k=50,000; weeks 3-4 and any-28: tw=4, sr=0, k=5,000; optimum inside the grid). Held-out Brier
+improves 1.2-3.4% over the original B0, and the reliability slope goes from 0.13-0.21 to 0.93-0.95.
+Tuned B0 only just beats a flat base rate (week 1 Brier 0.014736 vs 0.014749): out of sample,
+the per-cell onset climatology carries almost no information beyond seasonality. So BSS vs B0
+is now close to BSS vs a seasonal base rate, i.e. an honest (harder) reference.
 
 ## Day-2 results (real data, Oct 28)
 - Reference labels (40/20): 46,172 onset cell-days, 3,409 episodes (median 2 cells; 170 with 50+
