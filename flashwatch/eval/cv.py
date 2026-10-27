@@ -60,11 +60,11 @@ def fold_table(cube, fb: FeatureBuilder, ref_years, target_years, high=40, low=L
 
 
 def run_cv(cube, models=("B0", "B1"), cv_years=CV_YEARS, pool_years=YEARS, fb=None, ff=None, log=print,
-           labels=LABELS, holdout=None, thin=1, light=False):
+           labels=LABELS, holdout=None, thin=1, light=False, gbm_kw=None):
     """holdout: the held-out years to run (default all of cv_years; training always uses the
     rest of cv_years). thin: keep every thin-th cell in each direction. light: LIGHT GBMs."""
     fb = fb or FeatureBuilder(cube, model_issue_dates(pool_years), pool_years)
-    kw = {m: (LIGHT if light and m.startswith("M") else {}) for m in models}
+    kw = {m: ({**(LIGHT if light else {}), **(gbm_kw or {})} if m.startswith("M") else {}) for m in models}
     parts = []
     for h in holdout or cv_years:
         t0 = time.time()
@@ -109,6 +109,8 @@ def main():
     ap.add_argument("--holdout", nargs="+", type=int, help="held-out years to run (default: all)")
     ap.add_argument("--thin", type=int, help="keep every n-th cell in each direction")
     ap.add_argument("--tag", default="", help="suffix for the OOF file, to keep design variants apart")
+    ap.add_argument("--calibration", choices=["refit", "crossfit", "none"], help="GBM calibration (DESIGN.md A7)")
+    ap.add_argument("--inner-groups", type=int, help="GBM inner calibration year-groups")
     args = ap.parse_args()
     holdout = args.holdout or (FAST_HOLDOUT if args.fast else None)
     thin = args.thin or (2 if args.fast else 1)
@@ -128,7 +130,9 @@ def main():
     cube = dataclasses.replace(cube, **{f: None for f in ("rzsm", "sfsm", "t2m", "vpd", "precip", "evap", "pet", "ssrd")})
     gc.collect()
     t0 = time.time()
-    oof = run_cv(cube, args.models, fb=fb, ff=ff, labels=args.leads, holdout=holdout, thin=thin, light=args.fast)
+    gbm_kw = {k: v for k, v in (("calibration", args.calibration), ("inner_groups", args.inner_groups)) if v}
+    oof = run_cv(cube, args.models, fb=fb, ff=ff, labels=args.leads, holdout=holdout, thin=thin, light=args.fast,
+                 gbm_kw=gbm_kw)
     out = DATA / "oof"
     out.mkdir(parents=True, exist_ok=True)
     name = "_".join(args.models + args.leads) + ("_fast" if args.fast else "") + (f"_{args.tag}" if args.tag else "")

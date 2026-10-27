@@ -54,10 +54,16 @@ class GBM:
     forecast = False
     name = "M1"
 
-    def __init__(self, params=None, n_rounds=None, inner_groups: int = 2, seed: int = 0):
+    def __init__(self, params=None, n_rounds=None, inner_groups: int = 2, seed: int = 0,
+                 calibration: str = "refit"):
+        """calibration (DESIGN.md A7): 'refit' fits the isotonic map on the inner models' OOF
+        scores and applies it to a final model refitted on all rows; 'crossfit' keeps the inner
+        models and predicts the mean of iso(inner model) over them, so the map is applied to the
+        same models it was fitted on; 'none' returns raw LightGBM probabilities (diagnostic)."""
+        assert calibration in ("refit", "crossfit", "none")
         self.use_tuned = params is None and n_rounds is None
         self.params = {**PARAMS, **(params or {}), "seed": seed}
-        self.n_rounds, self.k, self.seed = n_rounds or N_ROUNDS, inner_groups, seed
+        self.n_rounds, self.k, self.seed, self.calibration = n_rounds or N_ROUNDS, inner_groups, seed, calibration
 
     def _fit_raw(self, df, label):
         import lightgbm as lgb
@@ -72,21 +78,31 @@ class GBM:
         if t:
             self.params = {**PARAMS, **t["params"], "seed": self.seed}
             self.n_rounds = t["n_rounds"]
+        if self.calibration == "none":
+            self.boosters = [self._fit_raw(df, label)]
+            return self
         years = np.array(sorted(df.year.unique()))
         groups = np.array_split(np.random.default_rng(self.seed).permutation(years), min(self.k, len(years)))
         raw = np.empty(len(df))
+        inner_models = []
         for g in groups:
             inner = df.year.isin(g).to_numpy()
-            raw[inner] = self._fit_raw(df[~inner], label).predict(df.loc[inner, self.cols].to_numpy(np.float32))
+            b = self._fit_raw(df[~inner], label)
+            raw[inner] = b.predict(df.loc[inner, self.cols].to_numpy(np.float32))
+            inner_models.append(b)
         self.iso = IsotonicRegression(out_of_bounds="clip", y_min=0, y_max=1).fit(raw, df[label].to_numpy())
-        self.booster = self._fit_raw(df, label)
+        self.boosters = inner_models if self.calibration == "crossfit" else [self._fit_raw(df, label)]
         return self
 
     def predict_raw(self, df):
-        return self.booster.predict(df[self.cols].to_numpy(np.float32))
+        X = df[self.cols].to_numpy(np.float32)
+        return np.mean([b.predict(X) for b in self.boosters], axis=0)
 
     def predict(self, df: pd.DataFrame) -> np.ndarray:
-        return self.iso.predict(self.predict_raw(df))
+        X = df[self.cols].to_numpy(np.float32)
+        if self.calibration == "none":
+            return self.boosters[0].predict(X)
+        return np.mean([self.iso.predict(b.predict(X)) for b in self.boosters], axis=0)
 
 
 class GBMForecast(GBM):

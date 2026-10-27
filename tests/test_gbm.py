@@ -52,3 +52,14 @@ def test_tuning_picks_params_and_gbm_uses_them(tmp_path, monkeypatch):
     assert m.n_rounds == res["n_rounds"]
     assert all(m.params[k] == v for k, v in res["params"].items())
     assert GBM(n_rounds=30).fit(df, "week1").n_rounds == 30      # explicit settings win
+
+
+def test_calibration_modes():
+    df = toy()
+    train, test = df[df.year < 2011], df[df.year >= 2011]
+    y = test.week1.to_numpy()
+    for mode in ("refit", "crossfit", "none"):
+        m = GBM(n_rounds=60, inner_groups=3, calibration=mode).fit(train, "week1")
+        p = m.predict(test)
+        assert len(m.boosters) == (3 if mode == "crossfit" else 1)
+        assert ((p - y) ** 2).mean() < ((y.mean() - y) ** 2).mean() and abs(p.mean() - y.mean()) < 0.01
