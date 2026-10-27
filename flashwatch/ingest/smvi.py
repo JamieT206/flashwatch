@@ -1,4 +1,7 @@
-"""SMVI flash-drought inventory (HydroShare): CSV composites covering 2000-2021 plus the event files."""
+"""SMVI flash-drought inventory (HydroShare): the event tables (onset dates per GLDAS cell, 1990-2021).
+
+The ~3 GB "Composites" archives are atmospheric anomaly composites, not events; not needed.
+"""
 
 from __future__ import annotations
 
@@ -8,9 +11,7 @@ from flashwatch.ingest.common import get_logger, http_download, retry
 OUT = RAW / "smvi"
 BASE = "https://www.hydroshare.org/resource/b6d1d853b82247e1aeaf907ac254c99e/data/contents/"
 FILES = ["README.txt", "LONLAT.csv", "FD_Events/CSV/SMVI_GLDAS_Events.tar.gz",
-         "FD_Events/NetCDF/FD_Events_NC.tar.gz"] + [
-    f"Composites/CSV/SMVI_Composites_{a}_{b}.tar.gz"
-    for a, b in [(2000, 2004), (2005, 2009), (2010, 2014), (2015, 2019), (2020, 2021)]]
+         "FD_Events/NetCDF/FD_Events_NC.tar.gz"]
 log = get_logger("smvi")
 
 

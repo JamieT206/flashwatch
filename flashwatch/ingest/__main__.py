@@ -1,7 +1,7 @@
 """Day-1 downloads. Resumable: re-running skips finished files and retries failures.
 
     python -m flashwatch.ingest all         # every source in parallel, logs in data/logs/
-    python -m flashwatch.ingest s2s         # one source: s2s | era5land | usdm | smvi
+    python -m flashwatch.ingest s2s         # one source: s2s | era5land | usdm | smvi | nino
     python -m flashwatch.ingest status      # what has landed so far
 """
 
@@ -13,7 +13,7 @@ import time
 
 from flashwatch.config import LOGS, RAW, load_env
 
-SOURCES = ["s2s", "era5land", "usdm", "smvi"]
+SOURCES = ["s2s", "era5land", "usdm", "smvi", "nino"]
 
 
 def status():

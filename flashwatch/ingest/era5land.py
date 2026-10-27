@@ -64,7 +64,8 @@ def year_task(var: str, year: int) -> bool:
         return True
     ee = init()
 
-    # Whole-year calls exceed Earth Engine's limits with reduceResolution, so pull by month.
+    # By month: a 365-band NUMPY_NDARRAY reply has an ~18 KB header (one field per day), which
+    # numpy 2.x refuses to parse (max_header_size 10000). A month stays well under it.
     parts = []
     for m in range(1, 13):
         end = f"{year + 1}-01-01" if m == 12 else f"{year}-{m + 1:02d}-01"
@@ -76,7 +77,7 @@ def year_task(var: str, year: int) -> bool:
     res = (sum((p[0] for p in parts), []), np.concatenate([p[1] for p in parts]))
     dates, data = res
     tmp = target.with_name(target.stem + ".part.npz")
-    np.savez_compressed(tmp, data=data, dates=np.array(dates))
+    np.savez_compressed(tmp, data=data, dates=np.array(dates, dtype="U8"))
     os.replace(tmp, target)
     log.info("done %s %d: %d days, %.0f%% valid", var, year, data.shape[0], 100 * np.isfinite(data).mean())
     return True
