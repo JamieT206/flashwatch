@@ -10,6 +10,9 @@ are never seen by either step.
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
@@ -30,6 +33,15 @@ PARAMS = {"objective": "binary", "learning_rate": 0.05, "num_leaves": 63, "min_d
           "feature_fraction": 0.8, "bagging_fraction": 0.5, "bagging_freq": 1, "lambda_l2": 1.0,
           "max_bin": 63, "verbose": -1, "num_threads": 0}
 N_ROUNDS = 400
+# Per model and lead, from python -m flashwatch.models.tune (QUESTIONS.md Q3a). Used when a GBM
+# is built without explicit params or rounds; PARAMS/N_ROUNDS otherwise.
+TUNED_FILE = Path(__file__).resolve().parents[1] / "config" / "gbm_params.json"
+
+
+def tuned(model: str, label: str) -> dict | None:
+    if not TUNED_FILE.exists():
+        return None
+    return json.loads(TUNED_FILE.read_text()).get(model, {}).get(label)
 
 
 def feature_columns(df: pd.DataFrame, forecast: bool) -> list[str]:
@@ -42,9 +54,10 @@ class GBM:
     forecast = False
     name = "M1"
 
-    def __init__(self, params=None, n_rounds=N_ROUNDS, inner_groups: int = 2, seed: int = 0):
+    def __init__(self, params=None, n_rounds=None, inner_groups: int = 2, seed: int = 0):
+        self.use_tuned = params is None and n_rounds is None
         self.params = {**PARAMS, **(params or {}), "seed": seed}
-        self.n_rounds, self.k, self.seed = n_rounds, inner_groups, seed
+        self.n_rounds, self.k, self.seed = n_rounds or N_ROUNDS, inner_groups, seed
 
     def _fit_raw(self, df, label):
         import lightgbm as lgb
@@ -55,6 +68,10 @@ class GBM:
     def fit(self, df: pd.DataFrame, label: str):
         from sklearn.isotonic import IsotonicRegression
         self.cols = feature_columns(df, self.forecast)
+        t = tuned(self.name, label) if self.use_tuned else None
+        if t:
+            self.params = {**PARAMS, **t["params"], "seed": self.seed}
+            self.n_rounds = t["n_rounds"]
         years = np.array(sorted(df.year.unique()))
         groups = np.array_split(np.random.default_rng(self.seed).permutation(years), min(self.k, len(years)))
         raw = np.empty(len(df))

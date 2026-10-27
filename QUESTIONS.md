@@ -26,7 +26,10 @@ ECMWF attribution; **no ECMWF-derived data files** go in the repo or the demo bu
 want more caution, the fallback is to drop B2/M2 from the public demo, or use GEFSv12 (public domain).
 Your call on how much risk to carry.
 
-### Q3. Hyperparameter tuning: fully nested, or tuned once on the dev years? (needs answer by Oct 29)
+### Q3. Hyperparameter tuning: fully nested, or tuned once on the dev years? **RESOLVED Oct 28: (a)**
+James: tune once per lead on the dev years. Implemented as `python -m flashwatch.models.tune`
+(4 year-groups over 2005-2021, every other cell, 30 random-search trials, early stopping picks
+the rounds; results in `flashwatch/config/gbm_params.json`, which M1/M2 read).
 The spec asks for nested tuning (~30 trials per lead) inside the leave-one-year-out CV. At real
 scale a fold has ~6.4M training rows; one LightGBM fit is roughly a minute on 4 cores, and each
 model already needs 5 fits per lead per fold (4 inner fits for the isotonic calibration, plus
@@ -38,9 +41,9 @@ Options:
   stay fully clean, and they're the headline.
 - (b) Nested, but only ~8 trials on a small search space, on the thinned data.
 - (c) No tuning: the current sensible defaults (models/gbm.py PARAMS).
-Until you answer, I'm running with (c).
+(Original default was (c).)
 
-### Q4. Compute budget for M1/M2, and your PC's RAM and core count (needs answer by Oct 28)
+### Q4. Compute budget for M1/M2, and your PC's RAM and core count **RESOLVED Oct 28: stay on LightGBM**
 Measured at real scale on a 4-core cloud VM (synthetic data of the true size: 17 folds,
 ~6.4M training rows per fold): the baseline CV (B0, B1) takes 39 min and peaks at ~11 GB RAM
 (I've since cut the main contributor). One LightGBM fit takes 93 s, so M1's CV

@@ -167,8 +167,8 @@ static soil water capacity and cropland features, the test-year scoring script.
 | --- | --- | --- | --- |
 | Q1 | Meta tooling is 25% of the score: keep the Glimmer narrative LoRA (move it off the cut list; cut SMAP first)? | Plan unchanged | Oct 30 |
 | Q2 | ECMWF CC BY-NC vs the submission licence | Publish code, results, attributed figures; no ECMWF-derived data files | before submission |
-| Q3 | Tune once on dev years (recommended) vs fully nested | No tuning (PARAMS defaults) | Oct 29 |
-| Q4 | Compute budget: PC cores and RAM; switch to XGBoost on the RTX 4070 (deviation)? | LightGBM, 2 inner calibration groups, headline leads first | Oct 28 |
+| Q3 | Tune once on dev years vs fully nested | **Resolved: tune once per lead on dev years** (`flashwatch.models.tune`) | done |
+| Q4 | Compute budget; XGBoost on GPU? | **Resolved: stay on LightGBM** (20 cores, 32 GB); 2 inner calibration groups, headline leads first | done |
 
 ### 4.5 Things learned the hard way (cloud session, Oct 26)
 

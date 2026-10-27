@@ -36,3 +36,19 @@ def test_gbm_learns_calibrated_probabilities():
     grid["rz_pct"] = np.linspace(21, 99, 50)
     p = GBM(n_rounds=60).fit(train, "week1").predict(grid)
     assert (np.diff(p) <= 1e-12).all()
+
+
+def test_tuning_picks_params_and_gbm_uses_them(tmp_path, monkeypatch):
+    import flashwatch.models.gbm as gbm
+    from flashwatch.models import tune
+    monkeypatch.setattr(gbm, "TUNED_FILE", tmp_path / "gbm_params.json")
+    monkeypatch.setattr(tune, "TUNED_FILE", tmp_path / "gbm_params.json")
+    monkeypatch.setattr(tune, "MAX_ROUNDS", 80)
+    df = toy(20000)
+    res = tune.tune(df, "week1", forecast=False, trials=3, log=lambda s: None)
+    assert res["logloss"] <= res["default_logloss"] and res["n_rounds"] >= 20
+    tune.save("M1", "week1", res)
+    m = GBM().fit(df, "week1")
+    assert m.n_rounds == res["n_rounds"]
+    assert all(m.params[k] == v for k, v in res["params"].items())
+    assert GBM(n_rounds=30).fit(df, "week1").n_rounds == 30      # explicit settings win
