@@ -34,12 +34,12 @@ amount: 1 is right, above 1 means too timid (should be more extreme), below 1 to
 | # | Topic | Status | Decision / current default |
 | --- | --- | --- | --- |
 | A1 | Study period and splits | Decided, plus robustness checks (P1) | 2005-2024; cross-validation leaves out one year at a time over 2005-2021; 2022-2024 kept back as the test, opened once |
-| A2 | Target definition | **Leaning 0-40 cm** (literature standard); more checks (T1) | Onset = soil moisture percentile drops from 40+ to 20 or below within 20 days and stays at or below 20 for 10 days |
+| A2 | Target definition | **0-40 cm is the working target** (literature standard; default since Oct 28); more checks (T1) | Onset = soil moisture percentile drops from 40+ to 20 or below within 20 days and stays at or below 20 for 10 days |
 | A3 | Forecast horizons | Decided for now; test the "accuracy cliff" (P2) | Week 1, 2, 3, 4 and "any onset in the next 28 days" |
 | A4 | Which rows go into training | See T2-T4 | Explained below |
 | A5 | Leakage rules | Decided | Features read data only as it would have been available on the issue date; every feature family has an automatic test |
 | A6 | Baseline (B0) | Decided | Climatology, smoothing tuned on the dev years (Q6) |
-| A7 | Calibration method | **Testing now** | See below |
+| A7 | Calibration method | **Decided: "crossfit" with 4 practice models** (default since Oct 28) | See below |
 | A8 | Features | In progress | F-list below |
 | A9 | M3 (deep-learning map model) | **Cut for now; on the "later" list (L1)** | Spatial context goes in as features instead (F5) |
 | A10 | One model per horizon vs one model for all horizons | **Recommend one per horizon** | Explained below |
@@ -56,7 +56,18 @@ about 9%, and when it says 0.5% the true rate is 0.2%. Likely cause: the step th
 scores into probabilities is learned from weaker practice models (each trained on half the years)
 and then applied to the stronger final model. First fix tested ("crossfit": use the practice models
 themselves for prediction, 4 of them) helps a little (slope 1.35-1.69, from 1.51-1.95; skill up
-slightly). Still testing: 4 practice models with the old method, and no conversion step at all.
+slightly). Results on the fast loop (0-100 cm target, same features):
+
+| Variant | Week-1 skill vs climatology | Calibration slope (1 = right) | Change vs current, with 95% range |
+| --- | --- | --- | --- |
+| Current (2 practice models, then refit) | 4.3% | 1.51 | - |
+| **crossfit, 4 practice models** | **4.5%** | 1.35 | +0.3% [+0.1, +0.6] |
+| refit, 4 practice models | 4.4% | 1.25 | +0.1% [+0.0, +0.2] |
+| no conversion step | -0.6% | 0.70 (too bold) | -5.1% |
+
+Without the conversion step the model is far too bold and loses to climatology; with it, it is a
+bit timid. crossfit gives the best scores at every horizon (clearly at week 1 and any-28), so it is
+the default. The remaining timidity (slope 1.3-1.7) is noted; B3 tests more practice models in the burst.
 
 **A10. One model per horizon, or one for all?** Today we train five separate models: one answers
 "onset in week 1?", another "onset in week 2?", and so on. The alternative is a single model with
@@ -157,7 +168,11 @@ cross-validation per horizon; keep the simpler option unless the improvement is 
 - [x] acceleration (is the drop speeding up?); days until the 20th percentile at the current rate;
   surface minus root-zone percentile (drying from the top down); highest percentile in the last 15 days
 - [ ] how fast this cell typically dries after rain (drydown timescale)
-- [ ] the 0-100 cm percentile as a "deep storage" feature if the target moves to 0-40
+- [ ] the 0-100 cm percentile as a "deep storage" feature now that the target is 0-40
+
+First batch result (F1-F3, fast loop, 0-100 cm target): week-1 skill 4.3% -> 5.5%, week 2 1.2% -> 1.5%,
+any-28 2.5% -> 3.4%; all three improvements clearly real (95% range excludes zero). Ranking of risky cells
+(PR-AUC, week 1) 0.085 -> 0.105.
 
 **F2. Atmospheric demand**
 - [x] 14/30-day anomalies of temperature, vapour pressure deficit (air dryness), potential evaporation, sunshine; evaporation / potential evaporation
@@ -171,12 +186,15 @@ cross-validation per horizon; keep the simpler option unless the improvement is 
 
 **F4. Vegetation and land surface**: MODIS greenness anomaly and change; land surface temperature anomaly; growing degree days (crop stage)
 
-**F5. Spatial context** (instead of M3): neighbourhood averages; share of neighbours already in onset (drought spreads); distance to the nearest Drought Monitor D1+ area
+**F5. Spatial context** (instead of M3)
+- [x] 7x7-cell neighbourhood (~175 km): average percentile and 10-day change; share of neighbours already below the 20th percentile; share that crossed below it in the last 14 days (drought spreads)
+- [ ] distance to the nearest Drought Monitor D1+ area
 
 **F6. Large-scale drivers**
 - [x] El Nino index (Nino 3.4)
-- [ ] MJO (a tropical pattern that moves round the globe over 30-60 days and affects weather 2-4 weeks out), PNA, PDO, AO
-- [ ] **climate-change state** (James): global mean surface temperature anomaly over the previous 12 months (NASA GISTEMP or NOAA, monthly, as available on the issue date)
+- [x] MJO (a tropical pattern that moves round the globe over 30-60 days and affects weather 2-4 weeks out): NOAA PSL's real-time index (ROMI), which uses past data only
+- [ ] PNA, PDO, AO
+- [x] **climate-change state** (James): global mean surface temperature anomaly over the previous 12 months (NASA GISTEMP, as available on the issue date)
 - [ ] Plains-wide average soil moisture anomaly
 
 **F7. Static**: aridity, growing-season rain [x]; soil water holding capacity, cropland share, irrigated share [ ]
@@ -186,7 +204,7 @@ cross-validation per horizon; keep the simpler option unless the improvement is 
 **F9. Other sources**: Drought Monitor category and its 4-week change at the cell; ESI and EDDI (NOAA drought indices)
 
 **F10. Year (diagnostic, James)**
-- [ ] year as a number (does risk trend over time?)
+- [x] year as a number (does risk trend over time?)
 - [ ] year as a category: diagnostic only. In leave-one-year-out testing the held-out year's own
   category is never seen in training, so it can't help predictions. We fit it on all dev years to
   measure how much each year differs, then look at whether those year effects trend or are just a few odd years.
