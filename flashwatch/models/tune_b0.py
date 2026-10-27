@@ -1,13 +1,13 @@
 """B0's smoothing and shrinkage, chosen per lead by year-grouped CV on the dev years (QUESTIONS.md Q6a).
 
-    python -m flashwatch.models.tune_b0          # needs data/labels/onsets_40_20.npz
+    python -m flashwatch.models.tune_b0 --depth 0-40     # needs python -m flashwatch.labels --depth 0-40
 
 Onsets cluster by year, so the effective sample behind a cell's rate is a handful of years and the
 original B0 (+/-2 weeks, 3x3 cells, k=20) was far too extreme (reliability slope ~0.4). Grid search
 over the time half-width tw, spatial radius sr and pseudo-row count k, minimising pooled Brier over
 4 year-groups of 2005-2021, using the reference labels (climatology from all years, own year
 excluded). Fitting works on per-group (week of year, cell) counts, so each grid point is cheap.
-Writes config/b0_params.json, which Climatology reads.
+Writes config/b0_params.json (for the current target depth, recorded in the file), which Climatology reads.
 """
 
 from __future__ import annotations
@@ -64,10 +64,16 @@ def brier_and_slope(counts, k, tw, sr, slope=False):
 
 
 def main():
-    z = np.load(DATA / "labels" / "onsets_40_20.npz", allow_pickle=True)
+    import argparse
+
+    from flashwatch.labels.__main__ import DEPTHS, label_file
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--depth", default="0-40", choices=list(DEPTHS))
+    depth = ap.parse_args().depth
+    z = np.load(DATA / "labels" / label_file(40, 20, depth), allow_pickle=True)
     years = np.array(CV_YEARS)
     groups = np.array_split(np.random.default_rng(0).permutation(years), 4)
-    tuned = {}
+    tuned = {"depth": depth}
     for label in LABELS:
         counts = group_counts(z, label, groups)
         base_n = sum(c[1].sum() for c in counts)

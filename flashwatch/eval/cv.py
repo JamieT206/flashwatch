@@ -115,7 +115,7 @@ def main():
     ap.add_argument("--tag", default="", help="suffix for the OOF file, to keep design variants apart")
     ap.add_argument("--calibration", choices=["refit", "crossfit", "none"], help="GBM calibration (DESIGN.md A7)")
     ap.add_argument("--inner-groups", type=int, help="GBM inner calibration year-groups")
-    ap.add_argument("--depth", default="0-100", help="target soil depth, e.g. 0-40 (DESIGN.md T1)")
+    ap.add_argument("--depth", default="0-40", help="target soil depth (DESIGN.md T1; 0-40 since Oct 28)")
     ap.add_argument("--drop", nargs="+", default=[], help="feature names/prefixes to leave out (ablation)")
     args = ap.parse_args()
     holdout = args.holdout or (FAST_HOLDOUT if args.fast else None)
