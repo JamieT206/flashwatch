@@ -68,12 +68,34 @@ moisture and precipitation only. Dropped: days 29-46, solar radiation, 0-20 cm s
 temperature, none of which any feature or B2 uses. Estimated finish ~Oct 30 (Sydney). If you
 want the dropped fields for anything (e.g. the demo), say so; they'd cost about 2x the queue time.
 
+### Q6. B0 (the BSS reference) is miscalibrated: strengthen its smoothing? (needs answer by Oct 29)
+B0's reliability slope is 0.34-0.49 in CV: the per-cell, per-week-of-year onset rates are too
+noisy. Every BSS in the headline is "vs B0", so a weak B0 inflates all skill claims. Options:
+- (a) **Recommended:** fix B0's shrinkage before any M1 score is seen: choose its pseudo-row
+  count k (and smoothing width) by the same year-grouped CV on the dev years, minimising Brier.
+  Still a climatology (no state information), just a fair one.
+- (b) Keep B0 as specified and also report BSS vs a recalibrated B0 (isotonic inside each fold).
+- (c) Keep as is.
+Until you answer: (a) is not applied; M1 tuning runs meanwhile (it doesn't depend on B0).
+
 ## Day-2 results (real data, Oct 28)
 - Reference labels (40/20): 46,172 onset cell-days, 3,409 episodes (median 2 cells; 170 with 50+
   cells); 8.09M eligible cell-issue rows. Base rates: week 1 1.69%, week 2 1.61%, week 3 1.42%,
   week 4 1.30%, any-28 6.01% (spec guessed 1-3% per cell-week). Onsets by year put
   2023 (4,408) and 2012 (4,351) on top, as expected.
 - Variants: 30/20 gives 73,274 onsets (week 1 2.52%); 40/10 gives 12,650 (week 1 0.43%).
+- Baseline LOYO CV (B0, B1; 2005-2021, 6.85M rows; BSS vs B0 with 95% year-bootstrap CI):
+  week 1 B1 BSS 0.016 (0.012, 0.021); week 2 0.001 (-0.003, 0.006); weeks 3-4 ~0; any-28 -0.001
+  (-0.016, 0.015). B1 is well calibrated (reliability slope 0.95-1.01). **B0 is not**: slope
+  0.34-0.49, intercept -1.3 to -2.7, i.e. its cell-by-week rates are too extreme (too little
+  smoothing/shrinkage for 1-2% events), so its Brier is worse than it should be and BSS vs B0
+  flatters every model. B0 still has the best PR-AUC at weeks 2-4 (the spatial pattern is real).
+  See Q6.
+- Cross-checks: SMVI overlap 13.1% vs 6.5% chance (2,812 episodes); USDM 2+ category worsening
+  4.1% vs 1.5% chance (170 large episodes). Known events: 2023 one 1,910-cell episode (onset
+  ~May 27, 36% of box); 2022 39%; 2017 20%; **2012 3% in the Jun-Jul window** because the
+  root-zone onsets came in May (675 cell-days) and 92% of the box was already below the 20th
+  percentile by Jun 1 (see the window question in chat).
 
 ## Defaults taken (Day 2 code)
 - D1 resolved: 2005-2024, CV 2005-2021, test 2022-2024 (the PDF spec still says 2023-2025).
