@@ -165,10 +165,10 @@ static soil water capacity and cropland features, the test-year scoring script.
 
 | # | Question | Default until answered | Needed by |
 | --- | --- | --- | --- |
-| Q1 | Meta tooling is 25% of the score: keep the Glimmer narrative LoRA (move it off the cut list; cut SMAP first)? | Plan unchanged | Oct 30 |
+| Q1 | Glimmer narrative LoRA off the cut list; cut SMAP first | **Resolved: yes** | done |
 | Q2 | ECMWF CC BY-NC vs the submission licence | Publish code, results, attributed figures; no ECMWF-derived data files | before submission |
 | Q3 | Tune once on dev years vs fully nested | **Resolved: tune once per lead on dev years** (`flashwatch.models.tune`) | done |
-| Q4 | Compute budget; XGBoost on GPU? | **Resolved: stay on LightGBM** (20 cores, 32 GB); 2 inner calibration groups, headline leads first | done |
+| Q4 | Compute budget; XGBoost on GPU? | **Resolved: stay on LightGBM; light training + fast cycles (`eval.cv --fast`) while iterating design, heavy training last** | done |
 
 ### 4.5 Things learned the hard way (cloud session, Oct 26)
 
@@ -303,7 +303,7 @@ page, two-page write-up, model card.
 | 9 | Nov 3 | Demo site, case studies, write-up draft, Glimmer fine-tune | Not started |
 | 10 | Nov 4 | Video, README, model card; **submit by 9 PM ET** | |
 
-Cut order if behind: Glimmer fine-tune (but see Q1), SMAP variant, M3. **Never cut**: calibrated
+Cut order if behind: SMAP variant, M3, then Glimmer fine-tune (Q1). **Never cut**: calibrated
 out-of-fold evaluation, the as-of leakage test, the 2023 replay.
 
 ---

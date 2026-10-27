@@ -65,9 +65,12 @@ class StateLogistic:
         return self.model.predict_proba(df[list(self.inputs)].fillna(self.fill))[:, 1]
 
 
-def _gbm(name):
+def _gbm(name, **kw):
     from flashwatch.models import gbm
-    return {"M1": gbm.GBM, "M2": gbm.GBMForecast}[name]()
+    return {"M1": gbm.GBM, "M2": gbm.GBMForecast}[name](**kw)
 
 
-MODELS = {"B0": Climatology, "B1": StateLogistic, "M1": lambda: _gbm("M1"), "M2": lambda: _gbm("M2")}
+MODELS = {"B0": Climatology, "B1": StateLogistic, "M1": lambda **kw: _gbm("M1", **kw),
+          "M2": lambda **kw: _gbm("M2", **kw)}
+# Light GBM training for fast design iteration (eval.cv --fast); heavy training comes later.
+LIGHT = {"params": {"learning_rate": 0.1}, "n_rounds": 150}

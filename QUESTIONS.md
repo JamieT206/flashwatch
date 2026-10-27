@@ -6,7 +6,8 @@ Public repo: nothing private goes here.
 
 ## Questions
 
-### Q1. Meta tooling is 25% of the score: promote the Glimmer work up the plan? (needs answer by Oct 30)
+### Q1. Meta tooling is 25% of the score: promote the Glimmer work up the plan? **RESOLVED Oct 28: (b)**
+James: fine. The Glimmer narrative LoRA is off the cut list; SMAP is cut first.
 The official rules (docs/hackathon-rules.pdf) score Impact 30%, **Use of Meta AI tooling 25%**
 ("how creatively... beyond a basic integration... surfaced unexpected capabilities"),
 Technical depth 20%, Demo 25%. The spec makes the Meta model an explainer/verifier and puts the
@@ -27,7 +28,7 @@ want more caution, the fallback is to drop B2/M2 from the public demo, or use GE
 Your call on how much risk to carry.
 
 ### Q3. Hyperparameter tuning: fully nested, or tuned once on the dev years? **RESOLVED Oct 28: (a)**
-James: tune once per lead on the dev years. Implemented as `python -m flashwatch.models.tune`
+James: tune once per lead on the dev years, in the heavy-training phase (see Q4). Implemented as `python -m flashwatch.models.tune`
 (4 year-groups over 2005-2021, every other cell, 30 random-search trials, early stopping picks
 the rounds; results in `flashwatch/config/gbm_params.json`, which M1/M2 read).
 The spec asks for nested tuning (~30 trials per lead) inside the leave-one-year-out CV. At real
@@ -56,7 +57,13 @@ little room for reruns. Options, cheapest first:
   wheels exist for Windows; it supports monotone constraints). Probably 10x+ faster, which
   makes tuning (Q3) affordable. The spec locks LightGBM, so this needs your OK.
 Until you answer: (a) + (b) with LightGBM.
-**Update Oct 28 (local session):** the PC has an i7-14700KF (20 cores, 28 threads), 32 GB RAM
+**RESOLVED Oct 28 (James): get the full pipeline running with light training and short cycle times,
+iterate on design (features, targets, architecture, ensembling) while training stays light, and only
+then train heavily.** `eval.cv --fast` is the iteration loop (6 held-out years incl. 2012, every
+other cell, LightGBM at learning rate 0.1 x 150 rounds). The tuner (`models.tune`) is deferred to
+the heavy phase.
+
+**Earlier update Oct 28:** the PC has an i7-14700KF (20 cores, 28 threads), 32 GB RAM
 and the RTX 4070. At 5x the cores of the cloud VM, M1's CV should take a few hours with LightGBM,
 so I now **recommend staying on LightGBM** (no deviation) and spending the headroom on Q3 (a).
 I'll confirm with a timed fit after the B0/B1 run.

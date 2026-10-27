@@ -1,6 +1,7 @@
 """Leave-one-year-out cross-validation over the development years.
 
     python -m flashwatch.eval.cv --models B0 B1      # needs data/obs.zarr
+    python -m flashwatch.eval.cv --models B0 B1 M1 --fast    # design iteration: minutes, not hours
 
 For each held-out year h, labels and features are rebuilt with climatology from the other
 development years only; each model is fitted per lead on those years and predicts h. The
@@ -12,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import gc
+import time
 from datetime import date
 
 import numpy as np
@@ -21,10 +23,12 @@ from flashwatch.config import CV_YEARS, DATA, YEARS
 from flashwatch.eval.metrics import score, year_bootstrap_bss
 from flashwatch.features.build import FeatureBuilder
 from flashwatch.labels.onset import LEADS, lead_labels, onset_days
-from flashwatch.models.baselines import MODELS
+from flashwatch.models.baselines import LIGHT, MODELS
 
 LABELS = [f"week{w}" for w in LEADS] + ["any28"]
 LOW = 20
+# --fast: 6 held-out years spread over the dev period (incl. 2012), every other cell, light GBMs.
+FAST_HOLDOUT = [2006, 2009, 2012, 2015, 2018, 2021]
 
 
 def model_issue_dates(years) -> pd.DatetimeIndex:
@@ -56,21 +60,27 @@ def fold_table(cube, fb: FeatureBuilder, ref_years, target_years, high=40, low=L
 
 
 def run_cv(cube, models=("B0", "B1"), cv_years=CV_YEARS, pool_years=YEARS, fb=None, ff=None, log=print,
-           labels=LABELS):
+           labels=LABELS, holdout=None, thin=1, light=False):
+    """holdout: the held-out years to run (default all of cv_years; training always uses the
+    rest of cv_years). thin: keep every thin-th cell in each direction. light: LIGHT GBMs."""
     fb = fb or FeatureBuilder(cube, model_issue_dates(pool_years), pool_years)
+    kw = {m: (LIGHT if light and m.startswith("M") else {}) for m in models}
     parts = []
-    for h in cv_years:
+    for h in holdout or cv_years:
+        t0 = time.time()
         ref = [y for y in cv_years if y != h]
         df = fold_table(cube, fb, ref, cv_years, ff=ff)
+        if thin > 1:
+            df = df[(df.iy % thin == 0) & (df.ix % thin == 0)]
         is_test = (df.year == h).to_numpy()
         train, test = df[~is_test], df[is_test]
         keep = test[["year", "issue", "iy", "ix", "woy", "rz_pct", *LABELS]].copy()
         for label in labels:
             for m in models:
-                keep[f"{m}_{label}"] = MODELS[m]().fit(train, label).predict(test).astype(np.float32)
+                keep[f"{m}_{label}"] = MODELS[m](**kw[m]).fit(train, label).predict(test).astype(np.float32)
         parts.append(keep)
         log(f"fold {h}: {len(train)} train rows, {len(test)} test rows, "
-            f"week-2 base rate {100 * test.week2.mean():.2f}%")
+            f"week-2 base rate {100 * test.week2.mean():.2f}%, {time.time() - t0:.0f}s")
         del df, train, test
         gc.collect()
     return pd.concat(parts, ignore_index=True)
@@ -94,7 +104,14 @@ def main():
     ap.add_argument("--models", nargs="+", default=["B0", "B1"])
     ap.add_argument("--leads", nargs="+", default=LABELS, choices=LABELS,
                     help="e.g. --leads week1 week2 any28 to run the headline leads first")
+    ap.add_argument("--fast", action="store_true",
+                    help=f"held-out years {FAST_HOLDOUT}, every other cell, light GBMs ({LIGHT})")
+    ap.add_argument("--holdout", nargs="+", type=int, help="held-out years to run (default: all)")
+    ap.add_argument("--thin", type=int, help="keep every n-th cell in each direction")
+    ap.add_argument("--tag", default="", help="suffix for the OOF file, to keep design variants apart")
     args = ap.parse_args()
+    holdout = args.holdout or (FAST_HOLDOUT if args.fast else None)
+    thin = args.thin or (2 if args.fast else 1)
     from flashwatch.cube import load_cube
     from flashwatch.ingest import nino
     cube = load_cube()
@@ -110,10 +127,13 @@ def main():
     import dataclasses
     cube = dataclasses.replace(cube, **{f: None for f in ("rzsm", "sfsm", "t2m", "vpd", "precip", "evap", "pet", "ssrd")})
     gc.collect()
-    oof = run_cv(cube, args.models, fb=fb, ff=ff, labels=args.leads)
+    t0 = time.time()
+    oof = run_cv(cube, args.models, fb=fb, ff=ff, labels=args.leads, holdout=holdout, thin=thin, light=args.fast)
     out = DATA / "oof"
     out.mkdir(parents=True, exist_ok=True)
-    oof.to_parquet(out / f"{'_'.join(args.models)}_{'_'.join(args.leads)}.parquet")
+    name = "_".join(args.models + args.leads) + ("_fast" if args.fast else "") + (f"_{args.tag}" if args.tag else "")
+    oof.to_parquet(out / f"{name}.parquet")
+    print(f"CV took {(time.time() - t0) / 60:.1f} min; OOF in {out / name}.parquet")
     print(report(oof, args.models, labels=args.leads).to_string(index=False, float_format=lambda v: f"{v:.4f}"))
 
 
