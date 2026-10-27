@@ -28,6 +28,8 @@ MONOTONE = {"rz_pct": -1, "rz_pct_chg5": -1, "rz_pct_chg10": -1, "rz_pct_chg20":
             "t2m14_z": 1, "t2m30_z": 1, "vpd14_z": 1, "vpd30_z": 1, "pet14_z": 1, "pet30_z": 1,
             "rz_days_to_p20": -1, "dry_days_2mm": 1, "dry_days_10mm": 1, "hot_days14": 1,
             "nbr_share_dry": 1, "nbr_share_newly_dry": 1}
+# usdm_cat is left unconstrained: a cell already in D1+ is usually also below the 20th percentile
+# (not eligible), so its relation to onset risk among eligible cells isn't obviously one-way.
 for _w in range(1, 5):
     MONOTONE.update({f"f_tp_w{_w}_z": -1, f"f_tp_w{_w}_plow": 1, f"f_t2m_w{_w}_z": 1,
                      f"f_vpd_w{_w}_z": 1, f"f_sm100_w{_w}_z": -1})

@@ -102,3 +102,16 @@ def test_box_mean_directions():
     assert w == 1.0 and e == 0.0                           # 30 cells in the west box, one of them 30
     edge = box_mean(np.ones((1, 5, 5)), *DIRECTIONS["W"])[0, 2, 0]
     assert np.isnan(edge)                                  # nothing to the west of the first column
+
+
+def test_usdm_features_ignore_maps_published_after_issue(cube):
+    dates = pd.date_range("2000-01-04", "2007-12-31", freq="7D")       # Tuesdays
+    rng = np.random.default_rng(2)
+    cat = rng.integers(-1, 5, size=(len(dates),) + cube.shape).astype(np.int8)
+    f0 = FeatureBuilder(cube, ISSUES, YEARS, usdm=(dates, cat)).build(YEARS)
+    for i, issue in enumerate(ISSUES):
+        c1 = cat.copy()
+        c1[dates > as_of("usdm", issue)] = 4
+        f1 = FeatureBuilder(cube, ISSUES[i:i + 1], YEARS, usdm=(dates, c1)).build(YEARS)
+        for k in ("usdm_cat", "usdm_chg4w", "nbr_usdm_d1"):
+            np.testing.assert_array_equal(f0[k][i], f1[k][0], err_msg=f"{k} leaks at {issue.date()}")

@@ -87,9 +87,10 @@ def season_days(time: pd.DatetimeIndex, start=PCT_SEASON[0], end=PCT_SEASON[1]) 
 
 class FeatureBuilder:
     def __init__(self, cube: Cube, issues: pd.DatetimeIndex, pool_years, rz_counts=None, nino=None,
-                 gistemp=None, mjo=None):
+                 gistemp=None, mjo=None, usdm=None):
         """nino: monthly Nino 3.4 series (ingest.nino.load()); gistemp: monthly global temperature
         anomaly (ingest.indices.load_gistemp()); mjo: daily MJO table (ingest.indices.load_mjo()).
+        usdm: (map dates, categories (map, lat, lon), -1 none .. 4 = D4), labels.crosscheck.usdm_cube().
         Each feature is omitted if its input is None."""
         from flashwatch.ingest.indices import daily_as_of, gistemp_12m
         self.issues = pd.DatetimeIndex(issues)
@@ -97,6 +98,16 @@ class FeatureBuilder:
         self.gmst12 = None if gistemp is None else np.array(
             [monthly_as_of(gistemp_12m(gistemp), "gistemp", d) for d in self.issues])
         self.mjo = None if mjo is None else dict(zip(mjo.columns, daily_as_of(mjo, "mjo", self.issues).T))
+        self.usdm = None
+        if usdm is not None:
+            # F9: latest Drought Monitor map published by the issue date, and the one 4 weeks before.
+            dates, cat = pd.DatetimeIndex(usdm[0]), np.asarray(usdm[1], np.float32)
+            cut = pd.DatetimeIndex([as_of("usdm", d) for d in self.issues])
+            i = dates.searchsorted(cut, side="right") - 1
+            now = np.where((i >= 0)[:, None, None], cat[np.maximum(i, 0)], np.nan)
+            then = np.where((i >= 4)[:, None, None], cat[np.maximum(i - 4, 0)], np.nan)
+            self.usdm = {"usdm_cat": now, "usdm_chg4w": now - then,
+                         "nbr_usdm_d1": nbr_mean(np.where(np.isnan(now), np.nan, (now >= 1).astype(np.float32)))}
         time = cube.time
         cutoff = pd.DatetimeIndex([as_of("era5land", d) for d in self.issues])
         self.pos = time.get_indexer(cutoff)
@@ -208,6 +219,8 @@ class FeatureBuilder:
         f["gs_precip"] = site_mean(self.gs_p)
         if self.nino is not None:
             f["nino34"] = np.broadcast_to(self.nino[:, None, None], shape)
+        if self.usdm is not None:
+            f.update(self.usdm)
         if self.gmst12 is not None:
             f["gmst12"] = np.broadcast_to(self.gmst12[:, None, None], shape)
         if self.mjo is not None:

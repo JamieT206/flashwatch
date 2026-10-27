@@ -118,6 +118,7 @@ def main():
     ap.add_argument("--calibrator", choices=["isotonic", "platt"], help="GBM calibration map (DESIGN.md A7)")
     ap.add_argument("--depth", default="0-40", help="target soil depth (DESIGN.md T1; 0-40 since Oct 28)")
     ap.add_argument("--drop", nargs="+", default=[], help="feature names/prefixes to leave out (ablation)")
+    ap.add_argument("--usdm", action="store_true", help="add the Drought Monitor features (F9; on trial)")
     args = ap.parse_args()
     holdout = args.holdout or (FAST_HOLDOUT if args.fast else None)
     thin = args.thin or (2 if args.fast else 1)
@@ -125,7 +126,9 @@ def main():
     from flashwatch.ingest import indices, nino
     cube = load_cube(depth=args.depth)
     issues = model_issue_dates(YEARS)
-    fb = FeatureBuilder(cube, issues, YEARS, nino=nino.load(), **indices.load_all())
+    from flashwatch.labels.crosscheck import usdm_cube
+    fb = FeatureBuilder(cube, issues, YEARS, nino=nino.load(), usdm=usdm_cube(YEARS) if args.usdm else None,
+                        **indices.load_all())
     ff = None
     from flashwatch.forecast import FCST_STORE
     if FCST_STORE.exists():
