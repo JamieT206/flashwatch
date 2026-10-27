@@ -69,6 +69,10 @@ Without the conversion step the model is far too bold and loses to climatology; 
 bit timid. crossfit gives the best scores at every horizon (clearly at week 1 and any-28), so it is
 the default. The remaining timidity (slope 1.3-1.7) is noted; B3 tests more practice models in the burst.
 
+Platt calibrator (Oct 28, 0-40 cm, no year-level features): same skill (week 1 4.35% vs 4.40%, week 2
+1.3% vs 1.4%, any-28 5.2% vs 5.1%, all within noise) and less timid (slope 1.22-1.30 vs 1.33-1.41).
+Leaning Platt; decide with the next feature runs.
+
 **A10. One model per horizon, or one for all?** Today we train five separate models: one answers
 "onset in week 1?", another "onset in week 2?", and so on. The alternative is a single model with
 "how many weeks ahead" as an input column: every row appears five times, once per horizon. That
@@ -137,7 +141,7 @@ simple cap (no single week above the 28-day value) would tidy it if needed.
 | P6 | Year effects (F10) | How much is left unexplained by year, and is it a trend or a few odd years? (Year as a category: later, L7) |
 | P7 | Predict "drought day" (presence) instead of onset | James has had interesting results modelling presence vs onset. "Was yesterday a drought day" will dominate; the interesting part is what else adds skill. Second priority |
 | P8 | Testing on held-out *places* within the same years | Second priority (James). Caution: flash droughts are mostly large. At 0-40 cm the median episode is 2 cells, but 72% of onset cell-days are in episodes of 100+ cells and 23% in episodes of 1,000+ (the largest covers 4,087 of 4,992 land cells). Held-out regions would have to be big blocks, or neighbouring training cells would give the answer away |
-| P9 | Year-level features (El Nino, global temperature, year, MJO) | Oct 28 finding: the top 1% of week-2 predictions were 84% from 2015 (record El Nino, a value outside the training range). With 16 training years, a once-per-year number lets the model memorise years. Running with and without them now |
+| P9 | Year-level features (El Nino, global temperature, year, MJO) | Oct 28 finding: the top 1% of week-2 predictions were 84% from 2015 (record El Nino, a value outside the training range). With 16 training years, a once-per-year number lets the model memorise years. **Result: removing them helps** (week 1 3.9% -> 4.4% skill, week 2 1.1% -> 1.4%, any-28 4.4% -> 5.1%, fast loop, 0-40 cm). MJO (daily) being re-tested on its own |
 
 ---
 
