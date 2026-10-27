@@ -95,6 +95,19 @@ verifies only.
 Defaults taken by the cloud session are listed at the bottom of `QUESTIONS.md` (trailing 5-day
 mean, own-year-excluded percentiles, masks, monotone list, etc.).
 
+### 4.2a Status at Oct 28, 07:50 Sydney (local session)
+
+- ERA5-Land (232), USDM (1,096), SMVI and Nino 3.4 complete. `obs.zarr` and labels built (see QUESTIONS for base rates).
+- Tests pass on Windows (29). eccodes decodes on Windows; `forecast build` works on real files.
+- **S2S was the bottleneck**: ECDS job timestamps show each request waits 1.5-3 h in the queue and
+  runs in 3-8 min, so 1 date per request meant ~3 h per file (15 of 202 in 26 h). Fixes:
+  requests now carry only what features use (days 1-28; t2m, d2m, sm100, tp), `FW_S2S_PACK`
+  packs several same-month dates into one request (auto-halved on ECDS "cost limits exceeded":
+  ~3 daily or ~5-6 accum dates fit) and the reply is split into the usual per-date files, and
+  `FW_S2S_WORKERS=3` (the queue accepted 3 of our jobs at once). Running detached:
+  `FW_S2S_PACK=16 FW_S2S_WORKERS=3 python -m flashwatch.ingest s2s`. ~50 requests, so done around Oct 30 if the queue holds.
+  Three stale jobs from the old process sit in the ECDS queue (could not cancel them from here); harmless.
+
 ### 4.2 Downloads (running on this PC since ~05:45 Sydney, Oct 27)
 
 Started with `python -m flashwatch.ingest all`. James was asked to stop it (Ctrl+C), `git pull` and

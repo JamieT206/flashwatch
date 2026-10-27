@@ -29,6 +29,8 @@ NAMES = {"2t": "t2m", "avg_2t": "t2m", "t2m": "t2m", "2d": "d2m", "avg_2d": "d2m
          "sm20": "sm20", "avg_sm20": "sm20", "sm100": "sm100", "avg_sm100": "sm100",
          "st20": "st20", "avg_st20": "st20", "tp": "tp", "ssrd": "ssrd"}
 ACCUMULATED = {"tp", "ssrd"}
+# Variables kept in fcst.zarr: the ones forecast features use, which every download has.
+KEEP = ("t2m", "d2m", "sm100", "tp")
 
 
 def read_messages(path: Path):
@@ -129,8 +131,8 @@ def build():
                     raise ValueError(f"{f.name}: hindcast years {years[0]}..{years[-1]}, expected {YEARS[0]}..{YEARS[-1]}")
                 for k, v in wk.items():
                     fields[k] = v if k not in fields else np.where(np.isnan(fields[k]), v, fields[k])
-        for k, v in fields.items():
-            data[k].append(v)
+        for k in KEEP:
+            data[k].append(fields[k])
         coords = (lats, lons, v.shape[1])
         print(f"{d}: {', '.join(sorted(fields))}")
     lats, lons, n_mem = coords
