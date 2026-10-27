@@ -74,6 +74,7 @@ inconsistencies between horizons afterwards if they show up.
   | Depth (cm) | Onsets (cell-days) | Weekly rate | SMVI agreement vs chance | Drought Monitor big worsening vs chance | Share of onsets in clusters of 10+ cells | Known events caught in their windows (2012 / 2017 / 2022 / 2023) |
   | --- | --- | --- | --- | --- | --- | --- |
   | 0-100 (spec) | 46,172 | 1.7% | 2.0x | 2.7x | 0.86 | 3% / 20% / 39% / 36% |
+  | 0-50 | 79,133 | 2.8% | 2.1x | 2.0x | 0.91 | 11% / 49% / 68% / 51% |
   | **0-40** | 91,841 | 3.2% | 2.1x | 4.3x | 0.93 | 17% / 54% / 76% / 59% |
   | 0-28 | 109,379 | 3.7% | 1.9x | 4.1x | 0.94 | 24% / 62% / 80% / 76% |
   | 0-7 | 127,895 | 4.0% | 1.9x | 2.9x | 0.95 | 32% / 87% / 76% / 84% |
@@ -85,7 +86,8 @@ inconsistencies between horizons afterwards if they show up.
   - In every depth, the Drought Monitor worsens a median 13-14 days after our onset.
   - 2012 dried out early: most onsets in the central-US box are March-May at every depth.
   - **James (Oct 28): align with the literature, so lean 0-40; also test 0-28, 0-50 and 0-100.**
-    0-50 is running now. ERA5-Land's third layer spans 28-100 cm, so 0-40 and 0-50 assume moisture
+    0-50 (done): between 0-40 and 0-100 on every check, and clearly weaker than 0-40 on the Drought
+    Monitor check (2.0x vs 4.3x), so it doesn't change the lean. ERA5-Land's third layer spans 28-100 cm, so 0-40 and 0-50 assume moisture
     is even within it (a proxy).
   - **Crop sense-check (to do):** root depths and critical periods of the main crops (corn: deep roots,
     critical at silking in July; soybeans: pod fill in August; winter wheat: planting Sep-Oct, heading
