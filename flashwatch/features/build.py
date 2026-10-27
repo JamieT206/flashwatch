@@ -132,7 +132,9 @@ class FeatureBuilder:
             with np.errstate(invalid="ignore", divide="ignore"):
                 r = np.where(np.abs(p) > 1e-5, e / p, np.nan)
             del e, p
-            add(f"esi{n}", np.clip(r, 0, 1.5).astype(np.float32))
+            r = np.clip(r, 0, 1.5).astype(np.float32)
+            add(f"esi{n}", r)
+            self.values[f"esi{n}_prev14"] = r[self.pos - 14]      # F2 rapid change, as of the cutoff
 
         # Static climatologies: annual precipitation / PET (aridity) and Apr-Sep precipitation.
         yr = time.year.to_numpy()
@@ -151,6 +153,10 @@ class FeatureBuilder:
         days = season_days(time)
         self.rz_counts = rz_counts or PercentileCounts(trailing_mean(cube.rzsm, 5), time, self.pool_years, days)
         self.sf_counts = PercentileCounts(trailing_mean(cube.sfsm, 5), time, self.pool_years, days)
+        # F1 deep storage: 0-100 cm percentile when the target depth is shallower (load_cube puts it in extra).
+        deep = cube.extra.get("deep_sm")
+        self.deep_counts = None if deep is None else PercentileCounts(trailing_mean(deep, 5), time,
+                                                                     self.pool_years, days)
         self.shape = cube.shape
 
     def build(self, ref_years, P_rz: np.ndarray | None = None) -> dict[str, np.ndarray]:
@@ -201,6 +207,14 @@ class FeatureBuilder:
             f[f"{name}_z"] = ys.zscore(self.values[name], self.k_idx, self.own_year, ref)
         for n in ESI_WINDOWS:
             f[f"esi{n}"] = self.values[f"esi{n}"]
+            # F2 rapid change: how far evaporation has fallen behind demand over two weeks
+            f[f"esi{n}_chg14"] = self.values[f"esi{n}"] - self.values[f"esi{n}_prev14"]
+        # F2 drying pressure: air dryness anomaly weighted by how dry the soil already is
+        f["vpd14_x_dryness"] = f["vpd14_z"] * (100 - P_rz[p]) / 100
+        if self.deep_counts is not None:
+            P_deep = self.deep_counts.fold(ref)
+            f["deep_pct"] = P_deep[p]
+            f["deep_pct_chg10"] = P_deep[p] - P_deep[p - 10]
         doy = self.issues.day_of_year.to_numpy()
         shape = (len(p),) + self.shape
         f["doy_sin"] = np.broadcast_to(np.sin(2 * np.pi * doy / 365.25)[:, None, None], shape)

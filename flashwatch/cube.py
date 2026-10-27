@@ -53,10 +53,11 @@ def load_cube(years=YEARS, min_land=0.2, depth: str = "0-100") -> Cube:
     v = lambda name: ds[name].values.astype(np.float32)  # noqa: E731
     t2m = v("temperature_2m")
     rz = v("rzsm") if depth == REFERENCE_DEPTH else soil_moisture(ds, depth).astype(np.float32)
+    extra = {} if depth == REFERENCE_DEPTH else {"deep_sm": v("rzsm")}     # 0-100 cm, for deep_pct
     return Cube(time=pd.DatetimeIndex(ds.time.values), rzsm=rz,
                 sfsm=v("volumetric_soil_water_layer_1"), t2m=t2m,
                 vpd=vpd_kpa(t2m, v("dewpoint_temperature_2m")), precip=v("total_precipitation_sum"),
                 evap=v("total_evaporation_sum"), pet=v("potential_evaporation_sum"),
                 ssrd=v("surface_solar_radiation_downwards_sum"),
                 masked=mask_days(v("snow_depth"), v("soil_temperature_level_1")),
-                land=ds.land_frac.values >= min_land)
+                land=ds.land_frac.values >= min_land, extra=extra)

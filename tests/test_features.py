@@ -15,6 +15,12 @@ FIELDS = ["rzsm", "sfsm", "t2m", "vpd", "precip", "evap", "pet", "ssrd"]
 
 
 @pytest.fixture(scope="module")
+def cube(cube):
+    """The shared synthetic cube plus a deep-layer series, so deep_pct is leak-tested too."""
+    return dataclasses.replace(cube, extra={"deep_sm": cube.rzsm * 0.7 + 0.1})
+
+
+@pytest.fixture(scope="module")
 def fb(cube):
     return FeatureBuilder(cube, ISSUES, YEARS)
 
@@ -38,7 +44,12 @@ def perturbed(cube, mask_time):
         a = getattr(cube, f).copy()
         a[mask_time] = rng.normal(size=a[mask_time].shape) * np.nanstd(a) + np.nanmean(a)
         new[f] = a
-    return dataclasses.replace(cube, **new)
+    extra = {}
+    for k, a in cube.extra.items():
+        a = a.copy()
+        a[mask_time] = rng.normal(size=a[mask_time].shape) * np.nanstd(a) + np.nanmean(a)
+        extra[k] = a
+    return dataclasses.replace(cube, **new, extra=extra)
 
 
 def test_features_ignore_own_year_future(cube, fb):
