@@ -2,6 +2,7 @@
 
     python -m flashwatch.labels                 # reference labels, thresholds 40/20
     python -m flashwatch.labels --variants      # also the 30/20 and 40/10 sensitivity runs
+    python -m flashwatch.labels --depth 0-28    # target soil depth variant (DESIGN.md T1)
 
 Reference labels use every study year as the climatology (each value against the other
 years); they are for cross-checks and the base rate. CV folds rebuild percentiles from
@@ -24,6 +25,10 @@ from flashwatch.labels.onset import LEADS, lead_labels, mask_days, onset_days
 from flashwatch.labels.percentile import percentiles, running_mean
 
 OUT = DATA / "labels"
+# Target soil depth (DESIGN.md T1): ERA5-Land layers 0-7, 7-28, 28-100 cm, weighted by thickness
+# within the depth. 0-40 cm takes 12 of layer 3's 72 cm. 0-100 is the spec's reference.
+DEPTHS = {"0-100": (7, 21, 72), "0-40": (7, 21, 12), "0-28": (7, 21, 0), "0-7": (7, 0, 0)}
+REFERENCE_DEPTH = "0-100"
 SEASON_PAD = ("03-05", "11-30")   # issue dates Apr 1-Oct 15, +28 d labels, -20/+10 d onset rule, -5 d latency
 
 
@@ -33,11 +38,20 @@ def issue_dates(years=YEARS) -> pd.DatetimeIndex:
     return pd.DatetimeIndex([date(y, d.month, d.day) for y in years for d in model_dates()])
 
 
-def load(years=YEARS):
+def soil_moisture(ds, depth: str = REFERENCE_DEPTH) -> np.ndarray:
+    w = DEPTHS[depth]
+    return sum(ds[f"volumetric_soil_water_layer_{i + 1}"].values * (wi / sum(w)) for i, wi in enumerate(w) if wi)
+
+
+def label_file(high: int, low: int, depth: str = REFERENCE_DEPTH) -> str:
+    return f"onsets_{high}_{low}" + ("" if depth == REFERENCE_DEPTH else f"_d{depth}") + ".npz"
+
+
+def load(years=YEARS, depth: str = REFERENCE_DEPTH):
     from flashwatch.obs import open_obs
     ds = open_obs().sel(time=slice(f"{years[0]}-01-01", f"{years[-1]}-12-31"))
     time = pd.DatetimeIndex(ds.time.values)
-    rz = running_mean(ds.rzsm.values, 5)
+    rz = running_mean(ds.rzsm.values if depth == REFERENCE_DEPTH else soil_moisture(ds, depth), 5)
     masked = mask_days(ds.snow_depth.values, ds.soil_temperature_level_1.values)
     land = (ds.land_frac.values >= 0.2)
     return time, rz, masked, land
@@ -79,15 +93,17 @@ def summarise(time, P, onset, low, years):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--variants", action="store_true")
+    ap.add_argument("--depth", default=REFERENCE_DEPTH, choices=list(DEPTHS))
     args = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
-    data = load()
+    data = load(depth=args.depth)
+    print(f"target depth {args.depth} cm")
     for high, low in [(40, 20)] + ([(30, 20), (40, 10)] if args.variants else []):
         print(f"\n=== thresholds {high}/{low} ===")
         time, P, onset = build(YEARS, YEARS, high, low, data)
         ids, lab, eligible = summarise(time, P, onset, low, YEARS)
         t, y, x = np.nonzero(onset)
-        np.savez_compressed(OUT / f"onsets_{high}_{low}.npz", t=t, y=y, x=x, episode=ids[t, y, x],
+        np.savez_compressed(OUT / label_file(high, low, args.depth), t=t, y=y, x=x, episode=ids[t, y, x],
                             time=time.strftime("%Y-%m-%d").to_numpy(dtype="U10"),
                             issue=issue_dates().strftime("%Y-%m-%d").to_numpy(dtype="U10"),
                             eligible=eligible, **{k: v for k, v in lab.items()})

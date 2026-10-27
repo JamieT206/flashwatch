@@ -1,12 +1,17 @@
 """Day-2 cross-checks of the onset labels against independent evidence.
 
     python -m flashwatch.labels.crosscheck      # after python -m flashwatch.labels
+    python -m flashwatch.labels.crosscheck --depth 0-28   # a target-depth variant (DESIGN.md T1)
 
 1. Known events: the largest episode inside each documented event's box and window.
 2. SMVI inventory (Osman et al.), 2005-2021: share of our episodes with an SMVI onset in the
    same cells within +/-14 days, against a chance level from SMVI dates of other years.
 3. Drought Monitor: share of large episodes whose cells worsen by 2+ categories within
    4 weeks of onset, against the same cells one year earlier/later.
+4. Season timing in each known event's box (first onset per cell, Mar-Nov of the event year).
+5. Lead over the Drought Monitor: share of onsets followed by a 1+ category worsening within
+   8 weeks (vs the same cells and dates 1-2 years away), and the median days to it.
+6. Episode coherence: share of onset cell-days in episodes of 10+ cells.
 Prints a table for the write-up; the thresholds for "pass" are judgement calls, so the
 numbers are shown rather than a verdict.
 """
@@ -33,8 +38,9 @@ KNOWN_EVENTS = [  # name, (lat0, lat1), (lon0, lon1), window
 MATCH_DAYS = 14
 
 
-def load_labels(high=40, low=20):
-    z = np.load(DATA / "labels" / f"onsets_{high}_{low}.npz")
+def load_labels(high=40, low=20, depth="0-100"):
+    from flashwatch.labels.__main__ import label_file
+    z = np.load(DATA / "labels" / label_file(high, low, depth))
     time = pd.DatetimeIndex(z["time"])
     onset = np.zeros((len(time), len(LAT), len(LON)), bool)
     onset[z["t"], z["y"], z["x"]] = True
@@ -176,13 +182,73 @@ def usdm_worsening(ep: pd.DataFrame, dates: pd.DatetimeIndex, cat: np.ndarray, m
                           "n_episodes": int(np.isfinite(real).sum())}])
 
 
+def event_timing(ep: pd.DataFrame) -> pd.DataFrame:
+    """Per known event: share of box cells with an onset Mar-Nov of the event year, and the
+    10th/50th/90th percentiles of each cell's first onset date."""
+    rows = []
+    for name, (la0, la1), (lo0, lo1), _ in KNOWN_EVENTS:
+        yr = int(name[:4])
+        e = ep[ep.lat.between(la0, la1) & ep.lon.between(lo0, lo1) & (ep.date.dt.year == yr)
+               & ep.date.dt.month.between(3, 11)]
+        box_cells = ((LAT >= la0) & (LAT <= la1)).sum() * ((LON >= lo0) & (LON <= lo1)).sum()
+        first = e.groupby(["iy", "ix"]).date.min()
+        row = {"event": name, "season_box_share": round(len(first) / box_cells, 2)}
+        if len(first):
+            q = first.quantile([0.1, 0.5, 0.9])
+            row.update(first_onset_p10=q.iloc[0].date(), p50=q.iloc[1].date(), p90=q.iloc[2].date())
+        rows.append(row)
+    return pd.DataFrame(rows)
+
+
+def usdm_lead(ep: pd.DataFrame, dates: pd.DatetimeIndex, cat: np.ndarray, weeks=8, n=20000, seed=0):
+    """Share of onsets (sampled) whose cell worsens by 1+ USDM category within `weeks`, against
+    the same cells and calendar dates 1-2 years away; median days from onset to that worsening."""
+    s = ep.sample(min(n, len(ep)), random_state=seed)
+
+    def hits(d, iy, ix):
+        i0 = dates.searchsorted(d, "right") - 1
+        ok = (i0 >= 0) & (i0 + weeks < len(dates))
+        base = cat[np.where(ok, i0, 0), iy, ix]
+        lead = np.full(len(d), np.nan)
+        for k in range(1, weeks + 1):
+            j = np.where(ok, i0 + k, 0)
+            worse = ok & np.isnan(lead) & (cat[j, iy, ix] > base)
+            lead[worse] = (dates[j[worse]] - d[worse]).days
+        return lead, ok
+
+    d, iy, ix = pd.DatetimeIndex(s.date), s.iy.to_numpy(), s.ix.to_numpy()
+    lead, ok = hits(d, iy, ix)
+    chance = np.mean([np.isfinite(lc)[oc].mean()
+                      for lc, oc in (hits(d + pd.DateOffset(years=dy), iy, ix) for dy in (-2, -1, 1, 2))])
+    return pd.DataFrame([{"check": f"USDM 1+ category worsening within {weeks} weeks of onset (sample)",
+                          "observed": round(np.isfinite(lead)[ok].mean(), 3), "chance": round(chance, 3),
+                          "n_episodes": int(ok.sum()),
+                          "median_days_to_worsening": float(np.nanmedian(lead))}])
+
+
+def coherence(ep: pd.DataFrame) -> pd.DataFrame:
+    sizes = ep.groupby("episode").size()
+    big = ep.episode.map(sizes) >= 10
+    return pd.DataFrame([{"check": "onset cell-days in episodes of 10+ cells", "observed": round(big.mean(), 3),
+                          "chance": np.nan, "n_episodes": len(sizes)}])
+
+
 def main():
+    import argparse
+
     from flashwatch.config import YEARS
-    time, onset, ids = load_labels()
+    from flashwatch.labels.__main__ import DEPTHS
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--depth", default="0-100", choices=list(DEPTHS))
+    args = ap.parse_args()
+    time, onset, ids = load_labels(depth=args.depth)
     ep = episode_table(time, ids)
+    print(f"target depth {args.depth} cm: {len(ep)} onset cell-days, {ep.episode.nunique()} episodes")
     print("Known events\n" + known_events(ep).to_string(index=False))
-    rows = [smvi_overlap(ep, smvi_onsets(range(2005, 2022)))]
-    rows.append(usdm_worsening(ep, *usdm_cube(YEARS)))
+    print("\nSeason timing in the event boxes\n" + event_timing(ep).to_string(index=False))
+    dates, cat = usdm_cube(YEARS)
+    rows = [smvi_overlap(ep, smvi_onsets(range(2005, 2022))), usdm_worsening(ep, dates, cat),
+            usdm_lead(ep, dates, cat), coherence(ep)]
     print("\n" + pd.concat(rows).to_string(index=False))
 
 
