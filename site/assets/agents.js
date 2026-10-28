@@ -7,14 +7,15 @@ const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "
 function pivots(p) {
   if (!p) { $("aPivots").hidden = true; return; }
   $("pivImg").innerHTML = `<img src="data/pivots/${p.stem}.png" alt="Aerial photo with the pivots SAM 3.1 found circled" class="aimg">
-    <div class="note">USDA aerial photo, ${(p.half_m * 2 / 1000).toFixed(1)} km across, near ${p.lat}, ${p.lon}. Red: pivots SAM 3.1 found.</div>`;
-  const tot = p.pivots.reduce((a, q) => a + q.acres, 0);
-  $("pivList").innerHTML = `<div class="step"><b>Asked</b> "${esc(p.phrase)}"</div>
-    <div class="step"><b>Found</b> ${p.pivots.length} pivots, ${tot.toLocaleString()} irrigated acres</div>
-    <table><thead><tr><th>Pivot</th><th>Acres</th><th>Across</th><th>Centre</th></tr></thead><tbody>
-    ${p.pivots.map((q, k) => `<tr><td>P${k + 1}</td><td>${q.acres}</td><td>${q.diameter_m} m</td><td>${q.lat}, ${q.lon}</td></tr>`).join("")}</tbody></table>
+    <div class="note">USDA aerial photo, ${(p.half_m * 2 / 1000).toFixed(1)} km across, near ${p.lat}, ${p.lon}. Red: full circles.
+      Orange: part and half circles, found by a second question to SAM 3.1.</div>`;
+  const tot = p.pivots.reduce((a, q) => a + q.acres, 0), part = p.pivots.filter(q => q.shape).length;
+  $("pivList").innerHTML = `<div class="step"><b>Asked</b> "${esc(p.phrase)}"${p.phrase_partial ? `, then "${esc(p.phrase_partial)}"` : ""}</div>
+    <div class="step"><b>Found</b> ${p.pivots.length} pivots${part ? ` (${part} part or half circles)` : ""}, ${tot.toLocaleString()} irrigated acres</div>
+    <table><thead><tr><th>Pivot</th><th>Acres</th><th>Shape</th><th>Across</th><th>Centre</th></tr></thead><tbody>
+    ${p.pivots.map((q, k) => `<tr><td>P${k + 1}</td><td>${q.acres}${q.acres_estimated ? "*" : ""}</td><td>${esc(q.shape || "full circle")}</td><td>${q.diameter_m} m</td><td>${q.lat}, ${q.lon}</td></tr>`).join("")}</tbody></table>
     <p class="note">The farm file this makes goes straight to the operator agent below. Crop, soil and pivot capacity start as guesses for the farmer
-      to correct. Partly planted circles (a corner cut out for a farmyard) aren't picked up yet.</p>`;
+      to correct. *Acres estimated from the box (about 3/4 of the circle for a part circle, half for a half circle): the farmer confirms them.</p>`;
 }
 
 function operator(o) {

@@ -4,8 +4,11 @@
 
 Fetches a USDA NAIP aerial image (public domain, USGS National Map image service) centred on the farm,
 asks SAM 3.1 to segment "center pivot irrigation circle", and turns each circular detection into a pivot:
-its centre (lat, lon), diameter and irrigated acres (a full circle, pi r^2). Boxes are enough for that, so
-masks aren't decoded. Writes data/agent/pivots/<lat>_<lon>.json and an annotated image beside it.
+its centre (lat, lon), diameter and irrigated acres (a full circle, pi r^2). A second pass asks for crop
+fields shaped like a circle or part of one, which finds the pivots the first pass misses: circles with a
+slice left out for a farmyard or a road (a square box: about three quarters of the circle's acres), and
+half circles (a box twice as long as wide). Their acres are estimates from the box, marked for the farmer to
+check. Boxes are enough for this, so masks aren't decoded. Writes data/agent/pivots/<lat>_<lon>.json and an annotated image beside it.
 Request and response format: dev.meta.ai/docs/sam (Responses API, streamed box and mask records).
 """
 
@@ -25,6 +28,7 @@ from flashwatch.config import DATA, load_env
 NAIP = "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPImagery/ImageServer/exportImage"
 R_EARTH = 6378137.0
 PHRASE = "center pivot irrigation circle"
+PARTIAL = "crop field shaped like a circle or part of a circle"
 M2_PER_ACRE = 4046.86
 BOX = re.compile(r"<\|box;([^|]*)\|>")
 
@@ -88,6 +92,40 @@ def to_pivots(bx: list[dict], lat: float, lon: float, half_m: float = 2400) -> l
     return sorted(pivots, key=lambda p: (-p["lat"], p["lon"]))
 
 
+def _iou(a, b) -> float:
+    ix = max(0, min(a[2], b[2]) - max(a[0], b[0]))
+    iy = max(0, min(a[3], b[3]) - max(a[1], b[1]))
+    inter = ix * iy
+    return inter / ((a[2] - a[0]) * (a[3] - a[1]) + (b[2] - b[0]) * (b[3] - b[1]) - inter)
+
+
+def to_partial(bx: list[dict], found: list[dict], lat: float, lon: float, half_m: float = 2400) -> list[dict]:
+    """Detections from the second pass that the circle pass didn't find: part circles (square box, about 3/4
+    of the circle's acres) and half circles (box about 2:1; the long side is the diameter)."""
+    out = []
+    for b in bx:
+        box = [b["x1"], b["y1"], b["x2"], b["y2"]]
+        if any(_iou(box, p["box_px"]) > 0.4 for p in found + out):
+            continue
+        mpp = 2 * half_m / b["w"]
+        wm, hm = (b["x2"] - b["x1"]) * mpp, (b["y2"] - b["y1"]) * mpp
+        edge = min(box) <= 1 or max(box[2] - b["w"], box[3] - b["h"]) >= -2
+        r = max(wm, hm) / max(min(wm, hm), 1)
+        if r <= 1.25 and 150 <= wm <= 1000:
+            d, share, shape = (wm + hm) / 2, 0.75, "at the photo's edge" if edge else "part circle"
+        elif 1.6 <= r <= 2.4 and 150 <= max(wm, hm) <= 1000 and not edge:
+            d, share, shape = max(wm, hm), 0.5, "half circle"
+        else:
+            continue
+        cx, cy = (b["x1"] + b["x2"]) / 2, (b["y1"] + b["y2"]) / 2
+        dn, de = (b["h"] / 2 - cy) * mpp, (cx - b["w"] / 2) * mpp
+        out.append({"lat": round(lat + dn / 111320, 5), "lon": round(lon + de / (111320 * math.cos(math.radians(lat))), 5),
+                    "diameter_m": round(d), "acres": round(share * math.pi * (d / 2) ** 2 / M2_PER_ACRE),
+                    "shape": shape, "acres_estimated": True,
+                    "box_px": [int(x) for x in box], "confidence": b.get("c")})
+    return out
+
+
 def annotate(image: bytes, pivots: list[dict], path) -> None:
     import io
     from PIL import Image, ImageDraw
@@ -95,7 +133,10 @@ def annotate(image: bytes, pivots: list[dict], path) -> None:
     dr = ImageDraw.Draw(im)
     for k, p in enumerate(pivots, 1):
         x1, y1, x2, y2 = p["box_px"]
-        dr.ellipse([x1, y1, x2, y2], outline=(216, 57, 51), width=4)
+        if p.get("shape"):                              # part or half circle: its box, in orange
+            dr.rectangle([x1, y1, x2, y2], outline=(240, 150, 30), width=4)
+        else:
+            dr.ellipse([x1, y1, x2, y2], outline=(216, 57, 51), width=4)
         dr.text(((x1 + x2) / 2 - 18, (y1 + y2) / 2 - 8), f"P{k} {p['acres']} ac", fill=(255, 255, 255))
     im.save(path)
 
@@ -111,15 +152,17 @@ def farm_config(res: dict, place: str) -> dict:
 
 def find(lat: float, lon: float, half_m: float = 2400) -> dict:
     img = naip(lat, lon, half_m)
-    text = segment(img)
-    bx = boxes(text)
+    bx = boxes(segment(img))
     piv = to_pivots(bx, lat, lon, half_m)
+    extra = boxes(segment(img, PARTIAL))
+    piv = sorted(piv + to_partial(extra, piv, lat, lon, half_m), key=lambda p: (-p["lat"], p["lon"]))
     out = DATA / "agent" / "pivots"
     out.mkdir(parents=True, exist_ok=True)
     stem = f"{lat:.3f}_{lon:.3f}"
     (out / f"{stem}.jpg").write_bytes(img)
     annotate(img, piv, out / f"{stem}_pivots.png")
-    res = {"lat": lat, "lon": lon, "half_m": half_m, "phrase": PHRASE, "detections": len(bx), "pivots": piv,
+    res = {"lat": lat, "lon": lon, "half_m": half_m, "phrase": PHRASE, "phrase_partial": PARTIAL,
+           "detections": len(bx) + len(extra), "pivots": piv,
            "image": "USDA NAIP via USGS National Map (public domain)"}
     (out / f"{stem}.json").write_text(json.dumps(res, indent=1))
     # For the site: the result and the annotated image (NAIP is public domain).
@@ -140,7 +183,8 @@ def main():
     r = find(a.lat, a.lon, a.half)
     print(f"{r['detections']} detections, {len(r['pivots'])} pivots:")
     for k, p in enumerate(r["pivots"], 1):
-        print(f"  P{k}: {p['acres']} acres, {p['diameter_m']} m across, at {p['lat']}, {p['lon']}")
+        print(f"  P{k}: {p['acres']} acres{' (' + p['shape'] + ', estimated)' if p.get('shape') else ''}, "
+              f"{p['diameter_m']} m across, at {p['lat']}, {p['lon']}")
 
 
 if __name__ == "__main__":

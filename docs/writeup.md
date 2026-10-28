@@ -37,8 +37,9 @@ So the question an irrigator faces every summer morning is simple: *start the pi
 - **Agents on Meta's models**, each working through tools and checked before anything reaches the
   farmer or a pivot:
   - *Pivot finder (SAM 3.1).* From the farm's location, a USDA aerial photo; SAM 3.1 finds every
-    centre-pivot circle; each becomes a pivot with its acres. In a Holt County, Nebraska test it found
-    the 11 full circles in a 4.8 km square.
+    centre-pivot circle; each becomes a pivot with its acres. A second question to SAM ("crop field shaped like a
+    circle or part of a circle") picks up the circles with a slice left out and the half circles. In a
+    Holt County, Nebraska test: the 11 full circles in a 4.8 km square, plus 4 part and half circles.
   - *Operator (Muse Spark).* For a farm with several pivots it reads each pivot's advice, water account,
     well and allocation and any voice note, and proposes starts and stops. Fixed farm rules check every
     command (well capacity, allocation, season, the advice); refusals go back to the agent with the
@@ -138,7 +139,7 @@ ERA5-Land soil, rain, heat (as of each forecast date)     ECMWF extended-range e
   open start/stop API; Leaf can read FieldNET's irrigation data today.
 - The water account uses daily means (ERA5-Land has no daily max and min here) and the FAO default wind;
   a farm's own rain gauge and weather station would sharpen it.
-- The pivot finder misses partial circles (a corner cut out for a farmyard).
+- The pivot finder estimates a part circle's acres from its box (masks not decoded yet).
 
 ## Built with
 

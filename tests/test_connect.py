@@ -189,3 +189,16 @@ def test_pivot_finder_reads_sam_boxes():
     piv = to_pivots(bx, 42.45, -98.6, half_m=2400)
     assert len(piv) == 1 and 100 < piv[0]["acres"] < 130
     assert piv[0]["lat"] > 42.45 and piv[0]["lon"] < -98.6        # upper-left of the image centre
+
+
+def test_second_pass_adds_part_and_half_circles_but_not_repeats():
+    from flashwatch.agent.pivots import to_partial, to_pivots
+    W = {"w": 1024, "h": 1024}                                   # 4.8 km photo: 4.69 m per pixel
+    full = to_pivots([{"x1": 100, "y1": 100, "x2": 260, "y2": 260, **W}], 42.0, -98.0)
+    extra = to_partial([{"x1": 102, "y1": 98, "x2": 262, "y2": 258, **W},       # the same circle again
+                        {"x1": 400, "y1": 400, "x2": 560, "y2": 560, **W},      # part circle
+                        {"x1": 600, "y1": 600, "x2": 760, "y2": 680, **W},      # half circle (2:1)
+                        {"x1": 300, "y1": 800, "x2": 340, "y2": 990, **W}],     # a strip: not a pivot
+                       full, 42.0, -98.0)
+    assert [p["shape"] for p in extra] == ["part circle", "half circle"]
+    assert extra[0]["acres"] == round(0.75 * full[0]["acres"]) and abs(extra[1]["acres"] - full[0]["acres"] / 2) <= 1
