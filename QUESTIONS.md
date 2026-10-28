@@ -152,6 +152,16 @@ when most of the county has an onset.
 **Default until you answer:** the region page leads with the calibrated $23M, with a selector for the
 textbook $99M. The farm page and the demo keep 35 days, so the July 3 demo reads as before.
 
+### Q12. Should the target be "damaging" flash droughts? (after the freeze, not now)
+The yield check (Q11) shows that onsets the Drought Monitor never marks D1 cost no yield on average.
+Those are dry spells that broke in time. About half our onsets are like that. A farmer only cares
+about the other half. A stricter label, such as "stays below the 20th percentile for 20+ days" or
+"the Monitor reaches D1 within 6 weeks", would aim warnings at the ones that cost money, and could
+make each warning worth more.
+**Recommendation:** not before Nov 4. The spec is settled and the test years are scored on the
+current label. Record it as the first post-hackathon experiment, and mention it in the write-up as
+an honest limitation. **Default:** no change.
+
 ### Q6. B0 (the BSS reference) is miscalibrated: strengthen its smoothing? **RESOLVED Oct 28: (a)**
 Done before any M1 score was read. `python -m flashwatch.models.tune_b0` grid-searches B0's time
 half-width tw, spatial radius sr and shrinkage k per lead (4 year-groups of 2005-2021, pooled
