@@ -50,13 +50,13 @@ def fold_table(cube, fb: FeatureBuilder, ref_years, target_years, high=40, low=L
     with np.errstate(invalid="ignore"):
         eligible = (feats["rz_pct"] > low) & cube.land[None] & keep_issue[:, None, None]
     n, iy, ix = np.nonzero(eligible)
-    df = pd.DataFrame({"year": fb.issues.year.to_numpy()[n], "issue": fb.issues[n], "iy": iy, "ix": ix,
-                       "woy": ((fb.issues.day_of_year.to_numpy()[n] - 1) // 7).clip(0, 52)})
+    cols = {"year": fb.issues.year.to_numpy()[n], "issue": fb.issues[n], "iy": iy, "ix": ix,
+            "woy": ((fb.issues.day_of_year.to_numpy()[n] - 1) // 7).clip(0, 52)}
     for k in list(feats):
-        df[k] = feats.pop(k)[n, iy, ix]           # pop: free each full grid once copied
+        cols[k] = feats.pop(k)[n, iy, ix]         # pop: free each full grid once copied
     for k, v in labels.items():
-        df[k] = v[n, iy, ix].astype(np.int8)
-    return df
+        cols[k] = v[n, iy, ix].astype(np.int8)
+    return pd.DataFrame(cols)                     # built once: no fragmented frame
 
 
 def run_cv(cube, models=("B0", "B1"), cv_years=CV_YEARS, pool_years=YEARS, fb=None, ff=None, log=print,
