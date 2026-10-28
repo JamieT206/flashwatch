@@ -201,10 +201,10 @@ def fetch_pack(ds: list[date], group: str) -> bool:
         h = (len(todo) + 1) // 2
         return all([fetch_pack(todo[:h], group), fetch_pack(todo[h:], group)])
     if res is not True:
-        # Each try costs a queue wait, so don't repeat a failing pack: fall back to one date per
-        # request for the rest of the run.
-        pack_size[group] = 1
-        log.warning("%s failed; falling back to single-date requests", name)
+        # Each try costs a queue wait, so don't repeat a failing pack: fetch its dates one by one.
+        # Later packs still go packed (a one-off failure, e.g. ECDS dismissing a queued job on
+        # Oct 28, used to switch the whole run to single dates, about 3 times slower).
+        log.warning("%s failed; fetching its dates one by one", name)
         return all([fetch(d, group, "form") for d in todo])
     written = split_pack(part, group)
     part.unlink()

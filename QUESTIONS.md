@@ -117,6 +117,19 @@ currently waiting in ECMWF's queue (up to ~1.5 h of work). Restart command:
 says "done _pack_..."). **Default until you answer:** leave it running as is; I won't stop it.
 **RESOLVED Oct 28 night: keep running in the current order (James).**
 
+### Q13. Restart the S2S downloader after all? (asked Oct 29, 4 am Sydney)
+At 23:29 on Oct 28 ECMWF dropped two of our queued jobs ("job not found"). The downloader then switched
+itself to one date per request for the rest of the run, about 3 times slower: 4 files in the next
+4.6 hours, against about 2 an hour before. 151 of 202 files are left. At this pace June-August arrive
+around Nov 1 and the rest around Nov 3, too late for a comfortable Nov 2 burst. The switch is fixed in
+the code (a failed pack now only affects its own dates), but the running process still has the old
+code. A restart with packing and summer first would finish June-August in about a day and everything
+in about two. Cost: the 3 requests now in ECMWF's queue are lost and may block new ones for up to
+~3 hours. Restart command:
+`$env:FW_S2S_PACK="16"; $env:FW_S2S_WORKERS="3"; $env:FW_S2S_FIRST="6,7,8"; python -m flashwatch.ingest s2s`.
+A different IP address wouldn't help: ECMWF's queue limit is per account, not per address.
+**Recommendation:** restart now. **Default until you answer:** leave it running; I won't stop it.
+
 ### Q10. Pivot control: may the agent ever act without the farmer's YES? Which accounts to pursue?
 The operator agent (DESIGN.md O10) plans pivot starts and stops, and the guard checks them. Nothing
 is sent without an approval. Two decisions:
