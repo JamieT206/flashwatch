@@ -1,0 +1,90 @@
+"""Write a checked weekly briefing for one place (DESIGN.md G1, HANDOVER 6.5).
+
+    python -m flashwatch.agent.brief --issue 2012-05-03 --place "Story County, Iowa" --lat 42.04 --lon -93.46
+
+The model gathers what it needs through the tools (agent/tools.py over the weekly pack), drafts the
+briefing, and the number checker traces every figure to a tool result. Untraced figures go back to
+the model with a request to fix them (at most 2 redrafts); any still left are cut with their
+sentences. Output: data/agent/brief_<issue>_<place>.json with the text, the tool calls it relied on
+and the checker's report.
+
+Replay guard: the model is told the date only as "this week" and must not use outside knowledge of
+what happened later (it may know famous droughts from its training data).
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+
+import pandas as pd
+
+from flashwatch.agent import pack as packs
+from flashwatch.agent.llm import Chat
+from flashwatch.agent.tools import Tools
+from flashwatch.agent.validate import drop_sentences, unsupported
+
+SYSTEM = """You are FlashWatch, a flash-drought early-warning analyst writing for a county agricultural
+extension office in the US Midwest. A flash drought is a rapid drop in root-zone soil moisture (from
+the 40th to below the 20th percentile within 20 days, lasting at least 10 days).
+
+Use the tools to look up the place you are asked about, the region overview and, if useful, the
+hotspots. Then write a briefing of at most 180 words with these headings:
+Risk this week / Why / What to watch / Suggested actions.
+
+Rules:
+- Every number you write must come from a tool result. Probabilities are fractions in the tools
+  (0.12 = 12%); you may write them as percentages. Do not compute new numbers, except "times normal"
+  values that a tool already gives.
+- Say how the risk compares with normal for this time of year; that matters more than the raw chance.
+- Translate drivers into plain language for farmers; no model jargon.
+- You do not know what happens after this week. Do not use outside knowledge of past events or years.
+- Be honest about uncertainty: these are probabilities, and most weeks with elevated risk do not end
+  in a flash drought."""
+
+
+def write(issue, place: str, lat: float, lon: float, chat: Chat | None = None, max_redrafts: int = 2) -> dict:
+    tools = Tools(pd.read_parquet(packs.path(issue)))
+    chat = chat or Chat()
+    ask = f"Write this week's briefing for {place} (latitude {lat}, longitude {lon})."
+    text, messages, log = chat.run([{"role": "system", "content": SYSTEM}, {"role": "user", "content": ask}],
+                                   tools.specs())
+    results = [r for _, _, r in log]
+    history = []
+    for _ in range(max_redrafts):
+        bad = unsupported(text, results)
+        history.append({"draft": text, "untraced": bad})
+        if not bad:
+            break
+        fix = (f"These figures do not appear in any tool result: {', '.join(bad)}. Rewrite the briefing using "
+               "only numbers from the tool results (call tools again if you need to). Reply with the briefing only.")
+        text, messages, more = chat.run(messages + [{"role": "user", "content": fix}], tools.specs())
+        log += more
+        results = [r for _, _, r in log]
+    bad = unsupported(text, results)
+    if bad:
+        text = drop_sentences(text, bad)
+    return {"issue": str(pd.Timestamp(issue).date()), "place": place, "lat": lat, "lon": lon,
+            "model": chat.model, "briefing": text, "cut_untraced": bad, "drafts": history,
+            "tool_calls": [{"tool": n, "args": a, "result": r} for n, a, r in log], "usage": chat.usage}
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--issue", required=True)
+    ap.add_argument("--place", required=True)
+    ap.add_argument("--lat", type=float, required=True)
+    ap.add_argument("--lon", type=float, required=True)
+    ap.add_argument("--model", help="override META_MODEL")
+    args = ap.parse_args()
+    out = write(pd.Timestamp(args.issue), args.place, args.lat, args.lon, Chat(model=args.model))
+    slug = re.sub(r"[^a-z0-9]+", "-", args.place.lower()).strip("-")
+    target = packs.OUT / f"brief_{out['issue']}_{slug}.json"
+    target.write_text(json.dumps(out, indent=2, default=float), encoding="utf-8")
+    print(out["briefing"])
+    print(f"\n[{len(out['tool_calls'])} tool calls, {len(out['drafts'])} draft(s), cut: {out['cut_untraced']}; {target}]")
+
+
+if __name__ == "__main__":
+    main()

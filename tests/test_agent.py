@@ -65,3 +65,23 @@ def test_tools_return_traceable_numbers():
     json.dumps([a, hs, t.overview()])                  # all JSON-ready
     for name, (spec, fn) in t.specs().items():
         assert spec["description"] and callable(fn)
+
+
+def test_briefing_redrafts_untraced_numbers(tmp_path, monkeypatch):
+    from flashwatch.agent import brief, pack
+    monkeypatch.setattr(pack, "OUT", tmp_path)
+    fake_pack().to_parquet(pack.path("2012-05-03"))
+    script = iter([
+        {"role": "assistant", "content": None, "tool_calls": [{"id": "1", "type": "function", "function":
+            {"name": "overview", "arguments": "{}"}}]},
+        {"role": "assistant", "content": "Risk this week: 37% chance of onset."},       # 37% is invented
+        {"role": "assistant", "content": "Risk this week: elevated, about normal for May."},
+    ])
+
+    def post(path, body):
+        return {"choices": [{"message": next(script)}]}
+
+    out = brief.write("2012-05-03", "Test County", 41.0, -92.5, chat=Chat(key="x", post=post))
+    assert out["drafts"][0]["untraced"] == ["37%"]
+    assert out["briefing"].startswith("Risk this week: elevated") and out["cut_untraced"] == []
+    assert out["tool_calls"][0]["tool"] == "overview"
