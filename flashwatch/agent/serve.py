@@ -4,6 +4,7 @@
 
 GET /health -> {"ok": true, "model": ...}
 POST /ask {"lat", "lon", "year", "date", "crop", "question", "history": [...]} -> {"answer", "tools", "cut_untraced"}
+POST /pivots {"lat", "lon"} -> the pivots SAM 3.1 finds around the farm (agent/pivots.py)
 Binds to 127.0.0.1 only: the API key stays on this machine, and the static site never sees it.
 """
 
@@ -42,11 +43,16 @@ class Handler(BaseHTTPRequestHandler):
             self._send(404, {"error": "not found"})
 
     def do_POST(self):
-        if self.path != "/ask":
+        if self.path not in ("/ask", "/pivots"):
             self._send(404, {"error": "not found"})
             return
         try:
             q = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
+            if self.path == "/pivots":
+                from flashwatch.agent.pivots import find
+                r = find(round(float(q["lat"]), 3), round(float(q["lon"]), 3))
+                self._send(200, {**r, "image": f"data/pivots/{float(q['lat']):.3f}_{float(q['lon']):.3f}.png"})
+                return
             farm = Farm(float(q["lat"]), float(q["lon"]), int(q["year"]), q["date"], q.get("crop", "corn"),
                         q.get("soil", "Silt loam"), float(q.get("gpm_per_acre", 5.0)), q.get("irrigation"))
             hist = [m for m in q.get("history", [])[-8:] if m.get("role") in ("user", "assistant")]

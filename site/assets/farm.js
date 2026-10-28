@@ -655,6 +655,8 @@ async function initAsk() {
     const r = await fetch(`${ASK}/health`, { signal: AbortSignal.timeout(1500) });
     if (!r.ok) return;
     $("askCard").hidden = false;
+    $("pivotFind").hidden = false;
+    $("pivotBtn").onclick = findPivots;
   } catch (e) { return; }        // no local server: no chat box (the published site has none)
   $("askForm").onsubmit = async ev => {
     ev.preventDefault();
@@ -684,6 +686,30 @@ async function initAsk() {
     } catch (e) { $("askLog").querySelector(".pending")?.remove(); bubble("bot", "Can't reach the FlashWatch agent on this computer."); }
   };
 }
+// SAM 3.1 through the local server: outline the pivots around the pin; clicking one makes it the farm.
+async function findPivots() {
+  $("pivotBtn").disabled = true;
+  $("pivotNote").textContent = "Looking at the aerial photo...";
+  try {
+    const r = await fetch(`${ASK}/pivots`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lat: S.lat, lon: S.lon }) });
+    const p = await r.json();
+    if (p.error) throw new Error(p.error);
+    if (S.pivotLayer) S.pivotLayer.remove();
+    S.pivotLayer = L.layerGroup().addTo(S.map);
+    p.pivots.forEach((q, k) => {
+      L.circle([q.lat, q.lon], { radius: q.diameter_m / 2, color: css("--act"), weight: 2, fillOpacity: 0.08 })
+        .bindTooltip(`P${k + 1}: ${q.acres} acres`).on("click", () => {
+          S.over.acres = q.acres; saveOver(); setLocation(q.lat, q.lon); renderSettings();
+        }).addTo(S.pivotLayer);
+    });
+    if (p.pivots.length) S.map.fitBounds(L.featureGroup(S.pivotLayer.getLayers()).getBounds().pad(0.2));
+    $("pivotNote").textContent = p.pivots.length
+      ? `Found ${p.pivots.length} pivots (${p.pivots.reduce((a, q) => a + q.acres, 0).toLocaleString()} acres). Click one to make it your field.`
+      : "No full pivot circles in this photo. Try moving the pin closer to your fields.";
+  } catch (e) { $("pivotNote").textContent = `Couldn't run the pivot finder (${e.message}).`; }
+  $("pivotBtn").disabled = false;
+}
+
 const escHtml = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 // ---------- decision cards: nitrogen, fungicide, silage, hay ----------
