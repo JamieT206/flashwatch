@@ -75,6 +75,15 @@ moisture and precipitation only. Dropped: days 29-46, solar radiation, 0-20 cm s
 temperature, none of which any feature or B2 uses. Estimated finish ~Oct 30 (Sydney). If you
 want the dropped fields for anything (e.g. the demo), say so; they'd cost about 2x the queue time.
 
+### Q7. Add NOAA's GEFS as a second forecast model? (decide after the early M2 results)
+ECMWF is the best single source for weeks 1-4 and stays primary (DESIGN.md W). The realistic upgrade
+is a second, independent model: combining two usually helps at weeks 2-4, and GEFS is public domain
+(which also covers the Q2 licence worry). Cost: ~450 GB of downloading (global files; we keep only a
+few MB), a new ingest module, about half a day of my time, and its archive stops in 2019/20, so
+2020-2024 need the operational archive. **Recommendation:** decide once we know how much real ECMWF
+forecasts keep of the perfect-weather ceiling and how steeply skill rises with forecast quality
+(both runs queued). **Default until you answer:** ECMWF only; no GEFS work started.
+
 ### Q6. B0 (the BSS reference) is miscalibrated: strengthen its smoothing? **RESOLVED Oct 28: (a)**
 Done before any M1 score was read. `python -m flashwatch.models.tune_b0` grid-searches B0's time
 half-width tw, spatial radius sr and shrinkage k per lead (4 year-groups of 2005-2021, pooled

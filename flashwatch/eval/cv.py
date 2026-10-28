@@ -121,6 +121,7 @@ def main():
     ap.add_argument("--usdm", action="store_true", help="add the Drought Monitor features (F9; on trial)")
     ap.add_argument("--oracle", choices=["native", "coarse"],
                     help="DIAGNOSTIC: give M2 the weather that actually happened (reads the future; eval/oracle.py)")
+    ap.add_argument("--oracle-skill", type=float, help="with --oracle: blur the weather to this correlation with the truth")
     args = ap.parse_args()
     holdout = args.holdout or (FAST_HOLDOUT if args.fast else None)
     thin = args.thin or (2 if args.fast else 1)
@@ -135,7 +136,7 @@ def main():
     from flashwatch.forecast import FCST_STORE
     if args.oracle:
         from flashwatch.eval.oracle import PerfectWeather
-        ff = PerfectWeather(cube, issues, coarse=args.oracle == "coarse")
+        ff = PerfectWeather(cube, issues, coarse=args.oracle == "coarse", skill=args.oracle_skill)
     elif FCST_STORE.exists():
         import xarray as xr
         from flashwatch.features.forecast import ForecastFeatures

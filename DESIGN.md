@@ -156,6 +156,7 @@ simple cap (no single week above the 28-day value) would tidy it if needed.
 | Any in 28 days | 5.4% | **42.7%** (41.0-45.2) | 0.23 -> 0.68 | 0.55 -> 0.93 |
 
   In 2012 the perfect-weather model catches both waves (actual week-2 rate 28% on May 3 / 19% on Aug 13; M2 13% then 26% the next issue, and 19%), where M1 stays at 3-5%.
+- *Blurred forecasts* (`--oracle-skill r`): the same test with the perfect weather mixed with large-scale noise so it matches the truth with correlation r = 0.7 / 0.5 / 0.3, to map how flash-drought skill depends on forecast quality. Results below when in.
 - *Meaning.* The target is sound and the onset waves are not noise; they are what weather forecasts exist to see. The ceiling is about 15x M1's skill at week 2. The open question is how much of it the real ECMWF forecasts keep (good at week 1, weaker at week 2, weak beyond), so M2 on real forecasts is the decisive run. The `native` (0.25 degree) variant is the absolute upper bound.
 
 ---
@@ -191,6 +192,24 @@ cross-validation per horizon; keep the simpler option unless the improvement is 
   and for non-specialists; worth pulling forward if time allows.
 - L6. More ECMWF lead time (days 29-46), downloaded two weeks at a time, to see how far ahead M2 can go (A3).
 - L7. Year as a category (diagnostic, F10).
+
+### W. Weather forecast sources (Oct 28, James: "are we using the best available forecasts?")
+
+We use forecasts, we don't build them. What a source must have to be usable for training: past
+forecasts ("reforecasts") from **one unchanged model** over many years (2005-2024 here), so the model
+learns how that forecast behaves, with weeks 1-4 covered.
+
+| Source | Strength | Fit for FlashWatch |
+| --- | --- | --- |
+| **ECMWF extended-range ensemble** (what we use: S2S database, 2025 model, 11 members, 20 years, 1.5 degrees) | Generally the most skilful system at weeks 1-4 in the international comparisons | The right primary source. Limits: 11 members, 1.5 degree archive, non-commercial licence (Q2), slow queue |
+| **NOAA GEFSv12 reforecast** (checked on AWS Oct 28) | Second-tier but independent physics; combining two models usually beats either one at weeks 2-4 | Public domain. 2000-2019 (plus part of 2020), a start every day, 5 members to day 16 and 11 members to day 35 on Wednesdays; 0.25 degree to day 10, 0.5 after. Files are global (no cropping on the server), so about 1 GB of transfer per start date for our 4 variables and 11 members, roughly 450 GB in total; a few MB kept after cropping. 2020-2024 would come from the operational GEFS archive (same model since Sept 2020; not yet checked) |
+| Other centres in the S2S database (UK Met Office, Canada, NCEP CFSv2, ...) | Extra models for a multi-model blend | Same slow ECMWF queue we're already waiting on; their past-forecast periods differ and are often shorter |
+| AI weather models (ECMWF AIFS, Google GraphCast / GenCast / WeatherNext, Pangu, FuXi) | Match or beat physics models over the first 10-15 days | Mostly stop at 10-15 days, and there is no 20-year archive of their past forecasts to train and test on; making one means running them ourselves on GPUs for ~2,000 start dates. A candidate for a live product's week 1-2 later, not for this build |
+| NOAA CPC official outlooks (6-10 day, 8-14 day, weeks 3-4) | Forecaster-blended, already combine ECMWF and GEFS | Coarse categories (above / near / below normal); archive length and format not yet checked |
+
+Plan: ECMWF stays primary. Whether to add GEFS (Q7) depends on (1) how much of the perfect-weather
+ceiling the real ECMWF keeps (early M2) and (2) the blurred-forecast curve, which says how much
+flash-drought skill a better forecast would buy.
 
 ---
 
