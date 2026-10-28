@@ -64,13 +64,35 @@ function glimmer(g) {
       Status: training data ready; fine-tune scheduled.</p>`;
 }
 
+function then(o, warn) {
+  if (!o) return "";
+  const txt = o.flash_drought_within_14_days ? `A flash drought began within 2 weeks${warn ? "" : " anyway"}.` : "No flash drought in the next 2 weeks.";
+  return `<span class="then ${o.right ? "right" : "wrong"}">${o.right ? "Right" : "Wrong"}: ${txt}</span>`;
+}
+
 function watch(w) {
   if (!w) { $("aWatch").hidden = true; return; }
   $("watch").innerHTML = w.farms.map(f => `<div><div class="tt">${esc(f.name)}: ${f.watering} ${f.crop}</div>
     <div class="note">${f.alerts.length} texts from ${f.dates_checked} forecasts, June to August ${w.year}</div>
-    <ul class="texts">${f.alerts.map(a => `<li class="${a.level}"><span class="when">${new Date(a.date + "T12:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>${esc(a.text)}${a.by !== "template" ? ` <span class="by">${esc(a.by)}</span>` : ""}</li>`).join("")}</ul></div>`).join("");
+    <ul class="texts">${f.alerts.map(a => `<li class="${a.level}"><span class="when">${new Date(a.date + "T12:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>${esc(a.text)}${a.by !== "template" ? ` <span class="by">${esc(a.by)}</span>` : ""}${then(a.outcome, a.level !== "info")}</li>`).join("")}</ul></div>`).join("");
+}
+
+const KIND = { "irrigated:start": "Start the pivot today", "irrigated:watch": "Risk rising: not yet", "irrigated:ease": "Risk has eased",
+  "rain-fed:act": "Act now on a rain-fed decision" };
+
+function scorecard(c) {
+  if (!c) { $("scorecard").hidden = true; return; }
+  const yrs = c.years.length > 1 ? `${c.years[0]}-${c.years[c.years.length - 1]} (${c.years.length} seasons)` : c.years[0];
+  $("scorecard").innerHTML = `<div class="tt">How often were the texts right?</div>
+    <p class="note">The same watcher on ${c.farms} farms spread across the region, irrigated and rain-fed corn, every summer in ${yrs}.
+      Each season was forecast by a model that never saw it. A flash drought followed ${c.normal_pct}% of all summer forecast dates
+      within 2 weeks (soil not already in drought): that's the normal chance to beat.</p>
+    <table><thead><tr><th>Text</th><th>Sent</th><th>Flash drought within 2 weeks</th><th>Times normal</th></tr></thead><tbody>
+    ${c.kinds.map(k => `<tr><td>${KIND[k.watering + ":" + k.kind] || k.kind}</td><td>${k.sent.toLocaleString()}</td>
+      <td>${k.followed_by_flash_drought_pct}%</td><td>${k.times_normal ?? "-"}</td></tr>`).join("")}</tbody></table>
+    <p class="note">${c.onsets_warned_pct}% of the ${c.onsets.toLocaleString()} summer flash droughts at these farms had a warning text in the 2 weeks before.</p>`;
 }
 
 fetch("data/agents.json").then(r => r.json()).then(d => {
-  pivots(d.pivots); operator(d.operator); watch(d.alerts); voice(d.voice); brief(d.brief); glimmer(d.glimmer);
+  pivots(d.pivots); operator(d.operator); watch(d.alerts); scorecard(d.scorecard); voice(d.voice); brief(d.brief); glimmer(d.glimmer);
 }).catch(() => { document.querySelector(".intro").insertAdjacentHTML("afterend", "<p class='note'>Agent runs not built yet (python -m flashwatch.site.agents).</p>"); });

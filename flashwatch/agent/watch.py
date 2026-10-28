@@ -121,34 +121,41 @@ def template(e: dict, sub: dict) -> str:
     return f"{sub['name']}: {e['kind']}"
 
 
+def follow(sub: dict, year: int, dates=None, chat=None, llm: int = 0) -> tuple[list[dict], int, int]:
+    """One farm through one season: (alerts, forecast dates checked, Muse Spark drafts left)."""
+    farm0 = Farm(sub["lat"], sub["lon"], year, "06-01", sub["crop"], sub["soil"], sub["gpm"] or 5.0, irrigation={})
+    ds = dates or [d for d in farm0.data.dates if "06-01" <= d <= "08-31"]
+    prev, last_stress, alerts = None, None, []
+    usual = usual_irrigation(sub, year, ds[-1]) if sub["watering"] == "irrigated" else {}
+    for md in ds:
+        irr = {k: v for k, v in usual.items() if k < md}
+        farm = Farm(sub["lat"], sub["lon"], year, md, sub["crop"], sub["soil"], sub["gpm"] or 5.0, irrigation=irr)
+        s = state(farm, sub)
+        for e in events(prev, s, sub, last_stress, f"{year}-{md}"):
+            if e["kind"] == "water_now":
+                last_stress = f"{year}-{md}"
+            text, by = template(e, sub), "template"
+            if chat and llm > 0:
+                draft = (chat.complete([{"role": "system", "content": WRITER},
+                                        {"role": "user", "content": json.dumps({"farm": sub["name"], "date": f"{year}-{md}", **e})}]).get("content") or "").strip()
+                if draft and not unsupported(draft, [e["facts"], {"date": [year, int(md[:2]), int(md[3:])]}]):
+                    text, by = draft[:200], chat.model
+                llm -= 1
+            alerts.append({"date": f"{year}-{md}", "kind": e["kind"], "level": e["level"], "text": text, "by": by, "facts": e["facts"]})
+        prev = s
+    return alerts, len(ds), llm
+
+
 def run(year: int, llm: int = 0, dates=None) -> dict:
+    from flashwatch.agent.scorecard import score_alerts
     chat = None
     if llm:
         from flashwatch.agent.llm import Chat
         chat = Chat(timeout=300)
     out = {"year": year, "farms": []}
     for sub in SUBSCRIBERS:
-        farm0 = Farm(sub["lat"], sub["lon"], year, "06-01", sub["crop"], sub["soil"], sub["gpm"] or 5.0, irrigation={})
-        ds = dates or [d for d in farm0.data.dates if "06-01" <= d <= "08-31"]
-        prev, last_stress, alerts = None, None, []
-        usual = usual_irrigation(sub, year, ds[-1]) if sub["watering"] == "irrigated" else {}
-        for md in ds:
-            irr = {k: v for k, v in usual.items() if k < md}
-            farm = Farm(sub["lat"], sub["lon"], year, md, sub["crop"], sub["soil"], sub["gpm"] or 5.0, irrigation=irr)
-            s = state(farm, sub)
-            for e in events(prev, s, sub, last_stress, f"{year}-{md}"):
-                if e["kind"] == "water_now":
-                    last_stress = f"{year}-{md}"
-                text, by = template(e, sub), "template"
-                if chat and llm > 0:
-                    draft = (chat.complete([{"role": "system", "content": WRITER},
-                                            {"role": "user", "content": json.dumps({"farm": sub["name"], "date": f"{year}-{md}", **e})}]).get("content") or "").strip()
-                    if draft and not unsupported(draft, [e["facts"], {"date": [year, int(md[:2]), int(md[3:])]}]):
-                        text, by = draft[:200], chat.model
-                    llm -= 1
-                alerts.append({"date": f"{year}-{md}", "kind": e["kind"], "level": e["level"], "text": text, "by": by, "facts": e["facts"]})
-            prev = s
-        out["farms"].append({**sub, "dates_checked": len(ds), "alerts": alerts})
+        alerts, n, llm = follow(sub, year, dates, chat, llm)
+        out["farms"].append({**sub, "dates_checked": n, "alerts": score_alerts(alerts, sub, year)})
     if chat:
         out["usage"] = chat.usage
     (SITE / "data" / "alerts").mkdir(parents=True, exist_ok=True)

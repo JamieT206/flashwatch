@@ -139,3 +139,30 @@ def test_ask_flashwatch_cuts_figures_not_in_tool_results():
     assert chat.calls == 2                                   # one redraft asked for
     assert "66%" in r["answer"] and "$45" not in r["answer"]
     assert r["cut_untraced"]
+
+
+def test_scorecard_checks_each_forecast_text_against_the_next_14_days():
+    from flashwatch.agent.scorecard import began_within, is_warning, score_alerts
+
+    class Data:
+        def record(self, lat, lon):
+            return {"onsets": ["07-05"]}
+
+    assert began_within(2012, "07-03", ["07-05"]) and not began_within(2012, "07-05", ["07-05"])
+    assert not began_within(2012, "06-20", ["07-05"])          # 15 days ahead: outside the window
+    alerts = [{"date": "2012-07-03", "kind": "start", "facts": {}},
+              {"date": "2012-06-01", "kind": "ease", "facts": {}},
+              {"date": "2012-07-01", "kind": "act_fungicide", "facts": {"note": "already in drought"}},
+              {"date": "2012-07-01", "kind": "water_now", "facts": {}}]
+    out = score_alerts(alerts, {"lat": 0, "lon": 0}, 2012, Data())
+    assert out[0]["outcome"] == {"flash_drought_within_14_days": True, "right": True}
+    assert out[1]["outcome"]["right"]                         # eased, and nothing came
+    assert not is_warning(alerts[2]) and "outcome" not in out[2] and "outcome" not in out[3]
+
+
+def test_blend_is_a_log_odds_mean():
+    import numpy as np
+    from flashwatch.eval.blend import mean_prob
+    a, b = np.array([0.1, 0.5]), np.array([0.1, 0.9])
+    assert np.allclose(mean_prob([a, a]), a)
+    assert np.isclose(mean_prob([b[1:], 1 - b[1:]])[0], 0.5)

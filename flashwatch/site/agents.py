@@ -53,9 +53,14 @@ def main():
                           "stats": _load(DATA / "glimmer" / "stats.json")}
     al = _load(SITE / "data" / "alerts" / "2012.json")
     if al:
+        from flashwatch.agent.scorecard import score_alerts
         out["alerts"] = {"year": al["year"], "farms": [{k: f[k] for k in ("name", "crop", "watering", "dates_checked")} |
-                                                        {"alerts": [{k: x[k] for k in ("date", "level", "text", "by")} for x in f["alerts"]]}
+                                                        {"alerts": [{k: x[k] for k in ("date", "level", "text", "by", "outcome") if k in x}
+                                                                    for x in score_alerts(f["alerts"], f, al["year"])]}
                                                         for f in al["farms"]]}
+    sc = _load(SITE / "data" / "scorecard.json")
+    if sc:
+        out["scorecard"] = sc
     (SITE / "data" / "agents.json").write_text(json.dumps(out))
     print("agents.json:", ", ".join(out))
 
