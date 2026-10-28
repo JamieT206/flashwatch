@@ -84,7 +84,15 @@ few MB), a new ingest module, about half a day of my time, and its archive stops
 forecasts keep of the perfect-weather ceiling and how steeply skill rises with forecast quality
 (both runs queued). **Default until you answer:** ECMWF only; no GEFS work started.
 
-### Q8. Decision dashboard (DESIGN.md O): scope and what gives
+### Q8. Decision dashboard (DESIGN.md O): scope and what gives **RESOLVED Oct 28: scope (a) and (c); nothing cut**
+James: agree the dashboard scope; **cut nothing** from the build plan (it may still fit, or come after
+the deadline). Priorities: (1) anything that meaningfully improves prediction, (2) making FlashWatch a
+genuinely useful tool for farmers, (3) the modelling nice-to-haves. Hero action: irrigation first,
+then hay and feed (both available; James notes buying feed early is partly zero-sum between
+neighbours). Effectiveness must vary with days of notice (DESIGN.md O1a), or the engine would always
+wait for the last moment. James is asking around for farmers to road-test it.
+
+Original question:
 Your idea, fleshed out in DESIGN.md O: per-location action cards (act now / not yet / trigger) from a
 cost/loss engine with user-edited costs by days of notice, triggers from the ECMWF ensemble members,
 dollars via crop yield response and a price, Muse alerts and Q&A. Evidence so far: week-1 forecasts

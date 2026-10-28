@@ -47,3 +47,23 @@ def test_forecast_features_shapes_and_isolation():
     train = np.array([d.year != 2007 for d in issues])
     for k in f0:
         np.testing.assert_array_equal(f0[k][train], f1[k][train], err_msg=k)
+
+
+def test_member_features_match_names_and_isolation():
+    years = list(range(2005, 2011))
+    ds = fake_fcst(years)
+    issues = pd.DatetimeIndex([f"{y}-06-13" for y in years])
+    ff = ForecastFeatures(ds, issues)
+    ref = [2005, 2006, 2008, 2009, 2010]
+    ens, m0, m1 = ff.build(ref), ff.build_member(ref, 0), ff.build_member(ref, 1)
+    assert set(m0) <= set(ens) and "f_tp_w2_z" in m0 and "f_dryhot_w12_z" in m0
+    assert not np.allclose(m0["f_tp_w1_z"], m1["f_tp_w1_z"], equal_nan=True)     # members differ
+    # Members are noisier than the ensemble mean but on the same z scale (pooled member climatology).
+    assert 0.5 < np.nanstd(m0["f_tp_w1_z"]) < 2
+    ds2 = ds.copy(deep=True)
+    for v in ("tp", "t2m", "d2m", "sm100"):
+        ds2[v].loc[dict(hyear=2007)] = ds2[v].sel(hyear=2007) * 3 + 1
+    p0 = ForecastFeatures(ds2, issues).build_member(ref, 0)
+    train = np.array([d.year != 2007 for d in issues])
+    for k in m0:
+        np.testing.assert_array_equal(m0[k][train], p0[k][train], err_msg=k)

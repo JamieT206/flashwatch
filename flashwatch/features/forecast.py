@@ -14,6 +14,10 @@ Derived features (F8, Oct 28; the early M2 run used the week-2 forecasts poorly)
   hot-and-dry-air (VPD in the upper tercile), i.e. the ensemble's chance of a flash-drought week;
 - f_dryhot_w<k>_z: VPD anomaly minus precipitation anomaly (ensemble mean);
 - f_sm100chg_w<k>_z: forecast change in 0-100 cm soil moisture from week 1 to week k (k = 2-4, 12).
+
+Member by member (P11, `build_member`): the same z and dry-hot features for one ensemble member, so
+M2 can be trained on each member's weather and its predictions averaged over the members. The
+ensemble mean blurs the strong hot, dry spells that cause onsets; single members keep them.
 """
 
 from __future__ import annotations
@@ -57,15 +61,50 @@ class ForecastFeatures:
         self.fields = f                                   # each (issue, hyear, member, week, lat, lon)
         self.idx = np.array([self.row.get((d.strftime("%m-%d"), d.year), (-1, -1)) for d in self.issues])
 
+    NAMES = [f"w{w}" for w in range(1, 5)] + ["w12"]
+
+    def _extended(self) -> dict[str, np.ndarray]:
+        """Weeks 1-4 plus the weeks 1+2 mean; sm100chg = soil moisture minus its week-1 value."""
+        if not hasattr(self, "_ext"):
+            f = {v: np.concatenate([a, a[:, :, :, :2].mean(3, keepdims=True)], 3) for v, a in self.fields.items()}
+            if "sm100" in f:
+                f["sm100chg"] = f["sm100"] - f["sm100"][:, :, :, :1]
+            self._ext = f
+        return self._ext
+
+    def build_member(self, ref_years, m: int) -> dict[str, np.ndarray]:
+        """Member m's own anomalies, z against all pooled members of the reference years (same names
+        as the ensemble-mean z features), and its dry-hot index."""
+        ref = np.isin(self.hyears, list(ref_years))
+        have = np.where(self.idx[:, 0] >= 0)[0]
+        n, grid = len(self.issues), (len(self.lats), len(self.lons))
+        f, names, res = self._extended(), self.NAMES, {}
+        for k in have:
+            i, j = self.idx[k]
+            pool = ref.copy()
+            pool[j] = False
+            z = {}
+            for v, a in f.items():
+                mem = a[i][pool]                                    # (years, M, W, la, lo)
+                with np.errstate(invalid="ignore", divide="ignore"):
+                    z[v] = (a[i, j, m] - mem.mean((0, 1))) / mem.std((0, 1))
+                for w, nm in enumerate(names):
+                    if not (v == "sm100chg" and nm == "w1"):
+                        res.setdefault(f"f_{v}_{nm}_z", np.full((n,) + grid, np.nan, np.float32))[k] = z[v][w]
+            if "vpd" in z:
+                for w, nm in enumerate(names):
+                    res.setdefault(f"f_dryhot_{nm}_z", np.full((n,) + grid, np.nan, np.float32))[k] = z["vpd"][w] - z["tp"][w]
+        return {name: bilinear(r, self.lats, self.lons) for name, r in res.items()}
+
+    @property
+    def n_members(self) -> int:
+        return next(iter(self.fields.values())).shape[2]
+
     def build(self, ref_years) -> dict[str, np.ndarray]:
         ref = np.isin(self.hyears, list(ref_years))
         have = np.where(self.idx[:, 0] >= 0)[0]
         n, grid = len(self.issues), (len(self.lats), len(self.lons))
-        # Weeks 1-4 plus the weeks 1+2 mean; sm100chg = soil moisture minus its week-1 value.
-        f = {v: np.concatenate([a, a[:, :, :, :2].mean(3, keepdims=True)], 3) for v, a in self.fields.items()}
-        if "sm100" in f:
-            f["sm100chg"] = f["sm100"] - f["sm100"][:, :, :, :1]
-        names = [f"w{w}" for w in range(1, 5)] + ["w12"]
+        f, names = self._extended(), self.NAMES
         res = {}
 
         def put(key, k, val):

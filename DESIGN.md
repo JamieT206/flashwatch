@@ -197,6 +197,11 @@ survives); M1 skill week 1 **4.3%**, week 2 **1.2%**, any-28 **4.6%** (before: 4
 | Any in 28 days | 42.7% | 27.7% | 20.2% | 12.4% | 5.4% |
 
   Reading it against the real ECMWF accuracy: week 1 forecasts sit at 0.8-0.97, so M2 "should" reach roughly 17-25% at week 1 (it gets 14.3% so far); week 2 sits at 0.4-0.65, so roughly 5-9% (it gets 2.0%). So **M2 is not yet using the forecasts as well as forecasts of that quality allow**, most of all at week 2. That points at our side (training data and features), which we control, not at the forecasts. Caveats: blur noise is a simplification of real forecast errors, and early M2 is scored on spring dates only. Next: re-run M2 as dates arrive; try forecast features built the way the land features are (combined dry-and-hot index, forecast soil-moisture change, week 1+2 totals).
+- *P11, M2 member by member* (Oct 28, `--members`; for priority 1). The diagnosis above says the
+  ensemble *mean* blurs the strong hot, dry spells. So: train M2 on each of the 11 members' own weather
+  (z against all members' climatology; one copy of each training row per member), and average its
+  predictions over the members. The ensemble-level features (spread, share hot-and-dry) stay as they
+  are. This is the same machinery O2 needs for "risk given this kind of week". Results: pending.
 - *Meaning.* The target is sound and the onset waves are not noise; they are what weather forecasts exist to see. The ceiling is about 15x M1's skill at week 2. The open question is how much of it the real ECMWF forecasts keep (good at week 1, weaker at week 2, weak beyond), so M2 on real forecasts is the decisive run. The `native` (0.25 degree) variant is the absolute upper bound.
 
 ---
@@ -355,7 +360,7 @@ of forecast scenarios hot and dry). About 7,600 tokens per briefing. Map check: 
 Falls, Chicago, St. Louis; the hotspot tool's top 3 were Des Moines, Chicago, Detroit (1 of 3 agree).
 Not yet looked into: the map may need clearer contrast or a bigger k.
 
-## O. From forecast to action: the decision dashboard (proposed Oct 28, James; under discussion)
+## O. From forecast to action: the decision dashboard (James, Oct 28; scope agreed, Q8)
 
 James: an abstract predictor isn't compelling; a tool that tells a farmer *what to do this week, at
 their place* is. The forecasting spec doesn't change; this is a layer on top of it. Nothing here is
@@ -421,6 +426,53 @@ Each action is a row in a user-editable config (defaults are placeholders, label
 Given FlashWatch's chance p of the event: expected value of acting now = p x avoided - (1 - p) x
 cost x (1 - salvage) - p x cost. Act when that is positive (p above the break-even ratio). The range
 comes from the forecast scenarios (O2), not just the mean.
+
+### O1a. How much is one more day of notice worth? (built: `flashwatch/decide`, Oct 28)
+
+James: without effectiveness falling as notice shrinks, an engine would always wait until the last
+moment to maximise certainty. So each action needs a value-by-notice curve.
+
+**Irrigation, from physics rather than guesses** (`decide/irrigation.py`). It is a daily root-zone
+water balance in the FAO-56 style through a rainless spell, starting from a full profile:
+- stress begins once depletion passes 55% of the available water;
+- yield loss = Ky x the crop's water shortfall / seasonal water use (FAO-33; Ky 1.5 around flowering);
+- the pivot adds at most its capacity each day and can't overfill the profile;
+- the usual practice starts the pivot 2 days after stress begins (sensor or crop symptoms);
+- FlashWatch starts it k days *before* stress begins.
+
+Typical Nebraska settings (silt loam, 3 ft roots, crop using 0.30 in/day, 220 bu at $4.50, $10 per
+acre-inch), avoided loss in $/acre against the usual practice:
+
+| Pivot capacity | 0 days | 3 days | 5 days | 7 days | 10 days | Extra pumping at 7 days |
+| --- | --- | --- | --- | --- | --- | --- |
+| 4 gpm/acre (0.18 in/day reaching the roots) | 21 | 51 | 70 | 87 | **109** | 17 |
+| 5 gpm/acre (0.23 in/day) | 26 | 61 | 78 | **85** | 85 | 16 |
+| 6.5 gpm/acre (0.29 in/day, about the crop's use) | 24 | 24 | 24 | 24 | 24 | 5 |
+
+So, to James's "8 days vs 7": with a 5 gpm pivot each day of notice is worth about $10-12/acre up to
+about 6 days, then nothing, because the profile is already full when the pivot starts. A
+low-capacity pivot keeps gaining to about 10 days, while a pivot that can match the crop's use only
+needs to start on time. On sandy soil (half the stored water) stress comes sooner, and notice stops
+helping after about 4-5 days. Nothing here is fitted to FlashWatch data. It is textbook physics with
+every setting in `config/actions.json` (sources noted), to be replaced with the farm's own.
+
+**Hay/feed and nitrogen:** value-by-notice tables in the config, all placeholders for now. Hay's value
+mostly comes from buying before the market moves. That tends to happen when the Monitor shows drought,
+a median 22 days after the soil crosses the line (O0), so extra notice matters less than for
+irrigation. James's point stands: buying early is partly zero-sum between neighbours, so irrigation
+leads the story.
+
+**Engine** (`decide/engine.py`, `python -m flashwatch.decide --week1 0.28 --week2 0.15`):
+- daily onset chances from the weekly forecast;
+- expected value of acting today against the usual practice;
+- expected value of deciding again in 3 days, over forecast-revision scenarios; until O2 is wired, a
+  placeholder of risk x1.6 or x0.4 at 50/50;
+- break-even chance of onset.
+
+Champaign-like risk (28% week 1, 15% week 2) with a 5 gpm pivot: **act now**, +$19/acre today vs
++$11 if deciding in 3 days. At 4% / 10%: **not yet**: -$0.6 today, but if the next forecast raises
+the risk 1.6x, acting then is worth +$3.5. Break-even is about a 15% chance of onset in the next 14
+days.
 
 ### O2. "Not yet, but if ..." (the value of waiting)
 
@@ -513,8 +565,10 @@ questions in the demo.
 4. Agent tools and alert drafting (O6). Half a day.
 5. NASS yield link (O4). Half a day; if short of time, literature defaults only.
 
-To fit by Nov 4, something else gives. Recommended cut order: G3 (voice), L1 (M3), then a smaller
-G2 (Glimmer). Never cut: the burst and freeze, the test-year scoring, the agent number checks.
+**Nothing is cut** (James, Q8): what doesn't fit by Nov 4 continues after. Order of work: (1) whatever
+meaningfully improves prediction, (2) the farmer tool (this section, irrigation first, then hay and
+feed), (3) modelling nice-to-haves (M3, L-list). Never skipped: the burst and freeze, the test-year
+scoring, the agent number checks.
 
 ## D. Deliverables (submission: Nov 4, 9 PM ET)
 

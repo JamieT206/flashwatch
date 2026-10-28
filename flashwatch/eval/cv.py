@@ -59,13 +59,27 @@ def fold_table(cube, fb: FeatureBuilder, ref_years, target_years, high=40, low=L
     return pd.DataFrame(cols, copy=False)         # built once, without copying the columns
 
 
+def member_frames(ff, fb, ref, train, test):
+    """Training rows stacked once per ensemble member with that member's z features, and one test
+    frame per member."""
+    def swap(df, g):
+        n = fb.issues.get_indexer(pd.DatetimeIndex(df.issue))
+        iy, ix = df.iy.to_numpy(), df.ix.to_numpy()
+        return df.assign(**{k: v[n, iy, ix] for k, v in g.items() if k in df.columns})
+    grids = [ff.build_member(ref, m) for m in range(ff.n_members)]
+    tr = pd.concat([swap(train, g) for g in grids], ignore_index=True)
+    return tr, [swap(test, g) for g in grids]
+
+
 def run_cv(cube, models=("B0", "B1"), cv_years=CV_YEARS, pool_years=YEARS, fb=None, ff=None, log=print,
-           labels=LABELS, holdout=None, thin=1, light=False, gbm_kw=None, drop=(), fc_dates=None):
+           labels=LABELS, holdout=None, thin=1, light=False, gbm_kw=None, drop=(), fc_dates=None, members=False):
     """holdout: the held-out years to run (default all of cv_years; training always uses the
     rest of cv_years). thin: keep every thin-th cell in each direction. light: LIGHT GBMs.
     drop: feature names or prefixes left out of the models (ablations).
     fc_dates: month-days ("04-01", ...) to keep, train and test, e.g. the ECMWF start dates
-    downloaded so far."""
+    downloaded so far.
+    members: M2 trained on every ensemble member's own weather (one copy of each row per member)
+    and its prediction averaged over the members (DESIGN.md P11); needs ff."""
     fb = fb or FeatureBuilder(cube, model_issue_dates(pool_years), pool_years)
     kw = {m: ({**(LIGHT if light else {}), **(gbm_kw or {})} if m.startswith("M") else {}) for m in models}
     parts = []
@@ -83,9 +97,15 @@ def run_cv(cube, models=("B0", "B1"), cv_years=CV_YEARS, pool_years=YEARS, fb=No
         is_test = (df.year == h).to_numpy()
         train, test = df[~is_test], df[is_test]
         keep = test[["year", "issue", "iy", "ix", "woy", "rz_pct", *LABELS]].copy()
+        mem = member_frames(ff, fb, ref, train, test) if members and ff is not None else None
         for label in labels:
             for m in models:
-                keep[f"{m}_{label}"] = MODELS[m](**kw[m]).fit(train, label).predict(test).astype(np.float32)
+                if mem and m == "M2":
+                    fit = MODELS[m](**kw[m]).fit(mem[0], label)
+                    p = np.mean([fit.predict(t) for t in mem[1]], axis=0)
+                else:
+                    p = MODELS[m](**kw[m]).fit(train, label).predict(test)
+                keep[f"{m}_{label}"] = p.astype(np.float32)
         parts.append(keep)
         log(f"fold {h}: {len(train)} train rows, {len(test)} test rows, "
             f"week-2 base rate {100 * test.week2.mean():.2f}%, {time.time() - t0:.0f}s")
@@ -123,6 +143,7 @@ def main():
     ap.add_argument("--depth", default="0-40", help="target soil depth (DESIGN.md T1; 0-40 since Oct 28)")
     ap.add_argument("--drop", nargs="+", default=[], help="feature names/prefixes to leave out (ablation)")
     ap.add_argument("--fc-dates", action="store_true", help="only issue dates with ECMWF forecasts")
+    ap.add_argument("--members", action="store_true", help="M2 trained and scored member by member (P11)")
     ap.add_argument("--usdm", action="store_true", help="add the Drought Monitor features (F9; on trial)")
     ap.add_argument("--oracle", choices=["native", "coarse"],
                     help="DIAGNOSTIC: give M2 the weather that actually happened (reads the future; eval/oracle.py)")
@@ -154,7 +175,7 @@ def main():
     gbm_kw = {k: v for k, v in (("calibration", args.calibration), ("inner_groups", args.inner_groups),
                                 ("calibrator", args.calibrator)) if v}
     oof = run_cv(cube, args.models, fb=fb, ff=ff, labels=args.leads, holdout=holdout, thin=thin, light=args.fast,
-                 gbm_kw=gbm_kw, drop=args.drop,
+                 gbm_kw=gbm_kw, drop=args.drop, members=args.members,
                  fc_dates=set(pd.DatetimeIndex(xr.open_zarr(FCST_STORE).issue.values).strftime("%m-%d"))
                  if args.fc_dates else None)
     out = DATA / "oof"
