@@ -107,7 +107,9 @@ def _cnn(**kw):
     return CNN(**kw)
 
 
-MODELS = {"B0": Climatology, "B1": StateLogistic, "H1": WeatherRule, "M3": _cnn, "M1": lambda **kw: _gbm("M1", **kw),
+MODELS = {"B0": Climatology, "B1": StateLogistic, "H1": WeatherRule, "M3": _cnn,
+          "M3b": lambda **kw: _cnn(**{**kw, "seed": 1, "width": 96, "epochs": 30}),   # a second M3, for averaging
+          "M1": lambda **kw: _gbm("M1", **kw),
           "M2": lambda **kw: _gbm("M2", **kw)}
 # Light GBM training for fast design iteration (eval.cv --fast); heavy training comes later.
 LIGHT = {"params": {"learning_rate": 0.1}, "n_rounds": 150}
