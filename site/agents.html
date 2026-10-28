@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlashWatch: agents</title>
+<meta name="description" content="FlashWatch's AI agents, built on Meta's models: what each does, with real runs.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='2' y='2' width='12' height='12' fill='%23d83933'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="brand"><span class="dot"></span>FlashWatch</div>
+  <nav><a href="index.html">Your farm</a><a href="region.html">The big picture</a><a class="on" href="agents.html">Agents</a><a href="help.html">Help</a><a href="about.html">About</a></nav>
+</div></header>
+
+<main class="wrap doc">
+  <h1>Agents</h1>
+  <p class="intro">FlashWatch's forecasts and dollar figures come from its own models. Getting them to a farmer, and into the farm's equipment,
+    is the agents' job. Each one below runs on a Meta model, works through tools that return FlashWatch's numbers, and is checked before
+    anything reaches the farmer or a pivot. These are real runs, replayed on past seasons.</p>
+
+  <section class="card agent" id="aPivots">
+    <div class="ahead"><h3>Finds your pivots</h3><span class="badge">SAM 3.1</span></div>
+    <p class="adoes">Setting up a farm shouldn't mean typing coordinates. Given the farm's location, FlashWatch fetches a USDA aerial photo,
+      asks SAM 3.1 to find every centre-pivot circle, and turns each one into a pivot: where it is, how wide, how many acres.</p>
+    <div class="agrid"><div id="pivImg"></div><div id="pivList"></div></div>
+  </section>
+
+  <section class="card agent" id="aOperator">
+    <div class="ahead"><h3>Plans the morning, runs the pivots</h3><span class="badge">Muse Spark</span></div>
+    <p class="adoes">For a farm with several pivots, the operator agent reads each pivot's advice, its water account and the farm's limits,
+      proposes which pivots to start, and asks the farmer by text. Fixed farm rules check every command; nothing moves until the farmer replies YES.</p>
+    <div id="opTrace" class="trace"></div>
+  </section>
+
+  <section class="card agent" id="aVoice">
+    <div class="ahead"><h3>Listens to the field</h3><span class="badge">Muse Voice Transcribe</span><span class="badge">Muse Spark</span></div>
+    <p class="adoes">A farmer leaves a voice note from the field. Muse Voice Transcribe turns it into text; Muse Spark matches what was said
+      to the farm's pivots and rates the crop stress. The operator agent treats a farmer-reported stressed crop as a reason to water.</p>
+    <div id="voice" class="agrid"></div>
+  </section>
+
+  <section class="card agent" id="aBrief">
+    <div class="ahead"><h3>Writes the weekly briefing</h3><span class="badge">Muse Spark</span></div>
+    <p class="adoes">For a county or extension office: risk this week, why, and what to watch. The agent gathers numbers through tools;
+      a checker traces every figure in the draft back to a tool result and sends the draft back if one can't be traced.</p>
+    <div id="brief" class="agrid"></div>
+  </section>
+
+  <section class="card agent" id="aGlimmer">
+    <div class="ahead"><h3>Writes like the Drought Monitor</h3><span class="badge">Muse Glimmer 30B, open weights</span></div>
+    <p class="adoes">The US Drought Monitor's weekly narrative is the text farmers and agencies already read. FlashWatch fine-tunes Meta's
+      open-weights Muse Glimmer on 15 years of those narratives, paired with the week's numbers, so it can write the same kind of summary from
+      FlashWatch's data, a week or more ahead of the Monitor.</p>
+    <div id="glimmer"></div>
+  </section>
+
+  <section class="card agent">
+    <div class="ahead"><h3>The safeguards</h3></div>
+    <ul class="safe">
+      <li><strong>Numbers come from tools.</strong> Agents never make up a figure; a checker compares every number in a draft with the tool
+        results and sends it back if one doesn't match.</li>
+      <li><strong>Farm rules are code, not prompts.</strong> Well capacity, water allocation, season and the advice are checked by fixed rules
+        that the agent can't talk its way past. Refusals go back to the agent with the reason.</li>
+      <li><strong>The farmer approves.</strong> Commands reach a pivot only after a YES. Pivots connect through a signed webhook, Lindsay
+        FieldNET's data through Leaf, or a to-do in the maker's app.</li>
+    </ul>
+  </section>
+
+  <footer>Aerial imagery: USDA NAIP via the USGS National Map (public domain). Data: ERA5-Land (Copernicus Climate Change Service),
+    ECMWF S2S reforecasts, US Drought Monitor (NDMC, USDA, NOAA), USDA NASS.</footer>
+</main>
+<script src="assets/agents.js"></script>
+</body>
+</html>
