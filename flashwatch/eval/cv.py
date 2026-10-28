@@ -60,15 +60,24 @@ def fold_table(cube, fb: FeatureBuilder, ref_years, target_years, high=40, low=L
 
 
 def member_frames(ff, fb, ref, train, test):
-    """Training rows stacked once per ensemble member with that member's z features, and one test
-    frame per member."""
+    """Training rows stacked once per ensemble member with that member's z features (rows with a
+    forecast only), one test frame per member, and each member's week-1 weather at the test rows."""
+    n = fb.issues.get_indexer(pd.DatetimeIndex(test.issue))
+    iy, ix = test.iy.to_numpy(), test.ix.to_numpy()
+
     def swap(df, g):
-        n = fb.issues.get_indexer(pd.DatetimeIndex(df.issue))
-        iy, ix = df.iy.to_numpy(), df.ix.to_numpy()
-        return df.assign(**{k: v[n, iy, ix] for k, v in g.items() if k in df.columns})
+        k = fb.issues.get_indexer(pd.DatetimeIndex(df.issue))
+        y, x = df.iy.to_numpy(), df.ix.to_numpy()
+        return df.assign(**{c: v[k, y, x] for c, v in g.items() if c in df.columns})
     grids = [ff.build_member(ref, m) for m in range(ff.n_members)]
-    tr = pd.concat([swap(train, g) for g in grids], ignore_index=True)
-    return tr, [swap(test, g) for g in grids]
+    has = train["f_tp_w1_z"].notna() if "f_tp_w1_z" in train else slice(None)
+    tr = pd.concat([swap(train[has], g) for g in grids], ignore_index=True)
+    wx = {}
+    for m in range(ff.n_members):
+        w = ff.member_weather(m)
+        wx[f"wx_rain1_m{m}"] = w["rain_in"][n, iy, ix]
+        wx[f"wx_temp1_m{m}"] = w["temp_f"][n, iy, ix]
+    return tr, [swap(test, g) for g in grids], wx
 
 
 def run_cv(cube, models=("B0", "B1"), cv_years=CV_YEARS, pool_years=YEARS, fb=None, ff=None, log=print,
@@ -102,10 +111,17 @@ def run_cv(cube, models=("B0", "B1"), cv_years=CV_YEARS, pool_years=YEARS, fb=No
             for m in models:
                 if mem and m == "M2":
                     fit = MODELS[m](**kw[m]).fit(mem[0], label)
-                    p = np.mean([fit.predict(t) for t in mem[1]], axis=0)
+                    pm = np.stack([fit.predict(t) for t in mem[1]], axis=1)
+                    p = pm.mean(1)
+                    if label in ("week1", "week2"):         # kept for the triggers (DESIGN.md O2)
+                        for j in range(pm.shape[1]):
+                            keep[f"M2_{label}_m{j}"] = pm[:, j].astype(np.float32)
                 else:
                     p = MODELS[m](**kw[m]).fit(train, label).predict(test)
                 keep[f"{m}_{label}"] = p.astype(np.float32)
+        if mem:
+            for c, v in mem[2].items():
+                keep[c] = v.astype(np.float32)
         parts.append(keep)
         log(f"fold {h}: {len(train)} train rows, {len(test)} test rows, "
             f"week-2 base rate {100 * test.week2.mean():.2f}%, {time.time() - t0:.0f}s")

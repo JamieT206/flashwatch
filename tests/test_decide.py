@@ -65,3 +65,18 @@ def test_backtest_credits_hits_and_charges_false_alarms():
     assert np.isclose(bt.value[0], float(c.net(5)) - c.cost_noevent)
     cal = backtest.run(oof, ons, "M1", act, "calendar", calendar="07-03")
     assert cal.hits[0] == 0 and cal.false_alarms[0] == 1   # the calendar start (July 3) already covers the July 6 onset
+
+
+def test_trigger_names_the_weather_that_tips_it():
+    from flashwatch.decide.trigger import trigger
+    c = curve(load()["irrigation"])
+    rain = np.array([0.1, 0.2, 0.3, 0.5, 0.9, 1.2, 1.5, 1.8, 2.0, 2.4, 3.0])
+    p1 = np.where(rain < 0.4, 0.45, 0.03)                  # dry members carry the risk
+    p2 = np.where(rain < 0.4, 0.30, 0.03)
+    temp = np.full(11, 80.0) + np.arange(11) % 2            # temperature says nothing here
+    t = trigger(c, p1, p2, {"rain_in": rain, "temp_f": temp}, lam=1.0)
+    assert not t["act_now"] and t["members_tipping"] == 3
+    assert t["trigger"]["var"] == "rain_in" and 0.3 < t["trigger"]["threshold"] < 0.5
+    assert "less than 0.4 in of rain" in t["trigger"]["text"]
+    calm = trigger(c, np.full(11, 0.01), np.full(11, 0.01), {"rain_in": rain})
+    assert calm["trigger"] is None and calm["members_tipping"] == 0

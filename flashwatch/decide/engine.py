@@ -76,3 +76,19 @@ def two_way(spread: float, weight_up: float = 0.5) -> list[tuple[float, float]]:
     up = 1 + spread
     down = (1 - weight_up * up) / (1 - weight_up)
     return [(weight_up, up), (1 - weight_up, max(down, 0.0))]
+
+
+def decide_members(c: Curve, p1m, p2m, lam: float = 0.5, step: int = 3) -> Decision:
+    """Like decide(), with the next forecast's possible outcomes taken from the ensemble members:
+    member j's risk, pulled toward the ensemble mean by (1 - lam) because the next forecast resolves
+    only part of the spread. scenarios: (weight, member index, ev of acting at the next decision)."""
+    p1m, p2m = np.asarray(p1m, float), np.asarray(p2m, float)
+    p1, p2 = p1m.mean(), p2m.mean()
+    base = decide(c, daily({"week1": p1, "week2": p2}), ((1.0, 1.0),), step)
+    per = []
+    for j in range(len(p1m)):
+        q = daily({"week1": p1 + lam * (p1m[j] - p1), "week2": p2 + lam * (p2m[j] - p2)})
+        per.append((1 / len(p1m), j, ev_act(c, q[step:])))
+    wait = sum(w * max(ev, 0.0) for w, _, ev in per)
+    return Decision(act_now=base.ev_now > 0 and base.ev_now >= wait, ev_now=base.ev_now, ev_wait=wait,
+                    breakeven=base.breakeven, scenarios=per)

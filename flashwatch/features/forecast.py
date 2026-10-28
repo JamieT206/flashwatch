@@ -96,6 +96,19 @@ class ForecastFeatures:
                     res.setdefault(f"f_dryhot_{nm}_z", np.full((n,) + grid, np.nan, np.float32))[k] = z["vpd"][w] - z["tp"][w]
         return {name: bilinear(r, self.lats, self.lons) for name, r in res.items()}
 
+    def member_weather(self, m: int, week: int = 1) -> dict[str, np.ndarray]:
+        """Member m's own weather in week `week`, in farmer units: rainfall total (inches) and mean
+        temperature (F), on the 0.25 degree grid. For the "what are we waiting for" triggers (O2);
+        not a model feature."""
+        have = np.where(self.idx[:, 0] >= 0)[0]
+        n, grid = len(self.issues), (len(self.lats), len(self.lons))
+        rain, temp = np.full((n,) + grid, np.nan, np.float32), np.full((n,) + grid, np.nan, np.float32)
+        for k in have:
+            i, j = self.idx[k]
+            rain[k] = self.fields["tp"][i, j, m, week - 1] * 7 / 25.4         # mm/day -> inches/week
+            temp[k] = (self.fields["t2m"][i, j, m, week - 1] - 273.15) * 9 / 5 + 32
+        return {"rain_in": bilinear(rain, self.lats, self.lons), "temp_f": bilinear(temp, self.lats, self.lons)}
+
     @property
     def n_members(self) -> int:
         return next(iter(self.fields.values())).shape[2]

@@ -39,6 +39,7 @@ def build(oof: pd.DataFrame, model: str, out: Path = SITE / "data", note: str = 
     md = sorted(pd.DatetimeIndex(oof.issue).strftime("%m-%d").unique())
     cells = oof[["iy", "ix"]].drop_duplicates().sort_values(["iy", "ix"])
     thin = int(np.gcd.reduce(np.r_[cells.iy.to_numpy(), cells.ix.to_numpy()])) or 1
+    members = sum(1 for c in oof.columns if c.startswith(f"{model}_week1_m"))
     udates, ucat = usdm_cube(list(range(min(years) - 1, max(years) + 1)))
     ons = onsets_table()
     ons = ons[ons.date.dt.year.isin(years)]
@@ -59,8 +60,19 @@ def build(oof: pd.DataFrame, model: str, out: Path = SITE / "data", note: str = 
                 for k, c in (("p1", f"{model}_week1"), ("p2", f"{model}_week2"), ("n1", "B0_week1"),
                              ("n2", "B0_week2"), ("rz", "rz_pct")):
                     series[k][t] = g[c].to_numpy()
+            if g is not None and members:
+                # Per-member week-1/2 risk and week-1 weather, for the weather triggers (O2).
+                for k, pre in (("mp1", f"{model}_week1_m"), ("mp2", f"{model}_week2_m"),
+                               ("mr", "wx_rain1_m"), ("mt", "wx_temp1_m")):
+                    arr = [None] * len(md)
+                    vals = g[[f"{pre}{j}" for j in range(members)]].to_numpy()
+                    for t, row in zip(g.t.to_numpy(), vals):
+                        if np.isfinite(row).all():
+                            arr[t] = _r(row, 3 if k in ("mp1", "mp2") else (2 if k == "mr" else 0))
+                    series[k] = arr
             on = ons[(ons.iy == iy) & (ons.ix == ix)].date
-            rec = {"iy": int(iy), "ix": int(ix), **{k: _r(v, 0 if k == "rz" else 3) for k, v in series.items()},
+            rec = {"iy": int(iy), "ix": int(ix),
+                   **{k: (_r(v, 0 if k == "rz" else 3) if isinstance(v, np.ndarray) else v) for k, v in series.items()},
                    "usdm": [int(ucat[k][iy, ix]) if k >= 0 else -1 for k in j],
                    "onsets": sorted(on[on.dt.year == y].dt.strftime("%m-%d").tolist())}
             tiles.setdefault((iy // thin // TILE, ix // thin // TILE), []).append(rec)

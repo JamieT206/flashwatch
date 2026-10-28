@@ -154,5 +154,49 @@ const FW = (() => {
              falseAlarms: events.filter(e => e.kind === "false").length };
   }
 
-  return { DEFAULTS, SOILS, simulate, stressDay, curve, netAt, daily, evAct, twoWay, decide, season, capacity };
+  // The ensemble members as the next forecast's possible outcomes (mirrors decide_members), and the
+  // weather split that tells the "start then" members from the rest (mirrors decide/trigger.py).
+  function decideMembers(c, p1m, p2m, lam = 0.5, step = 2) {
+    const mean = a => a.reduce((x, y) => x + y, 0) / a.length;
+    const p1 = mean(p1m), p2 = mean(p2m);
+    const base = decide(c, daily(p1, p2), [[1, 1]], step);
+    const per = p1m.map((_, j) => {
+      const q = daily(p1 + lam * (p1m[j] - p1), p2 + lam * (p2m[j] - p2));
+      return [1 / p1m.length, j, evAct(c, q.slice(step))];
+    });
+    const wait = per.reduce((a, [w, , ev]) => a + w * Math.max(ev, 0), 0);
+    return { actNow: base.evNow > 0 && base.evNow >= wait, evNow: base.evNow, evWait: wait, breakeven: base.breakeven, scenarios: per };
+  }
+
+  const TRIGGER_VARS = { rain_in: ["less than", "in of rain over the coming week", -1, 1],
+                         temp_f: ["an average temperature above", "°F over the coming week", 1, 0] };
+
+  function bestSplit(x, act, sign) {
+    const xs = [...new Set(x)].sort((a, b) => a - b);
+    let best = [NaN, 0];
+    for (let i = 0; i + 1 < xs.length; i++) {
+      const t = (xs[i] + xs[i + 1]) / 2;
+      const agree = x.filter((v, j) => (sign * (v - t) > 0) === act[j]).length / x.length;
+      if (agree > best[1]) best = [t, agree];
+    }
+    return best;
+  }
+
+  function trigger(c, p1m, p2m, weather, lam = 0.5, step = 2, minAgree = 0.9) {
+    const d = decideMembers(c, p1m, p2m, lam, step);
+    const actNext = d.scenarios.map(([, , ev]) => ev > 0);
+    const out = { ...d, membersTipping: actNext.filter(Boolean).length, members: actNext.length, trigger: null };
+    if (d.actNow || out.membersTipping === 0 || out.membersTipping === out.members) return out;
+    let best = null;
+    for (const [v, [pre, unit, sign, dec]] of Object.entries(TRIGGER_VARS)) {
+      if (!weather[v]) continue;
+      const [t, agree] = bestSplit(weather[v], actNext, sign);
+      if (isFinite(t) && (!best || agree > best.agree)) best = { v, t, agree, text: `${pre} ${t.toFixed(dec)} ${unit}` };
+    }
+    if (best && best.agree >= minAgree) out.trigger = best;
+    return out;
+  }
+
+  return { DEFAULTS, SOILS, simulate, stressDay, curve, netAt, daily, evAct, twoWay, decide, season, capacity,
+           decideMembers, trigger };
 })();

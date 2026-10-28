@@ -118,7 +118,10 @@ function renderVerdict(c) {
     $("evNow").textContent = "-"; $("evWait").textContent = "-"; $("trigger").textContent = "";
     return;
   }
-  const d = FW.decide(c, FW.daily(p1, p2), FW.twoWay(0.6), 2);
+  // With ensemble members for this date, the next forecast's outcomes come from them, and the
+  // trigger is named in weather; otherwise a placeholder spread and a risk threshold.
+  const mem = r.mp1 && r.mp1[i] ? FW.trigger(c, r.mp1[i], r.mp2[i], { rain_in: r.mr[i], temp_f: r.mt[i] }) : null;
+  const d = mem || FW.decide(c, FW.daily(p1, p2), FW.twoWay(0.6), 2);
   $("evNow").textContent = `${usd(d.evNow, 1)} /acre`;
   $("evWait").textContent = `${usd(d.evWait, 1)} /acre`;
   const inSeason = md >= SEASON[0] && md <= SEASON[1];
@@ -129,7 +132,7 @@ function renderVerdict(c) {
     $("trigger").textContent = "";
     return;
   }
-  const nextRisk = d.mStar * p1;
+  const nextRisk = (d.mStar ?? NaN) * p1;
   if (d.actNow) {
     const k = 4;
     const perDay = FW.netAt(c, k) - FW.netAt(c, k - 1);
@@ -141,7 +144,11 @@ function renderVerdict(c) {
       d.evNow > 0
         ? `Starting today is worth a little (${usd(d.evNow, 1)}/acre), but waiting two days for a fresher forecast is worth more: you lose a little warning, but you avoid pumping for a dry spell that may not come.`
         : `Starting today would cost more than it is likely to save (${usd(d.evNow, 1)}/acre), but the risk is high enough that the next forecast could tip it.`);
-    $("trigger").innerHTML = isFinite(nextRisk) && nextRisk < 1
+    $("trigger").innerHTML = mem && mem.trigger
+      ? `<strong>What we're waiting for:</strong> if the next forecast (in 2 days) shows <strong>${mem.trigger.text}</strong> at your farm, start the pivot then.
+         ${mem.membersTipping} of ${mem.members} of today's forecast scenarios look like that.`
+      : mem ? `<strong>What we're waiting for:</strong> ${mem.membersTipping} of ${mem.members} of today's forecast scenarios would make starting pay at the next forecast; no single rain or heat threshold separates them.`
+      : isFinite(nextRisk) && nextRisk < 1
       ? `<strong>What would change it:</strong> if the next forecast (in 2 days) puts the chance of a flash drought in the coming week above <strong>${pct(Math.min(nextRisk, 1))}</strong> (it is ${pct(p1)} today), start the pivot then.`
       : "";
   } else {

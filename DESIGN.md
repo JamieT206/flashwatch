@@ -487,6 +487,22 @@ right." Triggers are on weekly totals (our forecast data is weekly); daily trigg
 above 84 F") would need daily forecast data and stay a later idea. A "what-if" selector on the
 dashboard shows the same: pick a rain/heat scenario, see risk and value change.
 
+**Built (Oct 28 evening, James: "what's the info we're waiting for tomorrow?"):**
+- `decide/engine.decide_members`: each of the 11 members is a possible next forecast. Its risk is
+  pulled halfway toward the ensemble mean (lam = 0.5), because the next forecast resolves only part
+  of the spread.
+- `decide/trigger.py`: finds the coming-week rainfall or mean-temperature threshold at the farm that
+  best separates the members where starting at the next forecast would pay from the rest. It needs
+  90% agreement; otherwise it falls back to a risk threshold.
+- The farm page says, e.g., "What we're waiting for: if the next forecast shows **less than 0.4 in of
+  rain over the coming week** at your farm, start the pivot then (3 of 11 of today's scenarios look
+  like that)".
+- The same code is in JS (identical results on a test case).
+- It needs per-member M2 predictions. `cv --members` now keeps them, with each member's week-1
+  weather (`M2_week1_m<j>`, `wx_rain1_m<j>`, `wx_temp1_m<j>`), and the site build passes them through.
+- Daily triggers ("day 7 above X F") would need daily fields. The decoder computes daily means before
+  averaging to weeks, so they are within reach.
+
 ### O3. Actions catalogue (first pass; defaults from literature or left for the user)
 
 | Action | Who | Typical notice | Why notice matters |
