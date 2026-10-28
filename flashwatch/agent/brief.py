@@ -18,6 +18,7 @@ import argparse
 import json
 import re
 
+import numpy as np
 import pandas as pd
 
 from flashwatch.agent import pack as packs
@@ -68,6 +69,35 @@ def write(issue, place: str, lat: float, lon: float, chat: Chat | None = None, m
     return {"issue": str(pd.Timestamp(issue).date()), "place": place, "lat": lat, "lon": lon,
             "model": chat.model, "briefing": text, "cut_untraced": bad, "drafts": history,
             "tool_calls": [{"tool": n, "args": a, "result": r} for n, a, r in log], "usage": chat.usage}
+
+
+def nearest_city(lat: float, lon: float) -> str:
+    from flashwatch.agent.mapimg import CITIES
+    return min(CITIES, key=lambda c: (CITIES[c][0] - lat) ** 2 + ((CITIES[c][1] - lon) * np.cos(np.radians(lat))) ** 2)
+
+
+def map_check(issue, chat: Chat | None = None, k: int = 3) -> dict:
+    """Multimodal cross-check: the model reads the rendered risk map (no numbers) and names the k
+    areas of highest risk vs normal by their nearest marked city; we compare with the hotspots tool."""
+    import base64
+    from flashwatch.agent.mapimg import CITIES, render
+    p = pd.read_parquet(packs.path(issue))
+    chat = chat or Chat()
+    png = base64.b64encode(render(p)).decode()
+    ask = (f"This map shows flash-drought onset risk relative to normal. Name the {k} separate areas with "
+           f"the highest risk (brightest yellow/orange), each by the nearest marked city. Reply as JSON: "
+           f'{{"areas": ["<city>", ...]}} using only these city names: {", ".join(CITIES)}.')
+    msg = chat.complete([{"role": "user", "content": [{"type": "text", "text": ask},
+                          {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{png}"}}]}])
+    m = re.search(r"\{.*\}", msg.get("content") or "", re.S)
+    seen = json.loads(m.group(0)).get("areas", []) if m else []
+    truth = []
+    for h in Tools(p).hotspots(n=3 * k):
+        c = nearest_city(h["lat"], h["lon"])
+        if c not in truth:
+            truth.append(c)
+    truth = truth[:k]
+    return {"model_saw": seen, "tool_hotspots": truth, "agree": sorted(set(seen) & set(truth))}
 
 
 def main():

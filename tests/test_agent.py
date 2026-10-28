@@ -39,7 +39,7 @@ def fake_pack(n=400, seed=0):
     import pandas as pd
     rng = np.random.default_rng(seed)
     iy, ix = np.divmod(np.arange(n), 20)
-    d = pd.DataFrame({"iy": iy, "ix": ix, "lat": 42 - iy * 0.25, "lon": -95 + ix * 0.25,
+    d = pd.DataFrame({"iy": iy, "ix": ix, "lat": 49 - iy * 0.25, "lon": -104 + ix * 0.25,
                       "rz_pct": rng.uniform(20, 90, n), "usdm_cat": rng.integers(-1, 3, n),
                       "in_drought": rng.random(n) < 0.2, "f_tp_w12_z": rng.normal(size=n)})
     for lead in ("week1", "week2", "week3", "week4", "any28"):
@@ -56,7 +56,7 @@ def test_tools_return_traceable_numbers():
     import json
     from flashwatch.agent.tools import Tools
     t = Tools(fake_pack())
-    a = t.area_summary(41.0, -92.5, 60)
+    a = t.area_summary(46.5, -101.5, 60)
     assert a["land_cells"] > 0 and 0 <= a["onset_risk"]["any28"]["chance"] <= 0.2
     assert a["top_drivers"][0]["meaning"]
     hs = t.hotspots(3)
@@ -81,7 +81,23 @@ def test_briefing_redrafts_untraced_numbers(tmp_path, monkeypatch):
     def post(path, body):
         return {"choices": [{"message": next(script)}]}
 
-    out = brief.write("2012-05-03", "Test County", 41.0, -92.5, chat=Chat(key="x", post=post))
+    out = brief.write("2012-05-03", "Test County", 46.5, -101.5, chat=Chat(key="x", post=post))
     assert out["drafts"][0]["untraced"] == ["37%"]
     assert out["briefing"].startswith("Risk this week: elevated") and out["cut_untraced"] == []
     assert out["tool_calls"][0]["tool"] == "overview"
+
+
+def test_map_check_compares_what_the_model_sees_with_the_tools(tmp_path, monkeypatch):
+    from flashwatch.agent import brief, pack
+    monkeypatch.setattr(pack, "OUT", tmp_path)
+    fake_pack().to_parquet(pack.path("2012-05-03"))
+    sent = []
+
+    def post(path, body):
+        sent.append(body)
+        return {"choices": [{"message": {"role": "assistant", "content": '{"areas": ["Bismarck", "Chicago"]}'}}]}
+
+    out = brief.map_check("2012-05-03", chat=Chat(key="x", post=post))
+    assert out["model_saw"] == ["Bismarck", "Chicago"] and "Bismarck" in out["tool_hotspots"]
+    assert out["agree"] == ["Bismarck"]
+    assert sent[0]["messages"][0]["content"][1]["image_url"]["url"].startswith("data:image/png;base64,")
