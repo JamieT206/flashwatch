@@ -22,12 +22,35 @@ const FARM_FIELDS = [
   ["price", "Expected price ($/bu)", "number", 0.05],
   ["pump_cost_per_in", "Pumping cost ($ per acre-inch)", "number", 0.5],
   ["reaction_days", "Usual start (days after stress shows)", "number", 1],
+  ["spell_days", "Dry spell to plan for (days; county yields suggest 21)", "number", 1],
   ["baseline", "Compare against", "select", ["careful", "calendar"]],
   ["calendar", "Calendar start date (MM-DD)", "text"],
 ];
 
+// Other actions: value-by-notice tables (config/actions.json), rough placeholders.
+const OTHER_FIELDS = [
+  ["hay_tons", "Hay or feed to buy (tons)", 1], ["hay_price", "Hay price ($/ton)", 5],
+  ["hay_rise", "Price rise in a drought (%)", 1], ["hay_carry", "Cost of buying early if no drought (%)", 1],
+  ["n_cut_lb", "Side-dress nitrogen you could skip (lb/acre)", 1], ["n_price", "Nitrogen price ($/lb)", 0.05],
+  ["n_wrong_pct", "Yield lost if you skip it and rain comes (%)", 0.5],
+];
+const OTHER_DEFAULTS = { hay_tons: 50, hay_price: 180, hay_rise: 30, hay_carry: 8, n_cut_lb: 40, n_price: 0.6, n_wrong_pct: 5 };
+
+function tableCurve(notice, avoided, costNoEvent) {
+  return { rows: notice.map((k, i) => ({ notice: k, avoided: avoided[i], extraCost: 0 })), costNoEvent };
+}
+
+function otherCurves(f) {
+  const rise = f.hay_tons * f.hay_price * f.hay_rise / 100;
+  const saved = f.n_cut_lb * f.n_price, wrong = f.n_wrong_pct / 100 * f.yield_bu * f.price;
+  return [
+    ["Buy hay or feed before prices rise", "for the farm", tableCurve([0, 7, 14, 21, 28], [0.6, 0.8, 0.95, 1, 1].map(s => s * rise), f.hay_tons * f.hay_price * f.hay_carry / 100), ["01-01", "12-31"]],
+    ["Skip or cut side-dress nitrogen (rain-fed corn)", "an acre", tableCurve([0, 7, 14], [0.5, 1, 1].map(s => s * saved), Math.max(wrong - saved, 0)), ["06-01", "06-30"]],
+  ];
+}
+
 function defaultFarm(crop = "corn") {
-  return { ...FW.DEFAULTS[crop], crop, acres: 130, soil: "Silt loam", baseline: "careful", calendar: "07-01" };
+  return { ...FW.DEFAULTS[crop], ...OTHER_DEFAULTS, crop, acres: 130, soil: "Silt loam", baseline: "careful", calendar: "07-01" };
 }
 
 function loadFarm() {
@@ -37,6 +60,7 @@ function loadFarm() {
   } catch (e) { /* storage blocked: defaults */ }
   return defaultFarm();
 }
+const pick = (o, ks) => Object.fromEntries(ks.filter(k => k in o).map(k => [k, o[k]]));
 function saveFarm() { try { localStorage.setItem("fw.farm", JSON.stringify(S.farm)); } catch (e) { /* ignore */ } }
 
 function params() {
@@ -125,10 +149,24 @@ async function renderOps() {
   $("opsState").textContent = o.sent.length ? `Approved by ${o.approved_by}; sent: ${o.sent.map(c => `${c.pivot} ${c.state}`).join(", ")}.` : "Waiting for approval.";
 }
 
+function renderOther() {
+  const r = S.rec, i = S.i, md = S.meta.dates[i], p1 = r.p1[i], p2 = r.p2[i];
+  const rows = otherCurves(S.farm).map(([label, per, c, [a, b]]) => {
+    if (md < a || md > b) return `<tr><td>${label}</td><td colspan="3">Only decided ${a === "06-01" ? "in June, at side-dress time" : ""}</td></tr>`;
+    if (p1 === null) return `<tr><td>${label}</td><td colspan="3">Soil already in drought</td></tr>`;
+    const d = FW.decide(c, FW.daily(p1, p2), FW.twoWay(0.5), 2);
+    const v = d.actNow ? "Act now" : d.evWait > 0 ? "Not yet" : "No need";
+    return `<tr><td>${label}</td><td><strong class="${d.actNow ? "neg" : ""}">${v}</strong></td><td>${usd(d.evNow)} ${per}</td>
+      <td>${isFinite(d.breakeven) ? pct(d.breakeven) : "-"}</td></tr>`;
+  }).join("");
+  $("other").innerHTML = `<table><thead><tr><th>Action</th><th>Today</th><th>Acting today, on average</th><th>Pays when the 14-day chance tops</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
 function renderAll() {
   if (!S.rec) return;
   renderNote();
   renderOps();
+  renderOther();
   const c = FW.curve(params(), 21);
   renderVerdict(c);
   renderTiles();
@@ -335,6 +373,14 @@ function setDate(i) {
   renderAll();
 }
 
+function renderOtherSettings() {
+  const el = $("otherSettings");
+  el.innerHTML = OTHER_FIELDS.map(([k, label, step]) => `<label>${label}<input data-o="${k}" type="number" step="${step}" value="${S.farm[k]}"></label>`).join("");
+  el.querySelectorAll("[data-o]").forEach(inp => inp.addEventListener("change", () => {
+    S.farm[inp.dataset.o] = +inp.value; saveFarm(); renderOther();
+  }));
+}
+
 function renderSettings() {
   const el = $("settings");
   el.innerHTML = FARM_FIELDS.map(([k, label, type, opt]) => type === "select"
@@ -342,7 +388,7 @@ function renderSettings() {
     : `<label>${label}<input data-k="${k}" type="${type}" ${type === "number" ? `step="${opt}"` : ""} value="${S.farm[k]}"></label>`).join("");
   el.querySelectorAll("[data-k]").forEach(inp => inp.addEventListener("change", () => {
     const k = inp.dataset.k;
-    if (k === "crop") { S.farm = { ...defaultFarm(inp.value), acres: S.farm.acres, soil: S.farm.soil }; renderSettings(); }
+    if (k === "crop") { S.farm = { ...defaultFarm(inp.value), ...pick(S.farm, ["acres", "soil", ...Object.keys(OTHER_DEFAULTS)]) }; renderSettings(); }
     else S.farm[k] = inp.type === "number" ? +inp.value : inp.value;
     saveFarm();
     renderAll();
@@ -361,6 +407,7 @@ async function init() {
   $("modelNote").textContent = S.meta.note ? `Forecasts on this page: ${S.meta.note}.` : "";
   $("replayNote").textContent = `Replay of the ${S.year} season`;
   renderSettings();
+  renderOtherSettings();
   $("go").onclick = () => setLocation(+$("lat").value, +$("lon").value);
   $("year").onchange = async () => { S.year = +$("year").value; $("replayNote").textContent = `Replay of the ${S.year} season`; S.rec = await loadTile(S.year, S.cell); renderAll(); };
   $("date").oninput = () => setDate(+$("date").value);

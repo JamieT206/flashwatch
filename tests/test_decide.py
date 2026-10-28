@@ -80,3 +80,15 @@ def test_trigger_names_the_weather_that_tips_it():
     assert "less than 0.4 in of rain" in t["trigger"]["text"]
     calm = trigger(c, np.full(11, 0.01), np.full(11, 0.01), {"rain_in": rain})
     assert calm["trigger"] is None and calm["members_tipping"] == 0
+
+
+def test_yield_shortfall_uses_trend_from_other_years():
+    import pandas as pd
+    from flashwatch.eval.yields import shortfall
+    years = list(range(2005, 2017))
+    y = [100 + 2 * (t - 2005) for t in years]
+    y[7] *= 0.8                                          # one bad year, 20% below trend
+    d = pd.DataFrame({"fips": "1", "crop": "corn", "practice": "all", "year": years, "yield_bu": y})
+    s = shortfall(d).set_index("year").dev_pct
+    assert abs(s[2012] + 20) < 0.5                  # its own trend never sees the bad year
+    assert (s.drop(2012).abs() < 5).all()          # the others are only nudged by it
