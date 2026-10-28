@@ -125,7 +125,7 @@ const FW = (() => {
   // The season played day by day for one cell (mirrors decide/backtest.py).
   function season(c, dates, p1, p2, onsets, opts = {}) {
     const { baseline = "careful", calendar = "07-01", first = "06-01", last = "08-31", spread = 0.5,
-            review = 7, year = 2012 } = opts;
+            review = 7, year = 2012, once = false } = opts;   // once: a one-off decision, act at most once
     const day = s => Date.UTC(year, +s.slice(0, 2) - 1, +s.slice(3, 5)) / 864e5;
     let ons = onsets.map(day);
     const cal = baseline === "calendar" ? day(calendar) : null;
@@ -143,11 +143,11 @@ const FW = (() => {
         const k = nxt - t, v = netAt(c, k);
         value += v;
         events.push({ date: md, kind: "hit", notice: k, value: v });
-        blocked = nxt + 30;
+        blocked = once ? Infinity : nxt + 30;
       } else {
         value -= c.costNoEvent;
         events.push({ date: md, kind: "false", value: -c.costNoEvent });
-        blocked = t + review;
+        blocked = once ? Infinity : t + review;
       }
     });
     const inSeason = ons.filter(o => o >= day(first)).length;

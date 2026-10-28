@@ -63,6 +63,7 @@ def run(oof: pd.DataFrame, ons: pd.DataFrame, model: str, action: dict, baseline
         a["params"]["reaction_days"] = late_reaction
     c = curve(a)
     review = int(a["params"].get("review_days", 7))
+    once = bool(a.get("once"))          # a one-off decision (fungicide, side-dress): act at most once a season
     d = oof[pd.DatetimeIndex(oof.issue).strftime("%m-%d").to_series(index=oof.index).between(*season)]
     d = d[~d.year.isin(TEST_YEARS)].sort_values(["iy", "ix", "issue"])
     now, wait = ev_tables(c, d[f"{model}_week1"].to_numpy(), d[f"{model}_week2"].to_numpy(),
@@ -95,11 +96,11 @@ def run(oof: pd.DataFrame, ons: pd.DataFrame, model: str, action: dict, baseline
                 value += float(c.net(k))
                 saved += float(np.interp(k, c.notice, c.avoided))
                 hits += 1
-                blocked = nxt[0] + np.timedelta64(30, "D")
+                blocked = nxt[0] + np.timedelta64(30, "D") if not once else np.datetime64("2100-01-01")
             else:
                 value -= c.cost_noevent
                 false += 1
-                blocked = t + np.timedelta64(review, "D")
+                blocked = t + np.timedelta64(review, "D") if not once else np.datetime64("2100-01-01")
         n_on = len(onsets[onsets >= np.datetime64(f"{yr}-{season[0]}")])
         out.append({"iy": iy, "ix": ix, "year": yr, "value": value, "saved": saved, "starts": n_act, "hits": hits,
                     "false_alarms": false, "onsets": n_on, "perfect": n_on * best})

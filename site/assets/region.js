@@ -12,10 +12,15 @@ const PRICES = [3.5, 4.5, 5.5, 6.5, 7.5];
 
 // ---------- a typical farm ----------
 
-function perAcre(scope, year) {
-  if (!scope) return null;
-  const r = year === undefined ? scope.region : scope.region_by_year.find(x => x.year === year);
-  return r && r.acres ? r.dollars / r.acres : null;
+function perAcre(scopes, year) {
+  // Several decisions on the same acres add up (rain-fed corn: nitrogen and fungicide).
+  const one = s => {
+    if (!s) return null;
+    const r = year === undefined ? s.region : s.region_by_year.find(x => x.year === year);
+    return r && r.acres ? r.dollars / r.acres : null;
+  };
+  const v = [].concat(scopes).map(one);
+  return v.some(x => x === null) ? null : v.reduce((a, b) => a + b, 0);
 }
 
 function renderFarms() {
@@ -23,14 +28,15 @@ function renderFarms() {
   if (!s) { $("farmTable").textContent = "Not computed yet."; return; }
   const fs = (R.defaults && R.defaults.farm_sizes) || {};
   const round = v => Math.round(v / 50) * 50;
-  const fx = (R.defaults && R.defaults.fixed) || {};
-  // One flash drought with a week's warning: the farm page's water balance (21-day dry spell).
+  // One flash drought with a week's warning: the farm page's water balance (21-day dry spell), or
+  // for rain-fed fields the fungicide pass a dry spell makes unnecessary (site/assets/rainfed.js).
   const week = crop => { const c = FW.curve({ ...FW.DEFAULTS[crop], spell_days: 21 }, 21); return FW.netAt(c, 7); };
-  const nSaved = (fx.n_cut_lb ? fx.n_cut_lb.value : 40) * (fx.n_price ? fx.n_price.value : 0.66);
+  const rf = key => { const a = RF.ACTIONS.find(x => x.key === key); return RF.curve(a, { ...RF.DEFAULTS, price: key === "fungicide_soy" ? 10 : 4.3 }).gain; };
   const cols = [
     { name: "Irrigated corn farm", acres: round(fs.corn_irrigated || 350), scope: s.corn, event: week("corn") },
     { name: "Irrigated soybean farm", acres: round(fs.soybeans_irrigated || 250), scope: s.soybeans, event: week("soybeans") },
-    { name: "Rain-fed corn farm", acres: round(fs.corn_all || 300), scope: s.rainfed_nitrogen, event: nSaved },
+    { name: "Rain-fed corn farm", acres: round(fs.corn_all || 300), scope: [s.rainfed_nitrogen, s.rainfed_fungicide_corn], event: rf("fungicide_corn") },
+    { name: "Rain-fed soybean farm", acres: round(fs.soybeans_all || 300), scope: s.rainfed_fungicide_soy, event: rf("fungicide_soy") },
   ];
   const cell = (perA, acres) => perA === null ? "<td>-</td>" : `<td><strong>${usd0(perA * acres)}</strong><br><span class="note">${usd2(perA)} an acre</span></td>`;
   const rows = [
@@ -40,6 +46,11 @@ function renderFarms() {
   ];
   $("farmTable").innerHTML = `<table class="farms"><thead><tr><th></th>${cols.map(c => `<th>${c.name}<br><span class="note">${c.acres} acres</span></th>`).join("")}</tr></thead>
     <tbody>${rows.map(([label, f]) => `<tr><td>${label}</td>${cols.map(f).join("")}</tr>`).join("")}</tbody></table>`;
+  const tot = k => (s[k] && s[k].region ? s[k].region.dollars : 0);
+  const irr = tot("corn") + tot("soybeans"), rain = tot("rainfed_nitrogen") + tot("rainfed_fungicide_corn") + tot("rainfed_fungicide_soy");
+  $("regionTotals").innerHTML = `
+    <div><div class="bignum">$${(rain / 1e6).toFixed(0)}M</div><div class="note">a year across ${(R.defaults ? R.defaults.coverage.corn_rainfed + R.defaults.coverage.soybeans_rainfed : 130e6) / 1e6 | 0} million rain-fed acres in the coverage area (nitrogen and fungicide decisions)</div></div>
+    <div><div class="bignum">$${(irr / 1e6).toFixed(0)}M</div><div class="note">a year across ${(R.defaults ? R.defaults.coverage.corn_irrigated + R.defaults.coverage.soybeans_irrigated : 13e6) / 1e6 | 0} million irrigated acres (extra irrigation)</div></div>`;
 }
 
 // ---------- forecast quality: how often a flagged farm gets a flash drought ----------

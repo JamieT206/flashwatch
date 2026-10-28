@@ -22,6 +22,9 @@
       <div class="place" id="place">Loading...</div>
       <div class="place-sub" id="placeSub"></div>
     </div>
+    <div class="seg" role="group" aria-label="Irrigated or rain-fed">
+      <button id="wIrr" aria-pressed="true">Irrigated</button><button id="wRain" aria-pressed="false">Rain-fed</button>
+    </div>
     <div class="seg" role="group" aria-label="Today or a past season">
       <button id="modeToday" aria-pressed="true">Today</button><button id="modeReplay" aria-pressed="false">Replay a past season</button>
     </div>
@@ -34,7 +37,7 @@
     <div class="strip-legend" id="stripLegend"></div>
   </div>
 
-  <div class="top2">
+  <div class="top2" id="top2">
     <div class="col">
       <section class="verdict" id="verdict">
         <div class="q" id="vQ">Extra irrigation today? <a class="help" href="help.html#advice" title="What the advice means">?</a></div>
@@ -101,7 +104,7 @@
     </div>
   </section>
 
-  <section class="card full chart">
+  <section class="card full chart" id="seasonCard">
     <h3>This season</h3>
     <div class="chart-title">Chance of a flash drought in the next 7 days</div>
     <div id="seasonChart"></div>
@@ -116,10 +119,9 @@
     </div>
   </section>
 
-  <section class="card full">
-    <h3>Other actions <a class="help" href="help.html#other" title="About these decisions">?</a></h3>
-    <div id="other" style="overflow-x:auto"></div>
-    <div class="settings" id="otherSettings" style="margin-top:14px"></div>
+  <section class="card full" id="decisions" hidden>
+    <h3 id="decTitle">Drought decisions <a class="help" href="help.html#other" title="About these decisions">?</a></h3>
+    <div id="decCards"></div>
   </section>
 
   <section class="card full">
@@ -149,6 +151,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="assets/engine.js"></script>
+<script src="assets/rainfed.js"></script>
 <script src="assets/farm.js"></script>
 </body>
 </html>

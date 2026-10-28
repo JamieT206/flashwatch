@@ -28,7 +28,7 @@ def load(path=ACTIONS, overrides: dict | None = None) -> dict:
             continue
         params = {k: v["value"] for k, v in a["params"].items()}
         params.update({k: v for k, v in (overrides or {}).items() if k in params})
-        out[name] = {**a, "params": params}
+        out[name] = {**a, "name": name, "params": params}
     return out
 
 
@@ -48,4 +48,19 @@ def curve(action: dict, max_notice: int = 21) -> Curve:
         saved = p["n_cut_lb"] * p["n_price_per_lb"]
         wrong = p["yield_cost_if_wrong_pct"] / 100 * p["yield_bu"] * p["price"]
         return Curve(k, saved * np.array(action["avoided_share"]), np.zeros_like(k), wrong - saved)
+    if kind == "outcome":                                 # fungicide, silage: a gain if drought comes, a cost if not
+        gain, cost = outcomes(action["name"], p)
+        return Curve(k, gain * np.array(action["avoided_share"]), np.zeros_like(k), cost)
     raise ValueError(f"unknown action kind {kind!r}")
+
+
+def outcomes(name: str, p: dict) -> tuple[float, float]:
+    """($/acre if a flash drought comes, $/acre if it doesn't) for acting now. Mirrored in site/assets/rainfed.js."""
+    if name.startswith("fungicide"):
+        # Skip the pass: save its cost; lose the response it would have given (small in a dry spell, little disease).
+        return (p["cost_per_acre"] - p["response_dry_bu"] * p["price"],
+                p["response_wet_bu"] * p["price"] - p["cost_per_acre"])
+    if name == "silage":
+        # Get ready to chop drought-hit corn at the right moisture instead of late: keep a share of its feed value.
+        return (p["silage_t_per_acre"] * p["value_per_t"] * p["kept_share"], p["prep_cost_per_acre"])
+    raise ValueError(f"unknown outcome action {name!r}")

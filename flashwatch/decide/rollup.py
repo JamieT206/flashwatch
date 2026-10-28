@@ -7,8 +7,8 @@ Three scopes, kept separate (James, Oct 28):
    per grid cell, weighted by each county's irrigated acres (NASS Census 2022, county centroids).
 2. The same per-acre value scaled up to all US irrigated corn and soybeans. This is an
    extrapolation: flash-drought exposure outside the region is not measured here.
-3. Rain-fed corn in the region through cutting side-dress nitrogen ahead of a flash drought
-   (config placeholders; June decisions only).
+3. Rain-fed corn and soybeans in the region: trimming side-dress nitrogen (June) and skipping the
+   fungicide pass (July-August) ahead of a flash drought (config/actions.json; rough values).
 
 Each against both usual practices (careful, calendar). Per year: mean, median and worst/best of the
 development years in the OOF file. Food: bushels saved (crop value saved / price), calories (USDA
@@ -96,15 +96,19 @@ def run(oof: pd.DataFrame, model: str, overrides: dict | None = None) -> dict:
                          "us_acres": float(nat.get((crop, "irrigated"), np.nan))}
             res[crop]["us"] = {"dollars": per_acre * res[crop]["us_acres"],
                                "bushels": res[crop]["per_acre_bushels"] * res[crop]["us_acres"]}
-        # Scope 3: nitrogen on rain-fed corn (all corn minus irrigated), June decisions.
-        act = cfg["nitrogen"]
-        bt = backtest.run(oof, ons, model, act, base, season=("06-01", "06-30"))
-        allc = county[(county.crop == "corn") & (county.practice == "all")][["fips", "acres"]]
-        irr = county[(county.crop == "corn") & (county.practice == "irrigated")][["fips", "acres"]]
-        rf = allc.merge(irr, on="fips", how="left", suffixes=("", "_irr")).fillna(0)
-        rf = rf.assign(acres=(rf.acres - rf.acres_irr).clip(lower=0))[["fips", "acres"]]
-        yr = yearly(bt, rf, cc, act["params"]["price"])
-        res["rainfed_nitrogen"] = {"region": yr.mean().to_dict(), "region_by_year": yr.to_dict("records")}
+        # Scope 3: rain-fed corn and soybeans (all minus irrigated): side-dress nitrogen (June), the
+        # fungicide pass (corn mid-July, soybeans late July), each a one-off decision in its window.
+        def rainfed(crop):
+            allc = county[(county.crop == crop) & (county.practice == "all")][["fips", "acres"]]
+            irr = county[(county.crop == crop) & (county.practice == "irrigated")][["fips", "acres"]]
+            rf = allc.merge(irr, on="fips", how="left", suffixes=("", "_irr")).fillna(0)
+            return rf.assign(acres=(rf.acres - rf.acres_irr).clip(lower=0))[["fips", "acres"]]
+        for name, crop in (("nitrogen", "corn"), ("fungicide_corn", "corn"), ("fungicide_soy", "soybeans")):
+            act = cfg[name]
+            bt = backtest.run(oof, ons, model, act, base, season=tuple(act["window"]))
+            yr = yearly(bt, rainfed(crop), cc, act["params"]["price"])
+            res[f"rainfed_{name}"] = {"region": yr.mean().to_dict(), "region_by_year": yr.to_dict("records")}
+        res["rainfed_nitrogen"] = res.pop("rainfed_nitrogen")
         out["scopes"][base] = res
     out["sources"] = {"acres": "USDA NASS Census of Agriculture 2022 (county, harvested acres)",
                       "kcal": "USDA FoodData Central: corn grain yellow 365 kcal/100 g (fdcId 170288); soybeans mature raw 446 kcal/100 g (fdcId 174270)",

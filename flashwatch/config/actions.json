@@ -173,30 +173,30 @@
     ]
   },
   "nitrogen": {
-    "label": "Cut or delay side-dress nitrogen",
+    "label": "Trim side-dress nitrogen",
     "kind": "table",
     "per": "acre",
-    "note": "Needs agronomy input: how much N a drought-capped crop can use, and the yield cost of under-applying if rain comes. All placeholders.",
+    "note": "Extension advice (NC State 2026, Wisconsin, Ohio State) is to keep the planned rate unless drought has cut yield potential; a flash-drought warning is the early sign that it may. So a trim, not a skip, and only on rain-fed corn.",
     "params": {
       "n_cut_lb": {
-        "value": 40,
-        "source": "PLACEHOLDER: lb N/acre not applied"
+        "value": 30,
+        "source": "Trim of a typical 40-60 lb side-dress; large cuts are not advised"
       },
       "n_price_per_lb": {
-        "value": 0.6,
-        "source": "PLACEHOLDER: $/lb N"
+        "value": 0.66,
+        "source": "USDA AMS Iowa production cost report, June 2026: anhydrous ammonia $1,085 a ton"
       },
       "yield_cost_if_wrong_pct": {
-        "value": 5.0,
-        "source": "PLACEHOLDER: yield lost from the cut if no drought comes, %"
+        "value": 3.0,
+        "source": "Estimate: yield lost from a 30 lb trim if rain comes and the crop needed it"
       },
       "yield_bu": {
-        "value": 220.0,
-        "source": "PLACEHOLDER"
+        "value": 170.0,
+        "source": "Rain-fed corn, typical; the farm page uses USDA county yields"
       },
       "price": {
-        "value": 4.5,
-        "source": "PLACEHOLDER"
+        "value": 4.3,
+        "source": "USDA 2024 marketing-year price, corn-belt states"
       }
     },
     "notice_days": [
@@ -208,6 +208,128 @@
       0.5,
       1.0,
       1.0
+    ],
+    "once": true,
+    "window": [
+      "06-01",
+      "06-30"
     ]
+  },
+  "fungicide_corn": {
+    "label": "Skip the fungicide pass (corn)",
+    "kind": "outcome",
+    "per": "acre",
+    "once": true,
+    "window": [
+      "07-10",
+      "08-05"
+    ],
+    "note": "Foliar fungicide at tasseling/silking. Iowa State: average gain 3.3 bu/acre over 26 sites, profitable 27% of the time; responses are larger with disease and wet weather and near zero in dry seasons (NC State 2024 drought trial: no significant gain). Ohio State: ~$40/acre product and application; Wisconsin ~$22.",
+    "notice_days": [
+      0,
+      7,
+      14
+    ],
+    "avoided_share": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "params": {
+      "cost_per_acre": {
+        "value": 32,
+        "source": "Product and application, between Wisconsin ($22) and Ohio State ($40)"
+      },
+      "response_wet_bu": {
+        "value": 9.0,
+        "source": "Gain when disease is present and it stays wet (fields you'd normally spray)"
+      },
+      "response_dry_bu": {
+        "value": 1.0,
+        "source": "Gain in a dry spell: little disease (NC State 2024 drought trial)"
+      },
+      "price": {
+        "value": 4.3,
+        "source": "USDA 2024 marketing-year price, corn-belt states"
+      }
+    }
+  },
+  "fungicide_soy": {
+    "label": "Skip the fungicide pass (soybeans)",
+    "kind": "outcome",
+    "per": "acre",
+    "once": true,
+    "window": [
+      "07-20",
+      "08-20"
+    ],
+    "note": "Foliar fungicide at R3. Responses smaller than corn, again largest with disease and wet weather.",
+    "notice_days": [
+      0,
+      7,
+      14
+    ],
+    "avoided_share": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "params": {
+      "cost_per_acre": {
+        "value": 25,
+        "source": "Product and application, estimate"
+      },
+      "response_wet_bu": {
+        "value": 3.0,
+        "source": "Gain when disease is present and it stays wet, estimate"
+      },
+      "response_dry_bu": {
+        "value": 0.3,
+        "source": "Gain in a dry spell, estimate"
+      },
+      "price": {
+        "value": 10.0,
+        "source": "USDA 2024 marketing-year price, corn-belt states"
+      }
+    }
+  },
+  "silage": {
+    "label": "Get ready to chop drought-hit corn for silage",
+    "kind": "outcome",
+    "per": "acre",
+    "once": true,
+    "window": [
+      "07-20",
+      "08-31"
+    ],
+    "note": "For livestock farms. Drought-hit corn is still feed if chopped at the right moisture (60-70%); it often looks drier than it is, so test before chopping (Minnesota and Wisconsin extension). Notice gives time to line up a chopper, storage and moisture tests. Rough estimates.",
+    "notice_days": [
+      0,
+      7,
+      14
+    ],
+    "avoided_share": [
+      0.4,
+      1.0,
+      1.0
+    ],
+    "params": {
+      "silage_t_per_acre": {
+        "value": 9,
+        "source": "Drought-hit corn silage yield, tons an acre (estimate)"
+      },
+      "value_per_t": {
+        "value": 50,
+        "source": "Corn silage value, $ a ton (estimate)"
+      },
+      "kept_share": {
+        "value": 0.1,
+        "source": "Feed value kept by chopping on time rather than late (estimate)"
+      },
+      "prep_cost_per_acre": {
+        "value": 4,
+        "source": "Booking and testing if no drought comes (estimate)"
+      }
+    }
   }
 }

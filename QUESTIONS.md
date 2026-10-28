@@ -130,7 +130,7 @@ in about two. Cost: the 3 requests now in ECMWF's queue are lost and may block n
 A different IP address wouldn't help: ECMWF's queue limit is per account, not per address.
 **Recommendation:** restart now. **Default until you answer:** leave it running; I won't stop it.
 
-### Q14. Rain-fed farms: give them equal billing? (Oct 29)
+### Q14. Rain-fed farms: give them equal billing? (Oct 29) **RESOLVED Oct 29 (James: yes). Built: Irrigated / Rain-fed toggle on the farm page; decision cards for fungicide (corn, soybeans), side-dress nitrogen, silage and hay; rain-fed scopes in the roll-up (~$171M a year across the region's rain-fed acres, against ~$19M irrigated; rough values).**
 The coverage area has 130 million rain-fed acres of corn and soybeans against 13 million irrigated (2022 Census). Even the
 rough nitrogen estimate (~$50M a year in the region) is larger than the irrigation one (~$19M). The farm page now has a
 Watering setting (pivot-irrigated / rain-fed); rain-fed switches the advice box to drought decisions (side-dress nitrogen,
@@ -142,7 +142,7 @@ DESIGN L9.
 rain-fed scope to the big picture. **Default until you answer:** rain-fed mode as built; fungicide and silage after the
 summer M2 work.
 
-### Q15. Track the water a farmer has already put on? (Oct 29)
+### Q15. Track the water a farmer has already put on? (Oct 29) **RESOLVED Oct 29 (James: yes, build it, with irrigation-system and farm-software hookups as an agent case).**
 You asked whether FlashWatch can credit irrigation already applied ("they irrigated 2 days, so they can stop now").
 The current engine can't: it assumes the soil is full when a dry spell begins, so water put on earlier doesn't count.
 Doing it properly means a day-by-day soil-water account for the field (the "checkbook method" irrigators use): rain and

@@ -33,8 +33,10 @@
       <label>Compared with<select id="base"><option value="careful">starting irrigation 2 days after stress shows</option><option value="calendar">starting irrigation on July 1</option></select></label>
     </div>
     <div id="farmTable" style="overflow-x:auto"></div>
+    <div class="kpis two" id="regionTotals" style="margin-top:22px"></div>
     <p class="note" id="farmNote">Values calculated based on average flash-drought duration of 21 days and actual USDA county yields, 2005-2021
-      (1.5 to 3.6% of yield). Farm sizes: 2022 Census of Agriculture averages for the region. Rain-fed nitrogen values are rough.</p>
+      (1.5 to 3.6% of yield). Farm sizes: 2022 Census of Agriculture averages for the region. Rain-fed values (trimming side-dress
+      nitrogen, skipping the fungicide pass in a dry spell) rest on extension averages and are rougher than the irrigation model.</p>
   </section>
 
   <div class="top2">
@@ -84,6 +86,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
 <script src="assets/engine.js"></script>
+<script src="assets/rainfed.js"></script>
 <script src="assets/region.js"></script>
 </body>
 </html>

@@ -20,7 +20,7 @@ const DEMO_TODAY = { year: 2012, date: "07-03", demo: true };
 
 // [key, label, type, options/step, shown for: "all" | "irrigated"]
 const FARM_FIELDS = [
-  ["watering", "Watering", "select", ["pivot-irrigated", "rain-fed"], "all"],
+  ["livestock", "Livestock on the farm", "select", ["no", "yes"], "all"],
   ["crop", "Crop", "select", ["corn", "soybeans"], "all"],
   ["acres", "Acres", "number", 1, "all"],
   ["gpm_per_acre", "Pivot capacity (gpm per acre)", "number", 0.1, "irrigated"],
@@ -32,13 +32,6 @@ const FARM_FIELDS = [
   ["spell_days", "Dry spell to plan for (days)", "number", 1, "irrigated"],
   ["calendar", "Calendar start date (MM-DD)", "text", null, "irrigated"],
 ];
-const OTHER_FIELDS = [
-  ["hay_tons", "Hay or feed to buy (tons)", 1], ["hay_price", "Hay price ($/ton)", 5],
-  ["hay_rise", "Price rise in a drought (%)", 1], ["hay_carry", "Cost of buying early if no drought (%)", 1],
-  ["n_cut_lb", "Side-dress nitrogen you could skip (lb/acre)", 1], ["n_price", "Nitrogen price ($/lb)", 0.05],
-  ["n_wrong_pct", "Yield lost if you skip it and rain comes (%)", 0.5],
-];
-
 // Local starting values and where each comes from (site/data/defaults.json, flashwatch/site/defaults.py).
 function localValues() {
   const crop = S.over.crop || "corn", watering = S.over.watering || "pivot-irrigated";
@@ -47,12 +40,12 @@ function localValues() {
   const fx = k => D.fixed && D.fixed[k] ? D.fixed[k] : null;
   const prac = watering === "rain-fed" ? "rainfed" : "irrigated";
   const yr = D.yield_years ? `${D.yield_years[0]}-${String(D.yield_years[1]).slice(2)}` : "";
-  const v = { ...FW.DEFAULTS[crop], crop, watering, acres: 130, soil: "Silt loam", spell_days: 21, calendar: "07-01",
-              hay_tons: 50, hay_price: 180, hay_rise: 30, hay_carry: 8, n_cut_lb: 40, n_price: 0.6, n_wrong_pct: 5 };
-  const src = { acres: "One quarter-section pivot", gpm_per_acre: "Typical Nebraska pivot", soil: "Pick your soil",
+  const v = { ...FW.DEFAULTS[crop], ...RF.DEFAULTS, crop, watering, livestock: "no", soil: "Silt loam", spell_days: 21, calendar: "07-01",
+              acres: watering === "rain-fed" ? (crop === "corn" ? 300 : 300) : 130 };
+  const src = { ...RF.SOURCES, acres: watering === "rain-fed" ? "Average corn farm in the region (2022 Census)" : "One quarter-section pivot", gpm_per_acre: "Typical Nebraska pivot", soil: "Pick your soil",
                 spell_days: "Average flash drought (county yields)", reaction_days: "Typical practice",
                 calendar: "A fixed start some farms use", hay_tons: "Example herd", hay_carry: "Estimate",
-                watering: "", crop: "" };
+                watering: "", crop: "", livestock: "Shows hay, feed and silage decisions" };
   const set = (k, val, s) => { if (val !== null && val !== undefined && isFinite(val)) { v[k] = val; src[k] = s; } };
   if (cy && cy[crop]) set("yield_bu", cy[crop][prac], `USDA, ${S.cty[1]} ${S.cty[2]}, ${yr} average`);
   if (st) {
@@ -60,7 +53,7 @@ function localValues() {
     set("hay_price", st.hay_price, `USDA, ${S.cty[2]} ${D.price_year} average`);
     set("hay_rise", st.hay_rise, `USDA, ${S.cty[2]} rise in 2012`);
   }
-  for (const k of ["n_price", "pump_cost_per_in", "n_cut_lb", "n_wrong_pct"]) if (fx(k)) set(k, fx(k).value, fx(k).source);
+  for (const k of ["n_price", "pump_cost_per_in"]) if (fx(k)) set(k, fx(k).value, fx(k).source);
   for (const k of Object.keys(v)) if (!(k in src)) src[k] = "Typical value";
   return { v, src };
 }
@@ -73,31 +66,29 @@ function saveOver() { try { localStorage.setItem("fw.over", JSON.stringify(S.ove
 const irrigated = () => S.farm.watering !== "rain-fed";
 function params() { return { ...S.farm, awc_in_per_ft: FW.SOILS[S.farm.soil] ?? 2.0 }; }
 
-// ---------- other actions (hay or feed, nitrogen): value-by-notice tables, rough ----------
+// ---------- drought decisions other than irrigation (site/assets/rainfed.js) ----------
 
-function tableCurve(notice, avoided, costNoEvent) {
-  return { rows: notice.map((k, i) => ({ notice: k, avoided: avoided[i], extraCost: 0 })), costNoEvent };
+function decisions() {
+  return irrigated() ? RF.forFarm(S.farm, S.farm.livestock === "yes").filter(a => a.key === "hay")
+                     : RF.forFarm(S.farm, S.farm.livestock === "yes");
 }
-function otherCurves(f) {
-  const rise = f.hay_tons * f.hay_price * f.hay_rise / 100;
-  const saved = f.n_cut_lb * f.n_price, wrong = f.n_wrong_pct / 100 * f.yield_bu * f.price;
-  const out = [{ name: "Buy hay or feed before prices rise", act: "Buy hay or feed now", per: "for the farm",
-                 c: tableCurve([0, 7, 14, 21, 28], [0.6, 0.8, 0.95, 1, 1].map(s => s * rise), f.hay_tons * f.hay_price * f.hay_carry / 100),
-                 window: ["01-01", "12-31"] }];
-  if (f.crop === "corn" && !irrigated()) {
-    out.push({ name: "Skip or cut side-dress nitrogen", act: "Skip or cut side-dress nitrogen", per: "an acre",
-               c: tableCurve([0, 7, 14], [0.5, 1, 1].map(s => s * saved), Math.max(wrong - saved, 0)), window: ["06-01", "06-30"] });
+// One decision on one date: act / wait / calm, outside its window ("off"), or already in drought.
+function decisionAt(a, i, r = S.rec) {
+  const md = S.meta.dates[i], p1 = r.p1[i], p2 = r.p2[i], c = RF.curve(a, S.farm);
+  const be = c.cost > 0 ? c.cost / (c.gain + c.cost) : 0;
+  if (p1 === null || p2 === null) {
+    const dry = r.rz[i] === null && !(r.fz || []).includes(i);
+    return { c, be, chance: null, state: !RF.inWindow(a, md) ? "off" : dry ? "drought" : "none" };
   }
-  return out;
+  const d = FW.decide(c, FW.daily(p1, p2), FW.twoWay(0.5), 2), chance = Math.min(1, p1 + p2);
+  if (!RF.inWindow(a, md)) return { c, d, be, chance, state: "off" };
+  return { c, d, be, chance, state: d.actNow ? "act" : d.evWait > 0 ? "wait" : "calm" };
 }
-function otherAt(i) {
-  const r = S.rec, md = S.meta.dates[i], p1 = r.p1[i], p2 = r.p2[i];
-  return otherCurves(S.farm).map(o => {
-    if (md < o.window[0] || md > o.window[1]) return { ...o, state: "off" };
-    if (p1 === null || p2 === null) return { ...o, state: "none" };
-    const d = FW.decide(o.c, FW.daily(p1, p2), FW.twoWay(0.5), 2);
-    return { ...o, d, state: d.actNow ? "act" : d.evWait > 0 ? "wait" : "calm" };
-  });
+function decisionSeason(a, r, year, upTo = null) {
+  const c = RF.curve(a, S.farm), dts = S.meta.dates;
+  const cut = x => upTo === null ? x : x.map((v, i) => i <= upTo ? v : null);
+  const ons = upTo === null ? r.onsets : r.onsets.filter(o => o <= dts[upTo]);
+  return FW.season(c, dts, cut(r.p1), cut(r.p2), ons, { year, first: a.window[0], last: a.window[1], once: a.key !== "hay" });
 }
 
 // ---------- geography ----------
@@ -209,7 +200,7 @@ function adviceAt(i, c, full = false) {
     if (r.rz[i] === null) return { cls: "drought", big: "In drought now", sub: "Your soil is already in drought",
       why: `Soil moisture is below the 20th percentile for the date, so there is no flash drought left to warn about.
             ${irrigated() ? "This is when irrigation matters most: keep up with the crop, with the pivot running full time in hot weather."
-              : "Drought-year decisions (hay and feed) are under Other actions."} Warnings start again when the soil recovers.` };
+              : "The drought decisions below show what to do now."} Warnings start again when the soil recovers.` };
     return { cls: "none", big: "No forecast for this date", sub: "", why: "" };
   }
   if (!irrigated()) return rainfedAdvice(i, full);
@@ -250,16 +241,21 @@ function adviceAt(i, c, full = false) {
 }
 
 function rainfedAdvice(i, full) {
-  const acts = otherAt(i).filter(o => o.state !== "off" && o.state !== "none");
-  const now = acts.filter(o => o.state === "act"), wait = acts.filter(o => o.state === "wait");
-  const cls = now.length ? "act" : wait.length ? "wait" : "calm";
+  const all = decisions().map(a => ({ a, s: decisionAt(a, i) }));
+  const live = all.filter(o => o.s.state !== "off");
+  const now = live.filter(o => o.s.state === "act" || o.s.state === "drought"), wait = live.filter(o => o.s.state === "wait");
+  const cls = now.length ? "act" : wait.length ? "wait" : live.length ? "calm" : "off";
   if (!full) return { cls };
-  const r = S.rec;
-  const list = acts.map(o => `${o.name}: <strong>${o.state === "act" ? "act now" : o.state === "wait" ? "not yet" : "no need"}</strong> (${usd(o.d.evNow)} ${o.per}, on average)`).join("<br>");
-  return { cls, big: now.length ? now.map(o => o.act).join("; ") : wait.length ? "Not yet: keep checking forecasts" : "No drought action needed",
-    sub: cls === "calm" ? "Flash-drought risk low" : cls === "act" ? "Flash-drought risk high" : "Flash-drought risk rising",
-    why: `The chance of a flash drought this week is ${pct(r.p1[i])} (normal for the date: ${pct(r.n1[i])}).<br>${list}`, trigger: "" };
+  const r = S.rec, md = S.meta.dates[i];
+  const next = all.filter(o => o.a.window[0] > md).sort((x, y) => x.a.window[0] < y.a.window[0] ? -1 : 1)[0];
+  const risk = r.p1[i] === null ? "" : `The chance of a flash drought this week is ${pct(r.p1[i])} (normal for the date: ${pct(r.n1[i])}). `;
+  if (!live.length) return { cls: "off", big: "No drought decisions due", sub: next ? `Next: ${next.a.title.toLowerCase()}, from ${fmtShort(next.a.window[0])}` : "",
+    why: risk + "Each decision below shows when it's made and what it's worth.", trigger: "" };
+  return { cls, big: now.length ? now.map(o => o.a.act).join(" · ") : wait.length ? "Not yet: keep checking forecasts" : "Keep your plans",
+    sub: cls === "calm" ? "Flash-drought risk low" : cls === "act" ? (now.some(o => o.s.state === "drought") ? "Already in drought" : "Flash-drought risk high") : "Flash-drought risk rising",
+    why: risk + "Details and the numbers behind each decision are below.", trigger: "" };
 }
+const fmtShort = md => new Date(Date.UTC(2001, +md.slice(0, 2) - 1, +md.slice(3, 5))).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 
 // ---------- rendering ----------
 
@@ -269,7 +265,7 @@ function renderAll() {
   const c = FW.curve(params(), 21);
   renderNote();
   renderOps();
-  renderOther();
+  renderDecisions();
   renderVerdict(c);
   renderStrip(c);
   renderTiles();
@@ -277,6 +273,8 @@ function renderAll() {
   renderValue(c);
   renderNotice(c);
   renderMapState();
+  $("wIrr").setAttribute("aria-pressed", irrigated());
+  $("wRain").setAttribute("aria-pressed", !irrigated());
   const demo = S.mode === "today" && S.live && S.live.demo;
   $("banner").hidden = !(demo || S.mode === "replay");
   $("banner").innerHTML = demo
@@ -329,7 +327,8 @@ function renderStrip(c) {
     return `<div class="seg-${cls}${s.kind !== "day" ? " end" : ""}${k === cur ? " on" : ""}" data-s="${k}" title="${label}">${s.kind === "pre" ? "Before June" : s.kind === "post" ? "After Aug" : ""}${month}</div>`;
   }).join("");
   $("stripLegend").innerHTML = `<span class="d">${fmtDate(S.meta.dates[S.i])}</span>` +
-    `<span class="keys"><b class="k-act"></b>Start extra irrigation <b class="k-wait"></b>Not yet <b class="k-calm"></b>As usual <b class="k-drought"></b>In drought</span>`;
+    (irrigated() ? `<span class="keys"><b class="k-act"></b>Start extra irrigation <b class="k-wait"></b>Not yet <b class="k-calm"></b>As usual <b class="k-drought"></b>In drought</span>`
+                 : `<span class="keys"><b class="k-act"></b>Act <b class="k-wait"></b>Not yet <b class="k-calm"></b>Keep your plans <b class="k-drought"></b>In drought</span>`);
   if (!live) el.querySelectorAll("[data-s]").forEach(div => { div.onclick = () => setDate(st[+div.dataset.s].i); });
 }
 
@@ -485,11 +484,7 @@ function seasonValue(c, r, year = S.year, upTo = S.mode === "today" ? S.i : null
 
 async function renderTally(ss, c) {
   const acres = S.farm.acres, today = S.mode === "today";
-  if (!irrigated()) {
-    $("seasonTally").innerHTML = `<div class="row wide"><div class="note">Season values are worked out for irrigation. For rain-fed fields, see the decisions in the box above and under Other actions.</div></div>`;
-    $("events").innerHTML = "";
-    return;
-  }
+  if (!irrigated()) { await renderRainfedTally(); return; }
   const cal = FW.season(FW.curve({ ...params(), reaction_days: 7 }, 21), S.meta.dates, S.rec.p1, S.rec.p2, S.rec.onsets,
                         { year: S.year, baseline: "calendar", calendar: S.farm.calendar });
   const row = (title, v, sub, big = true) => `<div class="row"><div class="note">${title}</div><div class="v ${v >= 0 ? "pos" : "neg"}${big ? "" : " small"}">${usd(v)} an acre</div><div class="note">${sub}</div></div>`;
@@ -503,6 +498,26 @@ async function renderTally(ss, c) {
     ? `<li>${fmtDate(e.date)}: start extra irrigation. A flash drought began ${e.notice} day${e.notice === 1 ? "" : "s"} later (${usd(e.value)} an acre).</li>`
     : `<li>${fmtDate(e.date)}: start extra irrigation. No dry spell came (${usd(e.value)} an acre of pumping).</li>`).join("")
     : `<li>No extra irrigation ${today ? "so far" : "this summer"}.${ss.onsets ? ` ${ss.onsets} dry spell${ss.onsets > 1 ? "s" : ""} came without a warning.` : ""}</li>`;
+}
+
+// Rain-fed season value: the field decisions per acre, and hay for the farm, this season and on average.
+async function renderRainfedTally() {
+  const list = decisions(), acres = S.farm.acres, today = S.mode === "today";
+  const field = list.filter(a => a.per !== "for the farm"), hay = list.find(a => a.key === "hay");
+  const total = (r, y, upTo = null) => {
+    const f = d3.sum(field, a => decisionSeason(a, r, y, upTo).value);
+    return { field: f, hay: hay ? decisionSeason(hay, r, y, upTo).value : 0 };
+  };
+  const now = total(S.rec, S.year, today ? S.i : null);
+  const ys = S.meta.years, recs = await Promise.all(ys.map(y => loadTile(y, S.cell)));
+  const all = recs.map((r, k) => r ? total(r, ys[k]) : null).filter(Boolean);
+  const mean = { field: d3.mean(all, v => v.field), hay: d3.mean(all, v => v.hay) };
+  const row = (title, v) => `<div class="row"><div class="note">${title}</div><div class="v ${v.field >= 0 ? "pos" : "neg"}">${usd(v.field)} an acre</div>
+    <div class="note">${usd(v.field * acres)} on ${acres} acres${hay ? `, plus ${usd(v.hay)} from buying hay early` : ""}.</div></div>`;
+  $("seasonTally").innerHTML = row(today ? "This season so far" : `The ${S.year} season`, now) +
+    (all.length ? row(`Average of ${all.length} past seasons here`, mean) : "") +
+    `<div class="row wide"><div class="note">From the decisions below (${list.map(a => a.title.toLowerCase()).join(", ")}), each made at most once a season, compared with your usual plan.</div></div>`;
+  $("events").innerHTML = "";
 }
 
 async function multiYear(c) {
@@ -537,16 +552,103 @@ function renderNotice(c) {
     With no rain, stress starts ${c.stressDay} days into a dry spell. ${sat > 0 ? `Warning helps up to about <strong>${sat} days</strong>. After that, the soil is already full when the pivot starts.` : "Warning barely matters: your pivot keeps up with the crop if started on time."}`;
 }
 
-function renderOther() {
-  const rows = otherAt(S.i).map(o => {
-    if (o.state === "off") return `<tr><td>${o.name}</td><td colspan="3">Decided in June, at side-dress time</td></tr>`;
-    if (o.state === "none") return `<tr><td>${o.name}</td><td colspan="3">No forecast for this date</td></tr>`;
-    const v = o.state === "act" ? "Act now" : o.state === "wait" ? "Not yet" : "No need";
-    return `<tr><td>${o.name}</td><td><strong class="${o.state === "act" ? "neg" : ""}">${v}</strong></td><td>${usd(o.d.evNow)} ${o.per}</td>
-      <td>${isFinite(o.d.breakeven) ? pct(o.d.breakeven) : "-"}</td></tr>`;
-  }).join("");
-  $("other").innerHTML = `<table><thead><tr><th>Decision</th><th>Today</th><th>Acting today, on average</th><th>Pays when the 14-day chance tops</th></tr></thead><tbody>${rows}</tbody></table>
-    ${S.farm.crop === "corn" && irrigated() ? `<p class="note">Nitrogen: for rain-fed corn (set Watering to rain-fed below).</p>` : ""}`;
+// ---------- decision cards: nitrogen, fungicide, silage, hay ----------
+
+function renderDecisions() {
+  const list = decisions(), sec = $("decisions");
+  sec.hidden = !list.length;
+  // Rain-fed: the decisions are the main event, straight under the advice. Irrigated: hay comes after the season chart.
+  const anchor = irrigated() ? $("seasonCard") : $("top2");
+  if (anchor.nextElementSibling !== sec) anchor.after(sec);
+  $("decTitle").firstChild.textContent = irrigated() ? "Other decisions " : "Drought decisions ";
+  const lv = localValues();
+  $("decCards").innerHTML = list.map(a => `
+    <div class="dcard" id="dc-${a.key}">
+      <div class="dhead"><h4>${a.title}</h4><span class="note">${a.when}</span></div>
+      <div class="dbody">
+        <div class="dleft">
+          <div class="dpill"></div>
+          <div class="dgauge"></div>
+          <div class="dout"><div><b class="dgain"></b><span>if a flash drought comes</span></div><div><b class="dcost"></b><span>if it doesn't</span></div></div>
+          <p class="dwhy"></p>
+          <div class="dseason"></div>
+        </div>
+        <div class="dright">
+          <div class="dchart"></div>
+          <div class="dparams">${a.params.map(([k, label, step, def]) => {
+            const max = Math.max(def * 3, step * 10), v = S.farm[k];
+            return `<label><span>${label} <b data-v="${k}">${v}</b></span>
+              <input type="range" data-p="${k}" min="0" max="${max}" step="${step}" value="${v}">
+              <span class="src${k in S.over ? " over" : ""}">${k in S.over ? `Your value (local: ${lv.v[k]}) <button class="linkish" data-reset="${k}">reset</button>` : (lv.src[k] || "")}</span></label>`;
+          }).join("")}</div>
+        </div>
+      </div>
+    </div>`).join("");
+  for (const a of list) {
+    updateCard(a);
+    const el = $(`dc-${a.key}`);
+    el.querySelectorAll("[data-p]").forEach(inp => {
+      inp.addEventListener("input", () => {
+        S.over[inp.dataset.p] = +inp.value; S.farm[inp.dataset.p] = +inp.value;
+        el.querySelector(`[data-v="${inp.dataset.p}"]`).textContent = inp.value;
+        updateCard(a);
+      });
+      inp.addEventListener("change", () => { saveOver(); renderAll(); });
+    });
+    el.querySelectorAll("[data-reset]").forEach(b => b.addEventListener("click", ev => {
+      ev.preventDefault(); delete S.over[b.dataset.reset]; saveOver(); renderAll();
+    }));
+  }
+}
+
+function updateCard(a) {
+  const el = $(`dc-${a.key}`), s = decisionAt(a, S.i), farmWide = a.per === "for the farm";
+  const money = v => farmWide ? usd(v) : `${usd(v, 0)} <small>an acre</small>`;
+  const pill = { act: [a.act, "act"], drought: [`${a.act}: already in drought`, "act"], wait: ["Not yet: decide at the next forecast", "wait"],
+                 calm: [a.calm, "calm"], off: [`Not due yet: ${a.when.toLowerCase()}`, "off"], none: ["No forecast for this date", "off"] }[s.state];
+  if (s.state === "off" && S.meta.dates[S.i] > a.window[1]) pill[0] = "Decided for this season";
+  el.querySelector(".dpill").className = `dpill ${pill[1]}`;
+  el.querySelector(".dpill").textContent = pill[0];
+  el.querySelector(".dgain").innerHTML = money(s.c.gain);
+  el.querySelector(".dcost").innerHTML = money(-s.c.cost);
+  el.querySelector(".dwhy").innerHTML = a.explain(S.farm);
+  // Gauge: today's 14-day chance against the chance at which acting pays.
+  const top = Math.min(1, Math.max(0.3, s.be * 1.6, (s.chance || 0) * 1.25)), at = v => `${(100 * Math.min(v, top) / top).toFixed(1)}%`;
+  el.querySelector(".dgauge").innerHTML = `
+    <div class="gtrack"><div class="gkeep" style="width:${at(s.be)}"></div>
+      <div class="gbe" style="left:${at(s.be)}"><span>pays above ${pct(s.be)}</span></div>
+      ${s.chance === null ? "" : `<div class="gnow" style="left:${at(s.chance)}"><span>14-day chance today: ${pct(s.chance)}</span></div>`}</div>
+    <div class="glab"><span>${a.calm}</span><span>${a.act}</span></div>`;
+  const upTo = S.mode === "today" ? S.i : null, sv = decisionSeason(a, S.rec, S.year, upTo);
+  const acres = S.farm.acres;
+  el.querySelector(".dseason").innerHTML = `<strong>${S.mode === "today" ? "This season so far" : `The ${S.year} season`}: ${usd(sv.value)}${farmWide ? "" : " an acre"}</strong>
+    ${farmWide ? "" : `(${usd(sv.value * acres)} on ${acres} acres)`}. ${sv.events.length ? sv.events.map(e => `${fmtShort(e.date)}: ${e.kind === "hit" ? `acted, flash drought ${e.notice} days later` : "acted, no flash drought came"}`).join("; ") + "."
+      : "FlashWatch didn't call it this season."}`;
+  decisionChart(a, el.querySelector(".dchart"), s.be);
+}
+
+function decisionChart(a, box, be) {
+  const r = sofar(S.rec), dates = S.meta.dates.map(dateOf);
+  const W = 520, H = 170, m = { l: 40, r: 10, t: 12, b: 22 };
+  const x = d3.scaleUtc().domain(d3.extent(dates)).range([m.l, W - m.r]);
+  const ch = r.p1.map((p, i) => p === null || r.p2[i] === null ? null : Math.min(1, p + r.p2[i]));
+  const y = d3.scaleLinear().domain([0, Math.max(0.2, be * 1.4, (d3.max(ch.filter(v => v !== null)) || 0) * 1.1)]).range([H - m.b, m.t]).nice();
+  const svg = d3.select(box).html("").append("svg").attr("viewBox", `0 0 ${W} ${H}`);
+  const w0 = x(dateOf(a.window[0])), w1 = x(dateOf(a.window[1]));
+  svg.append("rect").attr("x", w0).attr("width", w1 - w0).attr("y", m.t).attr("height", H - m.t - m.b).attr("fill", css("--calm-bg"));
+  svg.append("text").attr("x", w0 + 4).attr("y", m.t + 11).attr("font-size", 10).attr("fill", css("--muted")).text("decision window");
+  svg.append("g").attr("class", "axis").attr("transform", `translate(0,${H - m.b})`).call(d3.axisBottom(x).ticks(6).tickFormat(d3.utcFormat("%b")));
+  svg.append("g").attr("class", "axis").attr("transform", `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(4).tickFormat(d3.format(".0%")));
+  svg.append("line").attr("x1", m.l).attr("x2", W - m.r).attr("y1", y(be)).attr("y2", y(be)).attr("stroke", css("--act")).attr("stroke-dasharray", "5 3");
+  svg.append("text").attr("x", W - m.r).attr("y", y(be) - 4).attr("text-anchor", "end").attr("font-size", 10).attr("fill", css("--act")).text("pays above this");
+  svg.append("path").attr("d", d3.line().defined(v => v !== null).x((v, i) => x(dates[i])).y(v => y(v))(ch))
+    .attr("fill", "none").attr("stroke", css("--risk")).attr("stroke-width", 2);
+  ch.forEach((v, i) => {
+    if (v === null || !RF.inWindow(a, S.meta.dates[i])) return;
+    if (decisionAt(a, i, r).state === "act") svg.append("circle").attr("cx", x(dates[i])).attr("cy", y(v)).attr("r", 3.5).attr("fill", css("--act"));
+  });
+  for (const o of r.onsets) svg.append("path").attr("d", `M${x(dateOf(o))},${H - m.b} l-5,-8 l10,0 z`).attr("fill", css("--drought"));
+  cursor(svg, x(dates[S.i]), m.t, H - m.b);
 }
 
 async function renderNote() {
@@ -561,7 +663,7 @@ async function renderOps() {
   const md = S.meta.dates[S.i];
   let o = null;
   try { const r = await fetch(`data/ops/${S.year}_${md}.json`); if (r.ok) o = await r.json(); } catch (e) { /* none */ }
-  const show = o && o.place && o.place === $("place").textContent;
+  const show = irrigated() && o && o.place && o.place === $("place").textContent;
   $("opsCard").hidden = !show;
   if (!show) return;
   $("opsSms").textContent = o.sms;
@@ -691,7 +793,6 @@ function renderSettings() {
   const lv = localValues(), v = farm();
   $("settings").innerHTML = FARM_FIELDS.filter(f => f[4] === "all" || v.watering !== "rain-fed")
     .map(([k, label, type, opt]) => fieldHtml(k, label, type, opt, v, lv.src[k], k in S.over && !["crop", "watering"].includes(k))).join("");
-  $("otherSettings").innerHTML = OTHER_FIELDS.map(([k, label, step]) => fieldHtml(k, label, "number", step, v, lv.src[k], k in S.over)).join("");
   document.querySelectorAll("[data-k]").forEach(inp => inp.addEventListener("change", () => {
     const k = inp.dataset.k;
     S.over[k] = inp.type === "number" ? +inp.value : inp.value;
@@ -711,6 +812,9 @@ async function init() {
   if (!S.meta.years.includes(S.year)) S.year = S.meta.years.includes(2012) ? 2012 : S.meta.years[0];
   $("year").innerHTML = S.meta.years.map(y => `<option${y === S.year ? " selected" : ""}>${y}</option>`).join("");
   S.i = Math.max(0, S.meta.dates.indexOf(S.wantDate || "07-03"));
+  const setWatering = w => { S.over.watering = w; delete S.over.acres; delete S.over.yield_bu; saveOver(); renderSettings(); renderAll(); };
+  $("wIrr").onclick = () => setWatering("pivot-irrigated");
+  $("wRain").onclick = () => setWatering("rain-fed");
   $("modeToday").onclick = () => setMode("today");
   $("modeReplay").onclick = () => setMode("replay");
   $("year").onchange = async () => { S.year = +$("year").value; S.rec = await loadTile(S.year, S.cell); renderAll(); };
@@ -723,7 +827,7 @@ async function init() {
   $("search").onsubmit = ev => { ev.preventDefault(); if ($("q").value.trim()) search($("q").value); };
   $("mapStreet").onclick = () => { S.mapMode = "street"; $("mapStreet").setAttribute("aria-pressed", true); $("mapDrought").setAttribute("aria-pressed", false); renderMapState(); };
   $("mapDrought").onclick = () => { S.mapMode = "drought"; $("mapDrought").setAttribute("aria-pressed", true); $("mapStreet").setAttribute("aria-pressed", false); renderMapState(); };
-  $("resetAll").onclick = () => { const keep = pick(S.over, ["crop", "watering"]); S.over = keep; saveOver(); renderSettings(); renderAll(); };
+  $("resetAll").onclick = () => { const keep = pick(S.over, ["crop", "watering", "livestock"]); S.over = keep; saveOver(); renderSettings(); renderAll(); };
   initMap();
   await setMode(S.mode);
   await setLocation(S.lat, S.lon);
