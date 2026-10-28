@@ -384,7 +384,7 @@ standard deviations. Second run: passed on the first draft, in plain language fo
 week vs 4% normally, about 7 times normal; drivers: forecast rain well below normal, very dry air, 83%
 of forecast scenarios hot and dry). About 7,600 tokens per briefing. Map check: Muse named Sioux
 Falls, Chicago, St. Louis; the hotspot tool's top 3 were Des Moines, Chicago, Detroit (1 of 3 agree).
-Not yet looked into: the map may need clearer contrast or a bigger k.
+Looked into (Oct 28 night): the "truth" was the nearest city to the top single cells, but the model reads patches. Against cities ranked by the average risk within 150 km (`brief.city_truth`), the same answer agrees on 2 of 3 (Chicago, Sioux Falls), and its third pick (St. Louis) is 4th. Spark 1.3 gives the same answer. Both measures are now reported.
 
 ## O. From forecast to action: the decision dashboard (James, Oct 28; scope agreed, Q8)
 

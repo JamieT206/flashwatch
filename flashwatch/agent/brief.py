@@ -76,6 +76,21 @@ def nearest_city(lat: float, lon: float) -> str:
     return min(CITIES, key=lambda c: (CITIES[c][0] - lat) ** 2 + ((CITIES[c][1] - lon) * np.cos(np.radians(lat))) ** 2)
 
 
+def city_truth(p: pd.DataFrame, k: int = 3, radius_km: float = 150, lead: str = "any28") -> list[str]:
+    """Cities ranked by the average risk-vs-normal of the land around them (cells already in drought
+    count as normal): what a reader of the map's patches should name, rather than single cells."""
+    from flashwatch.agent.mapimg import CITIES
+    from flashwatch.obs import LAT, LON
+    lat, lon = LAT[p.iy.to_numpy()], LON[p.ix.to_numpy()]
+    ratio = (p[f"p_{lead}"] / p[f"normal_{lead}"]).where(~p.in_drought.astype(bool), 1.0).to_numpy()
+    score = {}
+    for c, (a, o) in CITIES.items():
+        m = np.hypot(lat - a, (lon - o) * np.cos(np.radians(a))) * 111 <= radius_km
+        if m.any():
+            score[c] = float(np.nanmean(ratio[m]))
+    return sorted(score, key=score.get, reverse=True)[:k]
+
+
 def map_check(issue, chat: Chat | None = None, k: int = 3) -> dict:
     """Multimodal cross-check: the model reads the rendered risk map (no numbers) and names the k
     areas of highest risk vs normal by their nearest marked city; we compare with the hotspots tool."""
@@ -97,7 +112,9 @@ def map_check(issue, chat: Chat | None = None, k: int = 3) -> dict:
         if c not in truth:
             truth.append(c)
     truth = truth[:k]
-    return {"model_saw": seen, "tool_hotspots": truth, "agree": sorted(set(seen) & set(truth))}
+    areas = city_truth(p, k)
+    return {"model_saw": seen, "tool_hotspots": truth, "agree": sorted(set(seen) & set(truth)),
+            "area_truth": areas, "agree_areas": sorted(set(seen) & set(areas))}
 
 
 def main():
