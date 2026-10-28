@@ -144,6 +144,13 @@ simple cap (no single week above the 28-day value) would tidy it if needed.
 | P9 | Year-level features (El Nino, global temperature, year, MJO) | Oct 28 finding: the top 1% of week-2 predictions were 84% from 2015 (record El Nino, a value outside the training range). With 16 training years, a once-per-year number lets the model memorise years. **Result: removing them helps** (week 1 3.9% -> 4.4% skill, week 2 1.1% -> 1.4%, any-28 4.4% -> 5.1%, fast loop, 0-40 cm). MJO (daily) on its own also hurts (-0.4 points at week 1). **Decided: all four are left out of the models** (code kept) |
 | P10 | Can the onset waves be predicted at all? (Oct 28, after the 2012 replay showed M1 flat through the spikes) | **Done; see below.** |
 
+**Lake fix (Oct 28, afternoon).** ERA5-Land carries the Great Lakes as 269 "land" cells with constant soil
+moisture; they can never have an onset and flattered all skill scores. Now excluded (`obs.land_mask`,
+4,723 land cells). Re-run on the fast loop: B0 retunes to the regional seasonal rate (no place detail
+survives); M1 skill week 1 **4.3%**, week 2 **1.2%**, any-28 **4.6%** (before: 4.4 / 1.4 / 5.4); M2 on the
+10 forecast start dates (`--fc-dates`) **15.1% / 2.4% / 8.5%** against M1 1.7 / 0.4 / 1.4 on the same dates
+(before: 15.6 / 2.7 / 9.7). Conclusions unchanged; numbers below this line predate the fix (slightly high).
+
 **P10 result: the waves are weather, and they are predictable given the weather.**
 - *Where the skill is.* Onsets come in waves: the burstiest 10% of issue dates hold 37% of week-2 onsets. Knowing the exact share of the *whole region* with an onset on each date would only give 5-10% skill; knowing it for each 2-degree block (about 200 km) would give 37-51%. So the waves are a few hundred km wide, the size of a weather system.
 - *What M1 sees.* M1's daily regional average does rise and fall with the actual rate (correlation 0.37-0.55), but it moves only a quarter as much. Land state tells it where the ground is primed, not where next week's hot, dry spell lands.
