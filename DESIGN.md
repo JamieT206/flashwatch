@@ -142,6 +142,21 @@ simple cap (no single week above the 28-day value) would tidy it if needed.
 | P7 | Predict "drought day" (presence) instead of onset | James has had interesting results modelling presence vs onset. "Was yesterday a drought day" will dominate; the interesting part is what else adds skill. Second priority |
 | P8 | Testing on held-out *places* within the same years | Second priority (James). Caution: flash droughts are mostly large. At 0-40 cm the median episode is 2 cells, but 72% of onset cell-days are in episodes of 100+ cells and 23% in episodes of 1,000+ (the largest covers 4,087 of 4,992 land cells). Held-out regions would have to be big blocks, or neighbouring training cells would give the answer away |
 | P9 | Year-level features (El Nino, global temperature, year, MJO) | Oct 28 finding: the top 1% of week-2 predictions were 84% from 2015 (record El Nino, a value outside the training range). With 16 training years, a once-per-year number lets the model memorise years. **Result: removing them helps** (week 1 3.9% -> 4.4% skill, week 2 1.1% -> 1.4%, any-28 4.4% -> 5.1%, fast loop, 0-40 cm). MJO (daily) on its own also hurts (-0.4 points at week 1). **Decided: all four are left out of the models** (code kept) |
+| P10 | Can the onset waves be predicted at all? (Oct 28, after the 2012 replay showed M1 flat through the spikes) | **Done; see below.** |
+
+**P10 result: the waves are weather, and they are predictable given the weather.**
+- *Where the skill is.* Onsets come in waves: the burstiest 10% of issue dates hold 37% of week-2 onsets. Knowing the exact share of the *whole region* with an onset on each date would only give 5-10% skill; knowing it for each 2-degree block (about 200 km) would give 37-51%. So the waves are a few hundred km wide, the size of a weather system.
+- *What M1 sees.* M1's daily regional average does rise and fall with the actual rate (correlation 0.37-0.55), but it moves only a quarter as much. Land state tells it where the ground is primed, not where next week's hot, dry spell lands.
+- *Perfect-weather test* (`--oracle coarse`, eval/oracle.py; DIAGNOSTIC, reads the future on purpose). M2 is given the weather that actually happened in weeks 1-4 (precipitation, temperature, VPD anomalies), smoothed to about 1.75 degrees, i.e. roughly what the ECMWF grid could resolve with perfect skill. No future soil moisture. Fast loop, 0-40 cm:
+
+| Lead | M1 skill (BSS) | Perfect-weather M2 skill | PR-AUC M1 -> M2 | Daily regional average tracks actual (corr) |
+| --- | --- | --- | --- | --- |
+| Week 1 | 4.4% | **26.7%** (24.7-28.4) | 0.11 -> 0.43 | 0.47 -> 0.89 |
+| Week 2 | 1.4% | **20.0%** (17.1-23.3) | 0.06 -> 0.34 | 0.37 -> 0.82 |
+| Any in 28 days | 5.4% | **42.7%** (41.0-45.2) | 0.23 -> 0.68 | 0.55 -> 0.93 |
+
+  In 2012 the perfect-weather model catches both waves (actual week-2 rate 28% on May 3 / 19% on Aug 13; M2 13% then 26% the next issue, and 19%), where M1 stays at 3-5%.
+- *Meaning.* The target is sound and the onset waves are not noise; they are what weather forecasts exist to see. The ceiling is about 15x M1's skill at week 2. The open question is how much of it the real ECMWF forecasts keep (good at week 1, weaker at week 2, weak beyond), so M2 on real forecasts is the decisive run. The `native` (0.25 degree) variant is the absolute upper bound.
 
 ---
 

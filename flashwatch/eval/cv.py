@@ -119,6 +119,8 @@ def main():
     ap.add_argument("--depth", default="0-40", help="target soil depth (DESIGN.md T1; 0-40 since Oct 28)")
     ap.add_argument("--drop", nargs="+", default=[], help="feature names/prefixes to leave out (ablation)")
     ap.add_argument("--usdm", action="store_true", help="add the Drought Monitor features (F9; on trial)")
+    ap.add_argument("--oracle", choices=["native", "coarse"],
+                    help="DIAGNOSTIC: give M2 the weather that actually happened (reads the future; eval/oracle.py)")
     args = ap.parse_args()
     holdout = args.holdout or (FAST_HOLDOUT if args.fast else None)
     thin = args.thin or (2 if args.fast else 1)
@@ -131,7 +133,10 @@ def main():
                         **indices.load_all())
     ff = None
     from flashwatch.forecast import FCST_STORE
-    if FCST_STORE.exists():
+    if args.oracle:
+        from flashwatch.eval.oracle import PerfectWeather
+        ff = PerfectWeather(cube, issues, coarse=args.oracle == "coarse")
+    elif FCST_STORE.exists():
         import xarray as xr
         from flashwatch.features.forecast import ForecastFeatures
         ff = ForecastFeatures(xr.open_zarr(FCST_STORE).load(), issues)
