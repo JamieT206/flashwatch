@@ -70,6 +70,19 @@ def open_obs():
     return xr.open_zarr(OBS_STORE)
 
 
+def land_mask(ds, min_land: float = 0.2) -> np.ndarray:
+    """Cells used at all: at least min_land of the cell has ERA5-Land soil data, and the soil moisture
+    actually varies. ERA5-Land carries the Great Lakes as land points with a constant ~0.01 m3/m3
+    (261 cells here, Oct 28 finding); they can never have an onset and would flatter every skill score."""
+    rz = ds.rzsm.values
+    with np.errstate(invalid="ignore"):
+        varies = np.nanstd(rz, axis=0) > WATER_SD
+    return (ds.land_frac.values >= min_land) & varies
+
+
+WATER_SD = 0.002          # m3/m3: lake cells are flat, real soil varies by ~0.03 or more
+
+
 if __name__ == "__main__":
     build()
     sys.exit(0)

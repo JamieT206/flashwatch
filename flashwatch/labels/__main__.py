@@ -49,12 +49,12 @@ def label_file(high: int, low: int, depth: str = REFERENCE_DEPTH) -> str:
 
 
 def load(years=YEARS, depth: str = REFERENCE_DEPTH):
-    from flashwatch.obs import open_obs
+    from flashwatch.obs import land_mask, open_obs
     ds = open_obs().sel(time=slice(f"{years[0]}-01-01", f"{years[-1]}-12-31"))
     time = pd.DatetimeIndex(ds.time.values)
     rz = running_mean(ds.rzsm.values if depth == REFERENCE_DEPTH else soil_moisture(ds, depth), 5)
     masked = mask_days(ds.snow_depth.values, ds.soil_temperature_level_1.values)
-    land = (ds.land_frac.values >= 0.2)
+    land = land_mask(ds)
     return time, rz, masked, land
 
 

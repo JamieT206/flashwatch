@@ -47,7 +47,7 @@ def load_cube(years=YEARS, min_land=0.2, depth: str = "0-100") -> Cube:
     the rz_* features all follow it."""
     from flashwatch.labels.__main__ import REFERENCE_DEPTH, soil_moisture
     from flashwatch.labels.onset import mask_days
-    from flashwatch.obs import open_obs
+    from flashwatch.obs import land_mask, open_obs
 
     ds = open_obs().sel(time=slice(f"{years[0]}-01-01", f"{years[-1]}-12-31"))
     v = lambda name: ds[name].values.astype(np.float32)  # noqa: E731
@@ -60,4 +60,4 @@ def load_cube(years=YEARS, min_land=0.2, depth: str = "0-100") -> Cube:
                 evap=v("total_evaporation_sum"), pet=v("potential_evaporation_sum"),
                 ssrd=v("surface_solar_radiation_downwards_sum"),
                 masked=mask_days(v("snow_depth"), v("soil_temperature_level_1")),
-                land=ds.land_frac.values >= min_land, extra=extra)
+                land=land_mask(ds, min_land), extra=extra)
