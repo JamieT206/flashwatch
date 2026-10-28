@@ -156,6 +156,7 @@ simple cap (no single week above the 28-day value) would tidy it if needed.
 | Any in 28 days | 5.4% | **42.7%** (41.0-45.2) | 0.23 -> 0.68 | 0.55 -> 0.93 |
 
   In 2012 the perfect-weather model catches both waves (actual week-2 rate 28% on May 3 / 19% on Aug 13; M2 13% then 26% the next issue, and 19%), where M1 stays at 3-5%.
+- *Resolution barely matters.* The same test at the full 0.25 degree grid (`--oracle native`) gives week 1 28.2%, week 2 21.2%, any-28 45.0%: only 1-2 points above the 1.75 degree version. So the 1.5 degree ECMWF archive is not what limits us; forecast *accuracy* is.
 - *Blurred forecasts* (`--oracle-skill r`): the same test with the perfect weather mixed with large-scale noise so it matches the truth with correlation r = 0.7 / 0.5 / 0.3, to map how flash-drought skill depends on forecast quality. Results below when in.
 - *Meaning.* The target is sound and the onset waves are not noise; they are what weather forecasts exist to see. The ceiling is about 15x M1's skill at week 2. The open question is how much of it the real ECMWF forecasts keep (good at week 1, weaker at week 2, weak beyond), so M2 on real forecasts is the decisive run. The `native` (0.25 degree) variant is the absolute upper bound.
 
@@ -284,8 +285,49 @@ Needs a real job, not decoration (25% of the score is the use of Meta's tools). 
 **weekly alert emails** drafted for county extension offices and farmers when drought risk is
 rising: the risk level, why (top drivers), what to watch and practical actions. Each email is
 checked number by number against the model outputs before it goes out, and the agent keeps score of
-its past alerts. In the demo, emails are drafted and shown, not actually sent. Meta API credits not
-granted yet (Oct 28); fallback is the open-weight Glimmer model run locally.
+its past alerts. In the demo, emails are drafted and shown, not actually sent. Meta API credits
+arrived Oct 28 ($150).
+
+**Scoring context** (official rules, docs/hackathon-rules.pdf): Impact 30%, Use of Meta AI tooling 25%
+("how creatively ... beyond a basic integration ... surfaced unexpected capabilities"), Technical depth
+20%, Demo 25% (working demo, holds up live, video quality). (The Discord FAQ says "scored equally";
+the signed rules give the weights above.) Gate: must fit a theme and *meaningfully* use Meta models.
+Bonus prizes that fit us: Best Agentic Use-Case, Best Build on Open-Weight Models.
+
+**Plan for the Meta models** (each does a job the forecast can't do itself):
+
+| # | Model | Job | Why it's more than decoration |
+| --- | --- | --- | --- |
+| G1 | **Muse Spark** (Model API, tool calling) | **FlashWatch analyst agent.** Each week: pulls risk, the drivers behind it, the ECMWF weather outlook and the Drought Monitor status for a county or region through tools; writes the briefing and county alert emails; a checker compares every number in the draft with the tool outputs and sends it back to fix anything that doesn't match; keeps a track record of its past alerts | Grounded, self-checking agent with real tools. Multimodal twist: it also reads the rendered risk map image and must agree with the numbers (a cross-check judges can see) |
+| G2 | **Muse Glimmer** (open weights, LoRA fine-tune) | **Drought Monitor-style narrative writer**: trained on the real weekly USDM narratives (public domain) paired with our structured state for that week; writes the weekly regional summary | Scored against held-out real narratives plus a fact check. Runs without an API. Targets the open-weights prize. Training on Modal or Fireworks (Oct 30 live session covers training) |
+| G3 | Muse Voice Transcribe (stretch) | Field reports: a farmer or extension agent leaves a voice note ("corn curling by noon on the ridges"); transcribed, turned into a structured report by Spark, shown on the map and used by the agent | Ground truth from the people who benefit; good demo moment. Only if G1 and G2 are done |
+| - | SAM 3.1, Muse Image, Muse Wonder | No natural job; skip | Forced uses would cost marks on "meaningful" |
+| - | Muse Code | Fine for James to use when building the agent and site | Genuine use of Meta tooling; mention it |
+
+Order: G1 first (core of the demo), G2 from Oct 30, G3 only if time allows.
+
+## D. Deliverables (submission: Nov 4, 9 PM ET)
+
+Required: public repo, a 3-minute demo video (judges score it), every contributor named, a working
+product (judges assess "video, code and live product").
+
+- **Live product**: a static site (GitHub Pages or similar) with the replay, skill-by-horizon charts and
+  this week's agent briefings. Static means it can't break live. Q2 decides whether M2's forecast-derived
+  maps can be on it.
+- **3-minute video** (draft storyboard):
+  - 0:00-0:10: one line that everything shown was built during the hackathon (the FAQ asks videos to
+    say what, if anything, was pre-existing).
+  - 0:10-0:35: the problem. Flash droughts arrive in weeks (2012 cost tens of billions); official maps
+    describe them after they arrive.
+  - 0:35-1:30: 2012 replay. What happened, the land-only forecast, then the forecast with weather
+    forecasts catching the waves; the lead time over the Drought Monitor.
+  - 1:30-2:20: the agent. This week's briefing for a county, numbers checked live, the map cross-check,
+    the Glimmer narrative.
+  - 2:20-2:50: honest skill. Skill by lead with uncertainty ranges; the test years were scored once, after the freeze.
+  - 2:50-3:00: who benefits; open source; link.
+- **Repo**: README as the front door (what it does, results, how to run, architecture diagram); the
+  process docs (DESIGN, QUESTIONS) are a strength for "technical depth" and stay, tidied.
+- **Most Viral bonus**: post the video on X by Nov 8 (optional).
 
 ---
 
