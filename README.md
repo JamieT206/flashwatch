@@ -12,7 +12,11 @@ against waiting two days for a fresher forecast.
   - the season so far against what really happened;
   - what a day of warning is worth on *your* field (pivot capacity, soil, crop, prices: all editable);
   - a morning text message and note from an adviser agent built on Meta's Muse Spark, with every
-    number checked against the forecast tools.
+    number checked against the forecast tools;
+  - **your pivots**: for a farm with several pivots, the Muse operator agent plans which ones to start
+    today. Fixed farm rules (well capacity, water allocation, the advice) check every command, and
+    nothing moves until the farmer replies YES. The commands then go to the pivots (simulated in the
+    demo; a signed webhook, or a to-do in FieldNET or Valley 365). See DESIGN.md O10.
 - **The big picture** (`site/region.html`):
   - what FlashWatch would be worth if every irrigated corn and soybean farm used it;
   - a regional risk map;
@@ -49,6 +53,8 @@ ERA5-Land soil, rain, heat (as of the forecast date)    ECMWF S2S ensemble forec
           act today vs decide in 2 days (ensemble members as the next forecast's outcomes)
                                         |
       farm page (static site)   +   Muse Spark adviser (tool calls, number-checked, SMS + note)
+                                        |
+      Muse operator: plans pivot starts -> farm-rule guard -> farmer's YES -> pivot connector
 ```
 
 ## Run it
@@ -68,6 +74,7 @@ python -m flashwatch.site.build --oof data\oof\<file>.parquet --model M2
 python -m flashwatch.site.evidence --m1 <oof> --m2 <oof>
 python -m flashwatch.decide.rollup --oof <oof> --model M2 --tag <name>
 python -m flashwatch.agent.farm --lat 45.38 --lon -99.38 --year 2012 --dates 07-03   # needs META_API_KEY
+python -m flashwatch.agent.operator --year 2012 --dates 07-01 07-03 07-05 --llm-dates 07-03 --approve "demo"
 python -m http.server 8812 --directory site      # then open http://localhost:8812
 python -m pytest
 ```

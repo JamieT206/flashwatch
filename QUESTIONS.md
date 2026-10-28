@@ -115,6 +115,22 @@ currently waiting in ECMWF's queue (up to ~1.5 h of work). Restart command:
 `$env:FW_S2S_FIRST="6,7,8"; python -m flashwatch.ingest s2s`, after stopping the running one.
 **Recommendation:** restart with summer first, right after the current request finishes (the log
 says "done _pack_..."). **Default until you answer:** leave it running as is; I won't stop it.
+**RESOLVED Oct 28 night: keep running in the current order (James).**
+
+### Q10. Pivot control: may the agent ever act without the farmer's YES? Which accounts to pursue?
+The operator agent (DESIGN.md O10) plans pivot starts and stops, and the guard checks them. Nothing
+is sent without an approval. Two decisions:
+(a) **Autonomy.** Options: always ask (now); auto-*stop* only (for example, allocation used up),
+still asking for starts; or auto-start within limits the farmer sets ahead (such as "up to 2
+pivots, only when FlashWatch says start").
+(b) **Accounts.** Real connections need sign-ups: Leaf (reads FieldNET/Valley; paid, with a trial),
+the John Deere developer program, and the Climate FieldView partner program (free; needs approval).
+A text-reply loop needs Twilio or similar. All need your go-ahead, and none fits before Nov 4
+except perhaps a Leaf trial.
+**Recommendation:** (a) always ask for the hackathon, and show "auto-stop when the allocation runs
+out" as a farmer setting later. (b) Demo with the simulated pivots and the signed webhook; mention
+Leaf, Deere and FieldView as the path in the write-up and video. **Default until you answer:**
+exactly that. No sign-ups and no messages sent.
 
 ### Q6. B0 (the BSS reference) is miscalibrated: strengthen its smoothing? **RESOLVED Oct 28: (a)**
 Done before any M1 score was read. `python -m flashwatch.models.tune_b0` grid-searches B0's time

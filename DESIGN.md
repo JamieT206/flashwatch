@@ -646,6 +646,63 @@ average between forecasts 2 days apart (M1: 30%).
   notice), and smaller for soybeans (less sensitive, less value per acre);
 - the year-to-year swing is wide: drought years carry most of it.
 
+### O10. From advice to the pivot: equipment and farm software (James, Oct 28 night; built)
+
+James: "agentic integration into farm-management software, pivot control systems, etc. Makes it
+more useful and cooler, and also does good agent work."
+
+**What exists (web research, Oct 28):**
+- **Pivot control.** Lindsay FieldNET and Valley 365 (with AgSense) start and stop pivots remotely
+  from their own apps. Neither publishes an open API to *start* a pivot. Data sharing runs through
+  partner deals (Valley lists API monitoring links to about ten ag-software partners; Lindsay has
+  two-way data links with Climate FieldView and Nutrien).
+- **Reading pivot data.** Leaf (withleaf.io), a farm-data API, already reads FieldNET and Valley:
+  pivots, and the water each one actually applied, by day.
+- **Farm-management software.** The John Deere Operations Center has a developer program
+  (including a Work Plans API). Climate FieldView has a free partner program with OAuth and upload
+  endpoints. Both need partner approval and the farmer's consent per account.
+
+**Built** (`flashwatch/connect/`, `flashwatch/agent/operator.py`, `config/farm_demo.json`, tests in
+`tests/test_connect.py`):
+- **Connectors.** All share one interface: list pivots, status, water applied, send a command.
+  - `simulated`: pivots that run the water balance; used for the demo.
+  - `webhook`: a signed JSON command (HMAC-SHA256) to any URL the farmer chooses, such as their own
+    automation, a dealer system or a relay.
+  - `leaf`: read-only pivots and applied water from FieldNET and Valley. Written from Leaf's docs;
+    untested, as we have no account.
+  - `manual`: the honest default today. The message tells the farmer what to press in FieldNET or
+    Valley 365.
+- **Guard** (`connect/guard.py`). This is code, not the model. It refuses a command, with a reason
+  the agent sees, when:
+  - the pivot is unknown, offline or already in that state;
+  - today's advice isn't "start";
+  - it's out of season;
+  - the depth per pass is out of range;
+  - the water allocation is short (for example, a Nebraska NRD allocation);
+  - or a shared well would be over-drawn.
+  Commands are taken in order, so the agent lists the most valuable pivot first. Nothing is sent
+  without the farmer's YES. Connectors refuse unapproved commands as a second lock.
+- **Operator agent** (Muse Spark, two tools). `farm_overview` gives each pivot's advice from the
+  decision engine, with that pivot's own crop, soil and capacity, plus running state, water applied,
+  wells, allocation and a suggested order. `propose_commands` runs the guard. The agent proposes,
+  reads the refusals, revises, then writes an approval text and a note. Numbers are checked as in G1.
+  Applied water goes back into the next morning's overview: allocation used, pivots now running.
+- **Farm page:** a "Your pivots" panel (pivot table, the approval text, what was sent), shown for
+  the demo farm's county.
+
+**Live test (Muse Spark, 2012 replay, demo farm in Edmunds County SD: four pivots, N1 and N2 share
+a 1,100 gpm well, S2 has 0.5 in of allocation left).**
+- *July 3.* Muse proposed N1, N2 and S2. The guard refused N2: the well can't run both northern
+  pivots (1,210 gpm needed). Muse kept N1 (worth $533 against N2's $288), cut S2 to a 0.5 in pass
+  for its allocation, and left out the soybeans (S1: the advice says no need).
+- *The checker.* It caught a total Muse had worked out itself ($779) and had it rewritten.
+- *Cost.* About 14k tokens.
+- *Rules on later days.* The rule-based plan stopped S2 on July 5, once its allocation was used.
+
+**Not done / needs James:** real accounts (Leaf, Deere, FieldView partner programs); whether the
+agent may ever act without a YES (Q10; default never); a reply-by-text loop (needs Twilio or
+similar and James's go-ahead).
+
 ### O8. Build order (proposed; see QUESTIONS Q8)
 
 1. Decision engine (O1) in Python with tests; value curves into the report. About half a day.

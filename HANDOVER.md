@@ -224,6 +224,9 @@ training while the design moves; heavy burst ~Nov 2 Sydney (DESIGN.md B).
 6a. **Decision dashboard (DESIGN.md O; agreed Oct 28, Q8):** cost/loss engine with effectiveness by
    days of notice, "not yet, but if ..." triggers from ensemble members, a per-farm page, agent alerts.
    Irrigation first, then hay and feed.
+6b. **Equipment and farm software (DESIGN.md O10; James, Oct 28 night):** `flashwatch/connect`
+   (simulated, webhook, Leaf read-only, manual) + guard + Muse operator agent
+   (`agent/operator.py`), shown as "Your pivots" on the farm page. Q10: autonomy and accounts.
 
 **Priorities (James, Oct 28): (1) anything that meaningfully improves prediction, (2) the farmer tool,
 (3) modelling nice-to-haves. Nothing is cut; what misses Nov 4 continues after.**

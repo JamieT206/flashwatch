@@ -60,10 +60,12 @@ class FarmData:
         return next(r for r in json.loads(f.read_text()) if r["iy"] == iy and r["ix"] == ix)
 
 
-def status(data: FarmData, lat: float, lon: float, md: str, settings: dict | None = None) -> dict:
-    """Everything the note may say, rounded, for one farm and date."""
+def status(data: FarmData, lat: float, lon: float, md: str, settings: dict | None = None,
+           action: str = "irrigation") -> dict:
+    """Everything the note may say, rounded, for one farm and date. action: irrigation or
+    irrigation_soybeans (config/actions.json)."""
     r, i = data.record(lat, lon), data.dates.index(md)
-    c = curve(load(overrides=settings)["irrigation"])
+    c = curve(load(overrides=settings)[action])
     p1, p2, n1 = r["p1"][i], r["p2"][i], r["n1"][i]
     out = {"date": f"{data.year}-{md}", "soil_moisture_percentile": r["rz"][i],
            "drought_monitor": USDM.get(r["usdm"][i], "none")}

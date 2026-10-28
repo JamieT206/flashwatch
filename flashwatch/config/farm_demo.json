@@ -1,0 +1,16 @@
+{
+  "_note": "A made-up farm for the demo (DESIGN.md O10): four pivots near Ipswich, Edmunds County SD, two sharing a well, one with little water allocation left. Replace with your own.",
+  "name": "Demo farm, Edmunds County SD",
+  "place": "Edmunds County, SD",
+  "approver": "the farmer (demo)",
+  "connector": {"kind": "simulated"},
+  "wells": {
+    "North well": {"gpm": 1100, "pivots": ["N1", "N2"]}
+  },
+  "pivots": {
+    "N1": {"lat": 45.45, "lon": -99.30, "acres": 130, "crop": "corn", "soil": "Sandy loam", "gpm_per_acre": 4.5, "make": "valley"},
+    "N2": {"lat": 45.45, "lon": -99.24, "acres": 125, "crop": "corn", "soil": "Silt loam", "gpm_per_acre": 5.0, "make": "valley"},
+    "S1": {"lat": 45.33, "lon": -99.40, "acres": 130, "crop": "soybeans", "soil": "Silt loam", "gpm_per_acre": 5.5, "make": "lindsay"},
+    "S2": {"lat": 45.31, "lon": -99.35, "acres": 60, "crop": "corn", "soil": "Loam", "gpm_per_acre": 4.0, "make": "lindsay", "allocation_in_left": 0.5}
+  }
+}

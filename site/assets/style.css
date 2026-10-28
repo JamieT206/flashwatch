@@ -150,3 +150,4 @@ td { border-bottom: 1px solid var(--line); padding: 6px 10px 6px 0; font-variant
   .tile .v { font-size: 22px; }
   .bignum { font-size: 36px; }
 }
+.sms-ask { background: var(--act); color: #fff; padding: 10px 12px; font-size: 15px; }

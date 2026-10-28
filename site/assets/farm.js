@@ -102,9 +102,33 @@ async function renderNote() {
   if (n) { $("sms").textContent = n.sms || ""; $("note").textContent = n.note || ""; }
 }
 
+async function renderOps() {
+  const md = S.meta.dates[S.i];
+  let o = null;
+  try { const r = await fetch(`data/ops/${S.year}_${md}.json`); if (r.ok) o = await r.json(); } catch (e) { /* none */ }
+  const show = o && o.place && o.place === $("place").textContent;
+  $("opsCard").hidden = !show;
+  if (!show) return;
+  $("opsSms").textContent = o.sms;
+  $("opsNote").textContent = o.note;
+  const acc = Object.fromEntries(o.accepted.map(c => [c.pivot, c]));
+  const ref = Object.fromEntries(o.refused.map(c => [c.pivot, c]));
+  const rows = Object.entries(o.overview.pivots).map(([k, p]) => {
+    const a = p.advice, v = a.value_of_starting_today_dollars_whole_pivot;
+    const plan = acc[k] ? `<strong>${acc[k].action} ${acc[k].action === "start" ? acc[k].depth_in + " in" : ""}</strong>`
+      : ref[k] ? `held: ${ref[k].why}` : p.running ? "keep running"
+      : (a.verdict || "").startsWith("start") ? "held (see note)" : "-";
+    return `<tr><td><strong>${k}</strong></td><td>${p.crop}, ${p.acres} ac, ${p.soil.toLowerCase()}</td><td>${a.verdict ?? "-"}</td>
+      <td>${v === undefined ? "-" : usd(v)}</td><td>${p.running ? "on" : "off"}</td><td>${plan}</td></tr>`;
+  }).join("");
+  $("opsTable").innerHTML = `<table><thead><tr><th>Pivot</th><th>Field</th><th>Advice</th><th>Start today, whole pivot</th><th>Now</th><th>Plan</th></tr></thead><tbody>${rows}</tbody></table>`;
+  $("opsState").textContent = o.sent.length ? `Approved by ${o.approved_by}; sent: ${o.sent.map(c => `${c.pivot} ${c.state}`).join(", ")}.` : "Waiting for approval.";
+}
+
 function renderAll() {
   if (!S.rec) return;
   renderNote();
+  renderOps();
   const c = FW.curve(params(), 21);
   renderVerdict(c);
   renderTiles();
