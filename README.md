@@ -1,73 +1,71 @@
 # FlashWatch
 
-**Should you start irrigating today?** Flash droughts turn a green field brown in two or three weeks.
-FlashWatch forecasts, every other day, the chance that the soil at your farm crashes into drought in
-the next one and two weeks. It then works out whether starting your centre pivot early pays,
-against waiting two days for a fresher forecast.
+A flash drought can turn a green field brown in two or three weeks. FlashWatch forecasts the chance
+that the soil at a farm drops into drought in the next one and two weeks, and works out what to do
+about it: start extra irrigation today or wait, skip the fungicide pass, trim side-dress nitrogen, buy
+hay before prices rise. AI agents built on Meta's models deliver the advice by text, find a farm's
+pivots from aerial photos, answer the farmer's questions, and with the farmer's YES pass commands to
+the pivots.
 
-- **Your farm** (`site/index.html`): enter a latitude and longitude, and get the following:
-  - today's verdict (*start the pivot today / not yet / no need*), with the expected dollars per
-    acre of each choice;
-  - what the next forecast would have to show to change it;
-  - the season so far against what really happened;
-  - what a day of warning is worth on *your* field (pivot capacity, soil, crop, prices: all editable);
-  - a morning text message and note from an adviser agent built on Meta's Muse Spark, with every
-    number checked against the forecast tools;
-  - **your pivots**: for a farm with several pivots, the Muse operator agent plans which ones to start
-    today. Fixed farm rules (well capacity, water allocation, the advice) check every command, and
-    nothing moves until the farmer replies YES. The commands then go to the pivots (simulated in the
-    demo; a signed webhook, or a to-do in FieldNET or Valley 365). See DESIGN.md O10;
-  - **voice field reports**: the farmer leaves a voice note ("the sandy pivot is curling by noon");
-    Muse Voice Transcribe and Spark turn it into a report on that pivot, which the operator uses.
-- **The big picture** (`site/region.html`):
-  - what FlashWatch would be worth if every irrigated corn and soybean farm used it;
-  - a regional risk map;
-  - forecast skill, and when a warning is worth acting on;
-  - how far ahead of the US Drought Monitor it is.
+It covers the Corn Belt and northern Plains (36-49 N, 104-80 W): 143 million acres of corn and soybeans,
+13 million of them irrigated.
 
-## What we found (development years 2005-2021; test years 2022-2024 are scored once, after the model freeze)
+## The site
 
-- **A week's warning is worth acting on.**
-  - With ECMWF weather forecasts, the riskiest tenth of the region catches 42% of the flash droughts
-    that begin in the next 7 days.
-  - That captures 40-60% of a perfect forecast's value for cheap actions like starting a pivot early.
-  - Beyond two weeks, no weather forecast can see the dry spells.
-- **Notice is worth about $10/acre a day for a typical Nebraska pivot,** up to about a week. After that
-  the soil is already full when the pivot starts. This comes from a textbook FAO-56 water balance; see
-  `flashwatch/decide/irrigation.py`.
-- **Ahead of the Drought Monitor:** the soil crosses the drought line a median 22 days before the
-  Monitor first shows moderate drought (D1) at that place.
-- **Flash droughts cost crops, and irrigation saves most of it.** In USDA county yields (2005-2021),
-  rain-fed corn yields about 20% below trend where most of the county had a summer flash drought;
-  irrigated corn in the same counties loses about 2%. Flash droughts that the Drought Monitor never
-  flags cost no yield on average. See DESIGN.md O4 and `flashwatch/eval/yields.py`.
-- **Roll-up:** with dry spells matched to those county losses, about **$23 million a year** for US
-  irrigated corn and soybeans (ceiling with perfect weather: $33M). The textbook worst-case spell gives
-  about $100M, so we lead with the lower, data-backed number. This is an estimate until the
-  full-season forecasts finish downloading; see DESIGN.md O9 and QUESTIONS Q11.
+`python -m http.server 8812 --directory site`, then open http://localhost:8812.
 
-The full working record is in `DESIGN.md` (decisions, tests, results), `QUESTIONS.md` and
-`HANDOVER.md`.
+| Page | What's on it |
+| --- | --- |
+| **Your farm** | Pick the farm on a map (or search an address). **Irrigated**: "Extra irrigation today?" with the dollars of starting now against waiting for the next forecast, what would change the answer, the field's water account (root zone % full, days to stress, irrigation logged or read from the pivot), the season replayed. **Rain-fed**: a card per decision (fungicide, side-dress nitrogen, silage, hay) with a gauge of today's chance against the chance at which acting pays, adjustable assumptions and the season replayed. **Today** follows the latest forecast; **Replay** steps through a past season. Starting values are local (USDA prices, county yields) and labelled. |
+| **The big picture** | What FlashWatch is worth to a typical irrigated and rain-fed farm, how good the forecasts are, value by corn price, a regional risk map, and the lead over the US Drought Monitor. |
+| **Agents** | Real runs of each agent: SAM 3.1 finding pivots, the Muse Spark operator planning a morning (with the farm-rule checks and the farmer's approval), a voice note, a weekly briefing, and the Glimmer narrative writer. |
+| **Help, About** | What every number means; contact. |
+
+## Results so far
+
+Development years 2005-2021, each scored by a model that never saw that year. The test years 2022-2024
+are scored once, after the model is frozen.
+
+- **Forecasts.** On the tenth of farm-days FlashWatch rates riskiest, a flash drought begins in the
+  next 7 days 5.4 times as often as normal (29% against 5.3%); those flags hold 54% of all flash
+  droughts. A farmer's rule of thumb ("hot and dry lately", fitted the same way) manages 1.7 times.
+  Days 8-14: 2.4 times. Scored on the 16 spring forecast dates downloaded so far; summer is downloading.
+- **Ahead of the Drought Monitor.** The soil crosses the drought line a median 22 days before the
+  Monitor first marks moderate drought (D1) at that place, before the forecast adds its one to two weeks.
+- **Value.** A flash drought with a week's warning is worth about $21 an acre on irrigated corn (yield
+  saved less extra pumping) and about $28 an acre on rain-fed corn (the fungicide pass a dry spell makes
+  pointless). Averaged over all years, including the many without a flash drought at a given farm:
+  about $19M a year across the region's irrigated acres and about $171M across its rain-fed acres
+  (rain-fed values are rougher). Dry spells are set to 21 days, matching USDA county yield losses.
+- **Null results we kept:** Drought Monitor features, directional neighbourhood features, training on
+  each forecast run separately (no gain); year-level climate indices (worse, removed).
 
 ## How it works
 
 ```
-ERA5-Land soil, rain, heat (as of the forecast date)    ECMWF S2S ensemble forecasts (11 members)
-                     \                                    /
-            LightGBM onset model: chance of a flash drought in days 1-7, 8-14 (calibrated)
-                                        |
-          decision engine: FAO-56 water balance of your field x days of warning x
-          act today vs decide in 2 days (ensemble members as the next forecast's outcomes)
-                                        |
-      farm page (static site)   +   Muse Spark adviser (tool calls, number-checked, SMS + note)
-                                        |
-      Muse operator: plans pivot starts -> farm-rule guard -> farmer's YES -> pivot connector
+ERA5-Land soil, rain, heat (as known on the forecast date)      ECMWF extended-range forecasts (11 runs)
+                        \                                         /
+          LightGBM model (calibrated): chance of a flash drought in days 1-7 and 8-14
+                                           |
+   decision engine: FAO-56 water balance of the field (pivot, soil, crop, the root zone's current water)
+   and value tables for the rain-fed decisions; act today vs decide at the next forecast
+                                           |
+   site (static)  +  agents on Meta models, each working through tools and checked:
+     SAM 3.1          finds the farm's pivots in USDA aerial photos
+     Muse Spark       morning text, pivot operator, weekly briefing, Ask FlashWatch chat
+     Voice Transcribe field voice notes
+     Muse Glimmer     Drought Monitor-style narrative (open weights, LoRA; in progress)
+                                           |
+   farm rules (well, allocation, season, advice) -> farmer's YES -> pivot connector
+   (signed webhook, Lindsay FieldNET data through Leaf, or a to-do in the maker's app)
 ```
+
+Every number an agent writes is traced back to a tool result before it's sent; untraced figures go
+back for a redraft and are cut if they can't be fixed. Farm rules are code, not prompts.
 
 ## Run it
 
-Windows PowerShell, from the repo folder (Python venv in `.venv`; keys in `flashwatch.env`, never
-committed):
+Windows PowerShell from the repo folder; Python venv in `.venv`; keys in `flashwatch.env` (never committed).
 
 ```powershell
 py -m venv .venv; .venv\Scripts\activate; pip install -r requirements.txt
@@ -75,23 +73,46 @@ python -m flashwatch.ingest all                  # downloads (resumable; ECMWF S
 python -m flashwatch.obs                         # data/obs.zarr from ERA5-Land
 python -m flashwatch.labels --variants           # flash-drought onsets
 python -m flashwatch.forecast build              # data/fcst.zarr from the S2S files
-python -m flashwatch.eval.cv --models B0 M1 M2 --leads week1 week2 any28 --fast --fc-dates --members
-python -m flashwatch.ingest nass                 # county crop acres (needs NASS_API_KEY)
+python -m flashwatch.eval.cv --models B0 H1 M1 M2 --leads week1 week2 any28 --fast --fc-dates
+python -m flashwatch.ingest nass                 # county crop acres (NASS_API_KEY)
+python -m flashwatch.ingest.nass local           # state prices and farm counts
 python -m flashwatch.site.build --oof data\oof\<file>.parquet --model M2
-python -m flashwatch.site.evidence --m1 <oof> --m2 <oof>
-python -m flashwatch.decide.rollup --oof <oof> --model M2 --tag <name>
-python -m flashwatch.agent.farm --lat 45.38 --lon -99.38 --year 2012 --dates 07-03   # needs META_API_KEY
-python -m flashwatch.agent.operator --year 2012 --dates 07-01 07-03 07-05 --llm-dates 07-03 --approve "demo"
-python -m http.server 8812 --directory site      # then open http://localhost:8812
+python -m flashwatch.site.defaults               # local starting values for the farm page
+python -m flashwatch.site.evidence --m1 <oof> --m2 <oof> --h1 <oof>
+python -m flashwatch.decide.rollup --oof <oof> --model M2 --tag <name> --set spell_days=21
+python -m flashwatch.site.agents                 # agent runs for the Agents page
 python -m pytest
 ```
 
-Try the decision engine on its own:
+Agents (need `META_API_KEY`):
 
 ```powershell
-python -m flashwatch.decide --week1 0.28 --week2 0.15 --set gpm_per_acre=4
+python -m flashwatch.agent.pivots --lat 42.45 --lon -98.60          # SAM 3.1 pivot finder
+python -m flashwatch.agent.operator --year 2012 --dates 07-01 07-03 07-05 --llm-dates 07-03 --approve "demo"
+python -m flashwatch.agent.chat --lat 40.87 --lon -97.99 --year 2012 --date 07-03   # Ask FlashWatch
+python -m flashwatch.agent.serve                 # Ask FlashWatch on the farm page (127.0.0.1:8813)
+python -m flashwatch.agent.voice note.wav --year 2012 --date 07-03   # voice field report
+python -m flashwatch.agent.farm --lat 45.38 --lon -99.38 --year 2012 --dates 07-03  # morning text
+modal run flashwatch/agent/glimmer_train.py      # Glimmer LoRA (Modal account)
 ```
 
-Data: ERA5-Land (Copernicus Climate Change Service), ECMWF S2S reforecasts, US Drought Monitor
-(NDMC, USDA, NOAA), USDA NASS Census of Agriculture, US Census Gazetteer. See HANDOVER.md section 9
-for licences and attribution.
+## Where things are
+
+| Folder | Contents |
+| --- | --- |
+| `flashwatch/ingest` | Downloads: ERA5-Land, ECMWF S2S reforecasts, Drought Monitor maps and narratives, USDA NASS |
+| `flashwatch/labels`, `features`, `models`, `eval` | Flash-drought labels, as-of features (leakage-tested), models, cross-validation |
+| `flashwatch/decide` | Water balance, field water account, decision engine, backtest, roll-up |
+| `flashwatch/agent` | The agents, the number checker, the LLM client |
+| `flashwatch/connect` | Pivot connectors (simulated, webhook, Leaf, manual) and the farm-rule guard |
+| `site` | The static site |
+| `docs` | Write-up, agents, video plan |
+
+Working records: `DESIGN.md` (decisions, tests, results), `QUESTIONS.md`, `HANDOVER.md`.
+
+## Data and licences
+
+ERA5-Land (Copernicus Climate Change Service), ECMWF S2S reforecasts, US Drought Monitor (NDMC, USDA,
+NOAA), USDA NASS (yields, Census of Agriculture, prices), USDA NAIP aerial imagery (USGS National Map),
+US Census Gazetteer, OpenStreetMap. ECMWF-derived data files are not redistributed here. See
+HANDOVER.md section 9.
