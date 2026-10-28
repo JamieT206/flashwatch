@@ -40,8 +40,10 @@ DEPTH_IN = 0.75
 
 SYSTEM = """You are FlashWatch's irrigation operator for a farm with several centre pivots.
 Each morning:
-1. Call farm_overview: each pivot's flash-drought advice, whether it is running, its well and water allocation.
-2. Decide which pivots to start today. Start only pivots whose advice says to start. Where pivots
+1. Call farm_overview: each pivot's flash-drought advice, whether it is running, its well and water
+   allocation, and any recent voice report from the farmer about the crop.
+2. Decide which pivots to start today. Start only pivots whose advice says to start, or whose crop
+   the farmer reports stressed (say so, quoting the farmer). Where pivots
    share a well that cannot run them all, start the one worth more money first. Call
    propose_commands with your list, most valuable first. The tool checks every command against the
    farm's rules and says what it refused and why; propose again if a change would help (for
@@ -92,8 +94,25 @@ def with_allocation_used(farm: dict, conn, year: int) -> dict:
     return farm
 
 
+def field_reports(year: int, date: str, days: int = 7) -> dict:
+    """pivot -> its latest voice field report in the last `days` days (agent/voice.py)."""
+    from flashwatch.agent.voice import load_reports
+    d0 = (dt.date.fromisoformat(date) - dt.timedelta(days=days)).isoformat()
+    out = {}
+    for rep in load_reports(year):
+        if d0 <= rep["date"] <= date:
+            for r in rep.get("reports", []):
+                if r.get("pivot"):
+                    out[r["pivot"]] = {"date": rep["date"], "severity": r["severity"], "symptoms": r.get("symptoms", []),
+                                       "farmer_said": r.get("quote", "")}
+    return out
+
+
 def overview(data, farm, md, conn) -> dict:
     pivots = {}
+    date = f"{data.year}-{md}"
+    reports = field_reports(data.year, date)
+    recent = (dt.date.fromisoformat(date) - dt.timedelta(days=3)).isoformat()
     for k, piv in farm["pivots"].items():
         st = conn.status(k)
         pivots[k] = {"crop": piv["crop"], "acres": piv["acres"], "soil": piv["soil"],
@@ -103,6 +122,9 @@ def overview(data, farm, md, conn) -> dict:
                      "advice": pivot_advice(data, piv, md)}
         if st.note:
             pivots[k]["connection"] = st.note
+        if k in reports:
+            pivots[k]["field_report"] = reports[k]
+            pivots[k]["advice"]["farmer_reports_stress"] = reports[k]["severity"] >= 2 and reports[k]["date"] >= recent
     return {"date": f"{data.year}-{md}", "farm": farm["name"], "pivots": pivots,
             "wells": {w: {"gives_gpm": s["gpm"], "pivots": s["pivots"]} for w, s in farm.get("wells", {}).items()},
             "connection": conn.name, "connection_can_start_pivots": conn.can_control,
@@ -111,7 +133,8 @@ def overview(data, farm, md, conn) -> dict:
 
 def ranked(pivots: dict) -> list[str]:
     """Pivots the advice says to start, most money first (soil already dry counts as most urgent)."""
-    ok = [k for k, p in pivots.items() if p["advice"].get("verdict", "").startswith(STARTABLE) and not p["running"]]
+    ok = [k for k, p in pivots.items() if not p["running"] and (p["advice"].get("verdict", "").startswith(STARTABLE)
+                                                                or p["advice"].get("farmer_reports_stress"))]
     return sorted(ok, key=lambda k: -pivots[k]["advice"].get("value_of_starting_today_dollars_whole_pivot", 1e9))
 
 

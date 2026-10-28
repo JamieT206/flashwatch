@@ -145,3 +145,31 @@ def test_operator_cuts_untraced_numbers():
     m = morning()
     out = operator.plan_with_agent(m, FakeChat('{"sms": "Start B. Saves 912 dollars.", "note": "ok"}'), max_redrafts=1)
     assert out["cut_untraced"] == ["912"] and "912" not in out["sms"]
+
+
+def test_guard_accepts_a_start_backed_by_the_farmers_report():
+    advice = {"A": {"verdict": "not yet: wait for the next forecast", "farmer_reports_stress": True},
+              "B": {"verdict": "not yet: wait for the next forecast"}}
+    ok, bad = check([cmd("A"), cmd("B")], {**FARM, "wells": {}}, advice, OFF)
+    assert [c.pivot for c in ok] == ["A"] and "not a start" in bad[0][1]
+
+
+def test_voice_transcribe_request_shape(tmp_path):
+    import wave
+    from flashwatch.agent import voice
+    f = tmp_path / "n.wav"
+    with wave.open(str(f), "wb") as w:
+        w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000); w.writeframes(b"\0\0" * 1600)
+    seen = {}
+
+    class R:
+        status_code = 200
+        def json(self):
+            return {"transcript": "corn curling"}
+
+    def post(url, headers, files, timeout):
+        seen.update(url=url, req=json.loads(files["request"][1]), audio=files["audio"][0])
+        return R()
+    assert voice.transcribe(f, key="k", base="https://x/v1", post=post) == "corn curling"
+    assert seen["url"].endswith("/asr/transcribe") and seen["req"]["audioEncoding"] == "WAV"
+    assert seen["req"]["sampleRateHertz"] == 16000

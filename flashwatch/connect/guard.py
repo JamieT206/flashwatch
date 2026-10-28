@@ -4,7 +4,7 @@ The agent proposes; this code decides what is allowed. A command is refused, wit
 agent sees and must work around, if:
 - the pivot is unknown, offline, or already in the state asked for;
 - a start isn't backed by the forecast (today's advice must be "start the pivot today", or the soil
-  is already in drought);
+  is already in drought) or by the farmer's own field report of crop stress (agent/voice.py);
 - it's outside the irrigation season, or the depth per pass is outside the pivot's range;
 - the pivot has less than one pass of its water allocation left (e.g. a Nebraska NRD allocation);
 - the well would be over-drawn: pivots sharing a well can't together pump more than it gives.
@@ -56,7 +56,7 @@ def _why_not(c, pivots, wells, advice, status, running):
     if not (SEASON[0] <= c.date[5:] <= SEASON[1]):
         return "outside the irrigation season (June to August)"
     verdict = advice.get(c.pivot, {}).get("verdict", "")
-    if not verdict.startswith(STARTABLE):
+    if not verdict.startswith(STARTABLE) and not advice.get(c.pivot, {}).get("farmer_reports_stress"):
         return f"today's advice for {c.pivot} is '{verdict}', not a start"
     lo, hi = pivots[c.pivot].get("depth_range_in", DEPTH_RANGE)
     if not lo <= c.depth_in <= hi:

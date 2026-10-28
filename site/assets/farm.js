@@ -134,7 +134,6 @@ async function renderOps() {
   $("opsCard").hidden = !show;
   if (!show) return;
   $("opsSms").textContent = o.sms;
-  $("opsNote").textContent = o.note;
   const acc = Object.fromEntries(o.accepted.map(c => [c.pivot, c]));
   const ref = Object.fromEntries(o.refused.map(c => [c.pivot, c]));
   const rows = Object.entries(o.overview.pivots).map(([k, p]) => {
@@ -146,6 +145,10 @@ async function renderOps() {
       <td>${v === undefined ? "-" : usd(v)}</td><td>${p.running ? "on" : "off"}</td><td>${plan}</td></tr>`;
   }).join("");
   $("opsTable").innerHTML = `<table><thead><tr><th>Pivot</th><th>Field</th><th>Advice</th><th>Start today, whole pivot</th><th>Now</th><th>Plan</th></tr></thead><tbody>${rows}</tbody></table>`;
+  const reps = Object.entries(o.overview.pivots).filter(([, p]) => p.field_report);
+  const sev = ["looks fine", "mild signs", "stress showing", "severe"];
+  $("opsNote").innerHTML = (reps.length ? reps.map(([k, p]) => `<div class="note" style="margin-bottom:6px">Voice note from the farmer, ${p.field_report.date.slice(5)} (Muse Voice Transcribe), on ${k}:
+    "${p.field_report.farmer_said}" (${sev[p.field_report.severity] || ""})</div>`).join("") : "") + `<div>${o.note}</div>`;
   $("opsState").textContent = o.sent.length ? `Approved by ${o.approved_by}; sent: ${o.sent.map(c => `${c.pivot} ${c.state}`).join(", ")}.` : "Waiting for approval.";
 }
 

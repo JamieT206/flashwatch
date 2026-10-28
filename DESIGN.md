@@ -357,6 +357,25 @@ Bonus prizes that fit us: Best Agentic Use-Case, Best Build on Open-Weight Model
 
 Order: G1 first (core of the demo), G2 from Oct 30, G3 only if time allows.
 
+**G3 built (Oct 28 night, `agent/voice.py`).**
+- *Endpoint.* The Meta API lists `muse-voice-transcribe-1.0`; file transcription is `POST
+  {base}/asr/transcribe` (multipart: a JSON `request` part with `model`, `audioEncoding: "WAV"`,
+  `sampleRateHertz`, plus the `audio` part; 16-bit mono WAV at 16 or 24 kHz). This was found by trial,
+  as the OpenAI-style `/audio/transcriptions` gives 404.
+- *Test.* A 17-second synthetic voice note ("Corn on the sandy pivot, N one, is curling by noon on the
+  ridges ... the south beans look fine") was transcribed accurately. Spark, with a `farm_pivots`
+  tool, mapped "the sandy pivot" to N1 (severity 2: stress showing) and the beans to S1 (fine), at
+  about 10k tokens.
+- *How reports are used.* They go to `site/data/ops/reports_<year>.json`. The operator's overview
+  carries them, and the guard accepts a start backed by a recent stress report (the farmer's own
+  eyes are the usual practice). The farm page quotes the note under "Your pivots".
+- *Next.* A real recorded voice, and replies by voice.
+
+**Model note.** The API also lists `muse-spark-1.2` and `muse-spark-1.3`. 1.3 ran the July 3 operator
+morning well: it quoted the farmer, held N2 for the well, and used about 10k tokens against 14k on
+1.1. The default stays 1.1 until the briefing and farm notes are re-checked on 1.3 (set
+`META_MODEL`).
+
 **G1 live test (Oct 28, Muse Spark `muse-spark-1.1`, 2012-05-11 pack, Champaign County IL).** Tool
 calling works. First run: the checker flagged 5 figures, but they were real values written as "2.6
 below normal" (sign dropped) and "28 days", so the checker now ignores sign and exempts time spans;
