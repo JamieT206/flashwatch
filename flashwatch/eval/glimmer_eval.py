@@ -85,11 +85,15 @@ def main():
     if args.season_only:
         rows = [r for r in rows if "04" <= r["date"][5:7] <= "09"]
     rows = rows[:: max(1, len(rows) // args.n)][: args.n]
-    chat = Chat()
+    chat = Chat(timeout=300)
     out = []
     for r in rows:
         sys_msg, user, real = r["messages"]
-        draft = chat.complete([sys_msg, user]).get("content") or ""
+        try:
+            draft = chat.complete([sys_msg, user]).get("content") or ""
+        except Exception as e:                            # one slow week shouldn't lose the rest
+            print(f"{r['date']}: skipped ({type(e).__name__})")
+            continue
         s = score(draft, real["content"], json.loads(user["content"]))
         out.append({"date": r["date"], **s, "draft": draft, "real": real["content"]})
         print(f"{r['date']}: untraced {s['untraced']:.2f} states {s['states']:.2f} direction {s['direction']:.0f} "

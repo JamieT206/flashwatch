@@ -357,6 +357,30 @@ Bonus prizes that fit us: Best Agentic Use-Case, Best Build on Open-Weight Model
 
 Order: G1 first (core of the demo), G2 from Oct 30, G3 only if time allows.
 
+**G2 data ready (Oct 28 night).**
+- *Narratives.* `ingest.usdm_text` fetched all 1,044 weekly Drought Monitor narratives, 2005-2024.
+- *Training pairs.* `agent.glimmer_data` pairs each week's High Plains / Midwest sections with
+  that week's numbers, by region and state:
+  - ERA5-Land rain as a percent of normal and temperature departure, with normals from 2005-2019;
+  - soil moisture against normal and its weekly change;
+  - new flash-drought onsets;
+  - the Monitor's category shares and their change.
+  That gives **749 training weeks (2005-2019) and 104 validation weeks (2020-2021)**; 33 weeks had
+  no matching section. Test years are not written.
+- *Limitation.* Older narratives also mention places outside our grid (Texas, Arkansas), which the
+  inputs can't support.
+- *Scoring* (`eval.glimmer_eval`):
+  - share of figures not traceable to the input;
+  - F1 of the states named;
+  - direction of change. This is a crude word count, and unreliable: it misreads some real
+    narratives, so treat it as indicative only;
+  - ROUGE-L against the real text.
+- *Muse Spark 1.1, zero-shot, 4 summer validation weeks:* untraced figures 0%, states F1 0.69,
+  direction 0.25, ROUGE-L 0.09. About 35k tokens, mostly the model's reasoning. Spark is accurate
+  but writes a recital of the numbers, not the Monitor's prose ("Drought expanded in parts of
+  Wyoming ... that missed out on the heaviest rainfall"). Style and selection are what the Glimmer
+  LoRA has to learn. The bar to beat: keep untraced at about 0 and raise ROUGE-L and states F1.
+
 **G3 built (Oct 28 night, `agent/voice.py`).**
 - *Endpoint.* The Meta API lists `muse-voice-transcribe-1.0`; file transcription is `POST
   {base}/asr/transcribe` (multipart: a JSON `request` part with `model`, `audioEncoding: "WAV"`,

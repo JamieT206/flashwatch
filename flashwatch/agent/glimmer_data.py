@@ -53,7 +53,9 @@ def cell_states() -> np.ndarray:
 
 def is_ours(heading: str) -> bool:
     h = heading.lower()
-    return ("midwest" in h or "plains" in h or "corn belt" in h) and not h.startswith(("south", "the south"))
+    if any(k in h for k in ("central plains", "northern plains", "great lakes", "ohio valley", "corn belt")):
+        return True
+    return ("midwest" in h or "plains" in h) and not h.startswith(("south", "the south"))
 
 
 def target(narr: dict) -> str:
