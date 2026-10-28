@@ -255,6 +255,12 @@ cross-validation per horizon; keep the simpler option unless the improvement is 
   16.8%); the M2+M3 blend 16.3% (paired -0.6, CI -3.8 to +2.2); week 2 3.5% vs 3.8%. Only ~16 pictures a
   year to learn from on forecast dates, against ~100 on all dates, so the map model is starved. Re-run when
   the summer forecast dates land; until then the blend is a land-only (M1) improvement.
+  **Two M3s averaged (`m3seeds`: M3 and M3b, a wider net with another seed; then 50/50 with M1, fixed in
+  advance).** Week 1 Brier skill **6.0%** (90% range 4.8-7.0) against M1's 4.3%: paired **+1.7 points (1.2 to
+  2.3)**; PR-AUC 0.141 against 0.113 (+25%). Week 2: 1.7% against 1.2%, paired **+0.5 (0.1 to 0.8)**, now
+  clear of zero. The single-M3 re-run moved from 2.4% to 2.8% (GPU training isn't bit-for-bit repeatable),
+  which is why averaging several nets helps. Plan for the burst: M1 + mean of 3-5 M3s; and the same with
+  M2 once summer forecast dates land.
 - L2. Interactive map: click a location and watch two charts animate, the FlashWatch forecast
   [x] weeks out and the actual soil moisture catching up behind it.
 - L3. A full website (beyond the static replay page).
