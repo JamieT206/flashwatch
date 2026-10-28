@@ -155,3 +155,12 @@ is now close to BSS vs a seasonal base rate, i.e. an honest (harder) reference.
 - Nino 3.4: NOAA PSL ERSST v6 monthly anomaly; month m is treated as available 7 days after
   it ends. ERSST values are revised over time, so hindcasts use slightly better values than
   were available in real time (noted for the model card).
+
+## Defaults taken (Oct 28, afternoon, while James was out)
+- **Great Lakes removed from the land mask** (bug fix, FYI). ERA5-Land carries 269 lake cells as
+  land with a constant soil moisture of ~0.01. They can never have an onset, so the model learned
+  "zero" there while B0 gave them the regional rate, which flattered every skill score. Fixed in
+  `obs.land_mask` (soil moisture must vary over the record); labels, B0 tuning and the fast-loop
+  baselines are being re-run, and all earlier skill numbers in DESIGN.md P9/P10 predate the fix.
+- New forecast features (F8) kept in: neutral so far, physically sensible, and cheap.
+- Agent packs are refused for the test years until the model freeze.
