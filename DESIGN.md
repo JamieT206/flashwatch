@@ -175,6 +175,12 @@ simple cap (no single week above the 28-day value) would tidy it if needed.
 | Any in 28 days | 2.7% | 8.4% | +5.6 (+2.2 to +9.0) | +38.2 | about a seventh |
 
   Week 1 is a clear win: real forecasts roughly quintuple the skill. Week 2 gains little so far, although the week-2 forecasts are half-way good (correlation 0.4-0.65). Possible reasons, to check as the download fills in: too few dates to learn from yet, or the features don't present the week-2 signal well (e.g. a combined "dry and hot" index, or the forecast soil moisture). The blurred runs below show what a forecast of that quality *should* deliver.
+- *Two checks on the week-2 shortfall* (Oct 28, same 10 start dates):
+  - New forecast features (F8: weeks 1+2 mean, ensemble chance of a hot-and-dry week, dry-hot index, forecast soil drying): **neutral** (week 1 14.0%, week 2 2.2%, any-28 8.7% vs 14.3 / 2.0 / 8.4).
+  - Training *only* on the forecast dates (`--fc-dates`, so no rows without forecasts): real M2 15.6% / 2.7% / 9.7%; perfect weather with the same small training set 26.2% / 19.9% / 40.4%. So it isn't too little training data: perfect weather still gets 20% at week 2 from the same rows.
+  - **Conclusion so far:** the week-2 limit is in the real forecasts themselves. Their *average* week-2 match is fair (0.4-0.65), but flash-drought onsets hinge on the strong hot, dry spells, and an ensemble mean two weeks out blurs exactly those (the blur test added uniform noise, which is kinder). Spring-only dates may also understate it. Re-check with the full season once downloaded.
+  - Spring 2012 example (week 1): on May 11 M2 forecast 14.8% against 37.8% actual (land only 4.6%; perfect weather 29.5%). From two weeks out (May 3, week 2): M2 4.0%, actual 27.6%.
+  - **Pre-registered expectation 2 (HANDOVER 6.6: "M2 beats M1 at weeks 3-4 but not at week 1") is so far wrong in the opposite direction**: the gain is largest at week 1. To be reported as such.
 - *Blurred forecasts* (`--oracle-skill r`): the same test with the perfect weather mixed with large-scale noise so it matches the truth with correlation r, to map how flash-drought skill depends on forecast quality (all fast-loop dates):
 
 | Forecast quality (correlation with what happened) | 1.0 (perfect) | 0.7 | 0.5 | 0.3 | none (M1) |
