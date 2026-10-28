@@ -243,6 +243,21 @@ training while the design moves; heavy burst ~Nov 2 Sydney (DESIGN.md B).
    started detached with Start-Process (stdout/stderr in data/logs/s2s.*.txt). Expect June-August in
    about a day, the rest about a day later.
 
+6d. **Oct 29 (James at work; Remote Control on):**
+   - site rework from James's notes (farm page wording, Today/Replay, date bar, Leaflet map with search,
+     coverage outline; big picture rewrite; Help and About pages);
+   - rain-fed mode with decision cards (fungicide corn/soy, nitrogen trim, silage, hay); rain-fed roll-up
+     scopes (~$171M/yr region vs ~$19M irrigated);
+   - H1 rule-of-thumb baseline and pooled top-10% evidence (5.4x, 54%);
+   - field water account (`decide/waterbook.py`, FAO-56 PM ETo, Kc by date; dr0 in the engine), on
+     the farm page and in the operator agent;
+   - agents: SAM 3.1 pivot finder (`agent/pivots.py`), Ask FlashWatch chat (`agent/chat.py`,
+     `agent/serve.py`), Agents page (`site/agents.html`, `site/agents.py`); Glimmer Modal script
+     (`agent/glimmer_train.py`, Q20);
+   - docs: README rewrite, write-up update, `docs/video.md`.
+   Open: Q14-Q20 (Q14, Q15 resolved). S2S restarted 04:22 with summer first (Q13); watcher waits for
+   the first June-August date, then rebuild fcst.zarr, M2, site data (`site.build`, then `site.agents`).
+
 **Priorities (James, Oct 28): (1) anything that meaningfully improves prediction, (2) the farmer tool,
 (3) modelling nice-to-haves. Nothing is cut; what misses Nov 4 continues after.**
 7. Burst (Nov 2), freeze, test years once, replay, video, write-up.
