@@ -646,6 +646,46 @@ function importFromPivot() {
   renderAll();
 }
 
+// ---------- Ask FlashWatch (flashwatch.agent.serve, on this machine only) ----------
+
+const ASK = "http://127.0.0.1:8813";
+S.askHist = [];
+async function initAsk() {
+  try {
+    const r = await fetch(`${ASK}/health`, { signal: AbortSignal.timeout(1500) });
+    if (!r.ok) return;
+    $("askCard").hidden = false;
+  } catch (e) { return; }        // no local server: no chat box (the published site has none)
+  $("askForm").onsubmit = async ev => {
+    ev.preventDefault();
+    const q = $("askQ").value.trim();
+    if (!q) return;
+    $("askQ").value = "";
+    const bubble = (who, html) => { $("askLog").insertAdjacentHTML("beforeend", `<div class="msg ${who}">${html}</div>`); $("askLog").scrollTop = 1e6; };
+    bubble("you", escHtml(q));
+    bubble("bot pending", "Checking FlashWatch's numbers...");
+    try {
+      const r = await fetch(`${ASK}/ask`, { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lat: S.lat, lon: S.lon, year: S.year, date: S.meta.dates[S.i], crop: S.farm.crop, soil: S.farm.soil,
+          gpm_per_acre: S.farm.gpm_per_acre, irrigation: loadIrr(), question: q, history: S.askHist }) });
+      const a = await r.json();
+      $("askLog").querySelector(".pending").remove();
+      if (a.error) { bubble("bot", `Sorry: ${escHtml(a.error)}`); return; }
+      bubble("bot", `${escHtml(a.answer).replace(/\n+/g, "<br>")}<div class="tools">${a.tools.map(x => x.tool).join(" · ")}</div>`);
+      S.askHist.push({ role: "user", content: q }, { role: "assistant", content: a.answer });
+      if (a.tools.some(x => x.tool === "log_irrigation")) {
+        // Mirror what the agent logged into this page's water account.
+        for (const x of a.tools.filter(x => x.tool === "log_irrigation")) {
+          const irr = loadIrr(), md = String(x.args.date).slice(-5);
+          irr[md] = +((irr[md] || 0) + +x.args.inches).toFixed(2); saveIrr(irr);
+        }
+        renderAll();
+      }
+    } catch (e) { $("askLog").querySelector(".pending")?.remove(); bubble("bot", "Can't reach the FlashWatch agent on this computer."); }
+  };
+}
+const escHtml = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
 // ---------- decision cards: nitrogen, fungicide, silage, hay ----------
 
 function renderDecisions() {
@@ -934,6 +974,7 @@ async function init() {
   await setMode(S.mode);
   await setLocation(S.lat, S.lon);
   scheduleRefresh();
+  initAsk();
 }
 const pick = (o, ks) => Object.fromEntries(ks.filter(k => k in o).map(k => [k, o[k]]));
 

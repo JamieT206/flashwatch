@@ -113,3 +113,29 @@ def test_glimmer_scores():
     inp = {"regions": {"Midwest": {"rain_percent_of_normal": 40, "D1_or_worse_change_pct": 3.0}}}
     s = score("Rain was 40% of normal; drought expanded in Iowa. 77 counties.", "Drought expanded across Iowa.", inp)
     assert s["untraced_figures"] == ["77"] and s["direction"] == 1.0 and s["states"] == 1.0
+
+
+def test_ask_flashwatch_cuts_figures_not_in_tool_results():
+    from flashwatch.agent.chat import ask
+
+    class FakeFarm:
+        year, md, lat, lon, crop = 2012, "07-03", 40.87, -97.99, "corn"
+
+        def tools(self):
+            return {}
+
+    class FakeChat:
+        def __init__(self):
+            self.calls = 0
+
+        def run(self, msgs, tools):
+            self.calls += 1
+            # The tool said 66% full; the reply invents "$45 an acre" both times.
+            log = [("water_account", {}, {"root_zone_share_full_pct": 66})]
+            return "Your root zone is 66% full. Starting now is worth $45 an acre.", msgs, log
+
+    chat = FakeChat()
+    r = ask(FakeFarm(), "How full is my soil?", chat)
+    assert chat.calls == 2                                   # one redraft asked for
+    assert "66%" in r["answer"] and "$45" not in r["answer"]
+    assert r["cut_untraced"]
