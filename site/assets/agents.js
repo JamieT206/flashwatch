@@ -90,7 +90,8 @@ function scorecard(c) {
     <table><thead><tr><th>Text</th><th>Sent</th><th>Flash drought within 2 weeks</th><th>Times normal</th></tr></thead><tbody>
     ${c.kinds.map(k => `<tr><td>${KIND[k.watering + ":" + k.kind] || k.kind}</td><td>${k.sent.toLocaleString()}</td>
       <td>${k.followed_by_flash_drought_pct}%</td><td>${k.times_normal ?? "-"}</td></tr>`).join("")}</tbody></table>
-    <p class="note">${c.onsets_warned_pct}% of the ${c.onsets.toLocaleString()} summer flash droughts at these farms had a warning text in the 2 weeks before.</p>`;
+    <p class="note">"Risk has eased" means lower than it was, not gone. ${c.onsets_warned_pct}% of the ${c.onsets.toLocaleString()} summer flash droughts
+      at these farms had a warning text in the 2 weeks before: the rest came with little sign in the forecast, or while the farm was already being told to water.</p>`;
 }
 
 fetch("data/agents.json").then(r => r.json()).then(d => {
