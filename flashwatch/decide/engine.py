@@ -92,3 +92,19 @@ def decide_members(c: Curve, p1m, p2m, lam: float = 0.5, step: int = 3) -> Decis
     wait = sum(w * max(ev, 0.0) for w, _, ev in per)
     return Decision(act_now=base.ev_now > 0 and base.ev_now >= wait, ev_now=base.ev_now, ev_wait=wait,
                     breakeven=base.breakeven, scenarios=per)
+
+
+def risk_threshold(c: Curve, p_day) -> float:
+    """Multiplier m on today's risk profile at which acting on a forecast like that breaks even (nan
+    if none up to 50 does). The fallback trigger: start once a forecast shows m x this week's risk."""
+    p_day = np.asarray(p_day, float)
+
+    def f(m):
+        return ev_act(c, np.clip(p_day * m, 0, 1))
+    lo, hi = 0.0, 50.0
+    if f(hi) <= 0:
+        return float("nan")
+    for _ in range(40):
+        mid = (lo + hi) / 2
+        lo, hi = (lo, mid) if f(mid) > 0 else (mid, hi)
+    return hi

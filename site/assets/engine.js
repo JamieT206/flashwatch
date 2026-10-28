@@ -99,7 +99,7 @@ const FW = (() => {
 
   // Act today, or decide again in `step` days? Also: how high would the risk have to climb by then
   // for starting then to pay (the "what we're waiting for" number).
-  function decide(c, pDay, scenarios = twoWay(0.6), step = 2) {
+  function decide(c, pDay, scenarios = twoWay(0.5), step = 2) {
     const now = evAct(c, pDay);
     const rest = pDay.slice(step);
     const per = scenarios.map(([w, m]) => [w, m, evAct(c, rest.map(p => Math.min(1, p * m)))]);
@@ -109,12 +109,13 @@ const FW = (() => {
     let g = 0;
     shape.forEach((s, i) => { g += s * netAt(c, i + 1); });
     const breakeven = g + c.costNoEvent > 0 ? c.costNoEvent / (g + c.costNoEvent) : NaN;
-    // Multiplier on the remaining days' risk at which acting next time breaks even.
+    // Multiplier on today's risk profile at which acting on a forecast like that breaks even
+    // (mirrors engine.risk_threshold): the fallback trigger.
     let lo = 0, hi = 50, mStar = NaN;
-    if (evAct(c, rest.map(p => Math.min(1, p * hi))) > 0) {
+    if (evAct(c, pDay.map(p => Math.min(1, p * hi))) > 0) {
       for (let i = 0; i < 40; i++) {
         const mid = (lo + hi) / 2;
-        if (evAct(c, rest.map(p => Math.min(1, p * mid))) > 0) hi = mid; else lo = mid;
+        if (evAct(c, pDay.map(p => Math.min(1, p * mid))) > 0) hi = mid; else lo = mid;
       }
       mStar = hi;
     }
@@ -123,7 +124,7 @@ const FW = (() => {
 
   // The season played day by day for one cell (mirrors decide/backtest.py).
   function season(c, dates, p1, p2, onsets, opts = {}) {
-    const { baseline = "careful", calendar = "07-01", first = "06-01", last = "08-31", spread = 0.6,
+    const { baseline = "careful", calendar = "07-01", first = "06-01", last = "08-31", spread = 0.5,
             review = 7, year = 2012 } = opts;
     const day = s => Date.UTC(year, +s.slice(0, 2) - 1, +s.slice(3, 5)) / 864e5;
     let ons = onsets.map(day);

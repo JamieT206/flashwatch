@@ -94,8 +94,17 @@ function fmtDate(md, year = S.year) {
 
 // ---------- rendering ----------
 
+async function renderNote() {
+  const md = S.meta.dates[S.i], key = `${S.year}_${S.cell[0]}_${S.cell[1]}_${md}`;
+  let n = null;
+  try { const r = await fetch(`data/notes/${key}.json`); if (r.ok) n = await r.json(); } catch (e) { /* none */ }
+  $("noteCard").hidden = !n;
+  if (n) { $("sms").textContent = n.sms || ""; $("note").textContent = n.note || ""; }
+}
+
 function renderAll() {
   if (!S.rec) return;
+  renderNote();
   const c = FW.curve(params(), 21);
   renderVerdict(c);
   renderTiles();
@@ -121,7 +130,7 @@ function renderVerdict(c) {
   // With ensemble members for this date, the next forecast's outcomes come from them, and the
   // trigger is named in weather; otherwise a placeholder spread and a risk threshold.
   const mem = r.mp1 && r.mp1[i] ? FW.trigger(c, r.mp1[i], r.mp2[i], { rain_in: r.mr[i], temp_f: r.mt[i] }) : null;
-  const d = mem || FW.decide(c, FW.daily(p1, p2), FW.twoWay(0.6), 2);
+  const d = mem || FW.decide(c, FW.daily(p1, p2), FW.twoWay(0.5), 2);
   $("evNow").textContent = `${usd(d.evNow, 1)} /acre`;
   $("evWait").textContent = `${usd(d.evWait, 1)} /acre`;
   const inSeason = md >= SEASON[0] && md <= SEASON[1];
@@ -149,13 +158,13 @@ function renderVerdict(c) {
          ${mem.membersTipping} of ${mem.members} of today's forecast scenarios look like that.`
       : mem ? `<strong>What we're waiting for:</strong> ${mem.membersTipping} of ${mem.members} of today's forecast scenarios would make starting pay at the next forecast; no single rain or heat threshold separates them.`
       : isFinite(nextRisk) && nextRisk < 1
-      ? `<strong>What would change it:</strong> if the next forecast (in 2 days) puts the chance of a flash drought in the coming week above <strong>${pct(Math.min(nextRisk, 1))}</strong> (it is ${pct(p1)} today), start the pivot then.`
+      ? `<strong>What would change it:</strong> if the next forecast (in 2 days) shows at least a <strong>${pct(Math.min(nextRisk, 1))}</strong> chance of a flash drought in the coming week (today: ${pct(p1)}), start the pivot then.`
       : "";
   } else {
     set("calm", "No need to start early",
       `The chance of a flash drought this week is ${pct(p1)} (normal: ${pct(r.n1[i])}). Starting early wouldn't pay for its pumping.`);
     $("trigger").innerHTML = isFinite(nextRisk) && nextRisk < 1
-      ? `<strong>What would change it:</strong> a forecast putting this week's chance above <strong>${pct(nextRisk)}</strong>.`
+      ? `<strong>What would change it:</strong> a forecast showing at least a <strong>${pct(nextRisk)}</strong> chance this week (today: ${pct(p1)}).`
       : "";
   }
 }

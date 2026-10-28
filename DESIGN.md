@@ -580,6 +580,18 @@ the Python. The farm page:
 - Later: push alerts into farm-management software (John Deere Operations Center and Climate
   FieldView, for example, have developer APIs); export as webhook or CSV. Not for the hackathon.
 
+**Built (Oct 28 evening): `agent/farm.py`.** Muse Spark writes the farm's morning note and a text
+message (at most 160 characters). Its one tool, `farm_status`, reads the site data and runs the
+engine. Numbers are checked as in G1, and the farm page shows the result. First run, Edmunds County
+SD, 2012:
+- July 1: "no need to start early" (3%, normal);
+- July 3: "Start pivot today. 14% flash drought risk next 7 days, 4.8x normal ..."; the flash drought
+  began July 5;
+- August 21: "not yet".
+
+The checker caught an untraced "14" (from "14 days") twice, and the redraft fixed it. Three notes
+used about 25k tokens.
+
 ### O7. Honest evaluation in decision terms
 
 - Value curves (O0) by lead, on development years now and on the test years once, after the freeze.
@@ -608,13 +620,14 @@ ECMWF's measured week-1 (0.8-0.97) and week-2 (0.4-0.65) accuracy.
 
 | Forecasts | Region, irrigated | All US irrigated corn + soy | $/acre (corn / soy) | People fed (US) | Weight vs US retail food loss |
 | --- | --- | --- | --- | --- | --- |
-| Land only (measured) | $11M | $15M | 1.33 / 0.00 | 1.5M | 1.6% |
-| ECMWF quality (estimate) | $82M | **$107M** | 8.96 / 0.98 | **6.3M** | **6.4%** |
-| Perfect weather (ceiling) | $108M | $142M | 11.72 / 1.52 | 6.8M | 6.9% |
+| Land only (measured) | $9M | $12M | 1.05 / 0.00 | 1.9M | 2.0% |
+| ECMWF quality (estimate) | $76M | **$99M** | 8.33 / 0.86 | **6.6M** | **6.7%** |
+| Perfect weather (ceiling) | $99M | $131M | 10.79 / 1.38 | 6.8M | 6.9% |
 
-Against a calendar irrigator, the estimate is $36M (US) and land-only is slightly negative (false
-alarms cost more than the early starts save). Rain-fed nitrogen (placeholder costs): $51M under the
-estimate.
+Against a calendar irrigator, the estimate is $30M (US) and land-only is negative (false alarms cost
+more than the early starts save). Rain-fed nitrogen (placeholder costs): $50M under the estimate.
+The forecast-revision spread in the engine is 0.5, measured: M2's week-1 risk moves by 51% on
+average between forecasts 2 days apart (M1: 30%).
 
 **Honest reading:**
 - the number is **about $100 million a year, not billions**;

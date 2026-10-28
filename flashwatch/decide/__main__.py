@@ -12,9 +12,9 @@ def main():
     ap.add_argument("--week2", type=float, default=0.0, help="chance of onset in week 2 (0-1)")
     ap.add_argument("--action", nargs="+", help="actions to show (default: all)")
     ap.add_argument("--set", nargs="+", default=[], metavar="NAME=VALUE", help="override settings")
-    ap.add_argument("--spread", type=float, default=0.6,
-                    help="placeholder forecast revision: next update's risk x(1+spread) or lower, 50/50")
-    ap.add_argument("--step", type=int, default=3, help="days to the next decision")
+    ap.add_argument("--spread", type=float, default=0.5,
+                    help="forecast revision: next update risk x(1 +- spread), 50/50; M2 moves ~50%% in 2 days")
+    ap.add_argument("--step", type=int, default=2, help="days to the next decision (forecasts come every 2 days)")
     args = ap.parse_args()
     over = {k: float(v) for k, v in (s.split("=", 1) for s in args.set)}
     cfg = load(overrides=over)

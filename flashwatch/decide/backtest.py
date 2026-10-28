@@ -54,7 +54,7 @@ def ev_tables(c, p1, p2, scenarios, step):
 
 
 def run(oof: pd.DataFrame, ons: pd.DataFrame, model: str, action: dict, baseline: str = "careful",
-        spread: float = 0.6, calendar: str = "07-01", late_reaction: int = 7, season=SEASON) -> pd.DataFrame:
+        spread: float = 0.5, calendar: str = "07-01", late_reaction: int = 7, season=SEASON) -> pd.DataFrame:
     """One row per (cell, year): value ($/acre, net of pumping and false alarms), crop value saved
     (gross, $/acre), starts, hits, false alarms, onsets in the window."""
     a = {**action, "params": dict(action["params"])}
