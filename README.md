@@ -74,9 +74,11 @@ python -m flashwatch.obs                         # data/obs.zarr from ERA5-Land
 python -m flashwatch.labels --variants           # flash-drought onsets
 python -m flashwatch.forecast build              # data/fcst.zarr from the S2S files
 python -m flashwatch.eval.cv --models B0 H1 M1 M2 --leads week1 week2 any28 --fast --fc-dates
+python -m flashwatch.eval.cv --models B0 M1 M3 M3b --leads week1 week2 --fast --tag m3seeds   # M3 map model (GPU; requirements-dl.txt)
+python -m flashwatch.eval.blend <m3seeds oof> <m3seeds2 oof> --blend M1 M3+M3b+M3c+M3d --write E1   # M1 + mean of four M3s
 python -m flashwatch.ingest nass                 # county crop acres (NASS_API_KEY)
 python -m flashwatch.ingest.nass local           # state prices and farm counts
-python -m flashwatch.site.build --oof data\oof\<file>.parquet --model M2
+python -m flashwatch.site.build --oof data\oof\<file>.parquet --model M2   # or the E1 file, --model E1 (current site)
 python -m flashwatch.site.defaults               # local starting values for the farm page
 python -m flashwatch.site.evidence --m1 <oof> --m2 <oof> --h1 <oof>
 python -m flashwatch.decide.rollup --oof <oof> --model M2 --tag <name> --set spell_days=21
@@ -93,6 +95,8 @@ python -m flashwatch.agent.chat --lat 40.87 --lon -97.99 --year 2012 --date 07-0
 python -m flashwatch.agent.serve                 # Ask FlashWatch on the farm page (127.0.0.1:8813)
 python -m flashwatch.agent.voice note.wav --year 2012 --date 07-03   # voice field report
 python -m flashwatch.agent.farm --lat 45.38 --lon -99.38 --year 2012 --dates 07-03  # morning text
+python -m flashwatch.agent.watch --year 2012 --llm 3                # the watcher's texts for a season
+python -m flashwatch.agent.scorecard             # how often its texts were right, six seasons (no API)
 modal run flashwatch/agent/glimmer_train.py      # Glimmer LoRA (Modal account)
 ```
 

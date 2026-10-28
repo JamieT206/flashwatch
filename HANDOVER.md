@@ -258,6 +258,14 @@ training while the design moves; heavy burst ~Nov 2 Sydney (DESIGN.md B).
    Open: Q14-Q20 (Q14, Q15 resolved). S2S restarted 04:22 with summer first (Q13); watcher waits for
    the first June-August date, then rebuild fcst.zarr, M2, site data (`site.build`, then `site.agents`).
 
+6e. **Oct 29 morning (after the 9:00 usage reset):**
+   - M3 seeds: four M3s averaged, blended 50/50 with M1 (`eval.blend`): week 1 6.1% vs 4.3% (paired +1.8),
+     week 2 1.7% vs 1.2%; more seeds no longer help (DESIGN L1). The site now runs on this blend (`E1`);
+     the old M1 site data is in `data/site_backup/m1_0924/`. Agent texts regenerated on it.
+   - Watcher fixes: risk easing must hold two forecasts; drought text at most every 4 weeks.
+   - Watcher scorecard (`agent/scorecard.py`): each forecast text checked against the next 14 days, on
+     the Agents page with a six-season track record.
+
 **Priorities (James, Oct 28): (1) anything that meaningfully improves prediction, (2) the farmer tool,
 (3) modelling nice-to-haves. Nothing is cut; what misses Nov 4 continues after.**
 7. Burst (Nov 2), freeze, test years once, replay, video, write-up.
