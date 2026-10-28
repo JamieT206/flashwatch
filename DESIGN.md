@@ -251,6 +251,10 @@ cross-validation per horizon; keep the simpler option unless the improvement is 
   (0.8 to 1.5). Week 2: 1.6% vs 1.2% (+0.3, CI -0.3 to +0.8). So the map model sees something the
   per-cell model doesn't, at week 1. Next: M3 with the forecast features against M2 (`m3fc`); a
   cross-fitted calibration for M3; if it holds, the blend goes into the Nov 2 burst (B4 ensembling).
+  **With the forecast features (`m3fc`, 16 spring forecast dates):** no gain. M3 alone week 1 10.6% (M2
+  16.8%); the M2+M3 blend 16.3% (paired -0.6, CI -3.8 to +2.2); week 2 3.5% vs 3.8%. Only ~16 pictures a
+  year to learn from on forecast dates, against ~100 on all dates, so the map model is starved. Re-run when
+  the summer forecast dates land; until then the blend is a land-only (M1) improvement.
 - L2. Interactive map: click a location and watch two charts animate, the FlashWatch forecast
   [x] weeks out and the actual soil moisture catching up behind it.
 - L3. A full website (beyond the static replay page).
