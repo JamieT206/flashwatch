@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlashWatch Replay</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<style>
+  :root { --bg: #0e1116; --panel: #161b22; --ink: #e6edf3; --muted: #8b949e; --grid: #30363d;
+          --pred: #f5a623; --obs: #ffffff; --dry: #3a3550; --usdm: #58a6ff; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 22px; margin: 4px 0 2px; font-weight: 650; letter-spacing: .2px; }
+  .sub { color: var(--muted); margin-bottom: 12px; }
+  .stage { position: relative; background: var(--panel); border-radius: 10px; overflow: hidden; }
+  canvas { display: block; width: 100%; height: auto; }
+  .date { position: absolute; top: 12px; left: 16px; font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; text-shadow: 0 2px 8px #000; }
+  .stats { position: absolute; top: 52px; left: 16px; color: var(--muted); font-size: 13px; text-shadow: 0 1px 4px #000; }
+  .controls { display: flex; gap: 12px; align-items: center; margin: 12px 0; }
+  button { background: var(--pred); color: #111; border: 0; border-radius: 6px; padding: 7px 14px; font-weight: 650; cursor: pointer; }
+  input[type=range] { flex: 1; accent-color: var(--pred); }
+  .legend { display: flex; flex-wrap: wrap; gap: 18px; color: var(--muted); font-size: 13px; margin: 6px 0 14px; }
+  .legend span.sw { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -2px; margin-right: 6px; }
+  .ramp { width: 120px; height: 10px; border-radius: 3px; display: inline-block; vertical-align: 0; margin: 0 6px; }
+  .chart { background: var(--panel); border-radius: 10px; padding: 8px 8px 4px; }
+  .chart text { fill: var(--muted); font-size: 11px; }
+  .note { color: var(--muted); font-size: 12px; margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 id="title">FlashWatch replay</h1>
+  <div class="sub" id="subtitle"></div>
+  <div class="stage">
+    <canvas id="map" width="1068" height="600"></canvas>
+    <div class="date" id="date"></div>
+    <div class="stats" id="stats"></div>
+  </div>
+  <div class="controls">
+    <button id="play">Play</button>
+    <input id="slider" type="range" min="0" value="0">
+  </div>
+  <div class="legend">
+    <div>Forecast risk of onset<span class="ramp" id="ramp"></span><span id="rampmax"></span></div>
+    <div><span class="sw" style="background:var(--dry)"></span>Already in drought</div>
+    <div><span class="sw" style="background:#fff;border-radius:50%"></span>Onset that actually happened</div>
+    <div><span class="sw" style="border:2px solid var(--usdm)"></span>Drought Monitor D1+ (published)</div>
+  </div>
+  <div class="chart"><svg id="chart" width="100%" height="190"></svg></div>
+  <div class="note" id="note"></div>
+</div>
+<script>
+const D = /*__DATA__*/null;
+const dec = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+const prob = dec(D.prob), dry = dec(D.dry), onset = dec(D.onset), usdm = dec(D.usdm), land = dec(D.land);
+const N = D.dates.length, NY = D.ny, NX = D.nx, CELLS = NY * NX;
+const leadTxt = D.lead === "any28" ? "in the next 28 days" : `in week ${D.lead.slice(-1)}`;
+document.getElementById("title").textContent = `FlashWatch replay: ${D.year}`;
+document.getElementById("subtitle").textContent =
+  `Forecast chance of a flash-drought onset ${leadTxt}, from a model that never saw ${D.year}, against what happened.`;
+document.getElementById("note").textContent =
+  `Soil moisture 0-${D.depth.split("-")[1]} cm, ERA5-Land. Onsets: drop from the 40th to the 20th percentile or below, held for 10 days. ` +
+  `Map shows dots for onsets in the window the forecast targets. Light-training prototype.`;
+
+const canvas = document.getElementById("map"), ctx = canvas.getContext("2d");
+const W = canvas.width, H = canvas.height;
+const res = D.res, lat0 = D.lat[0], lon0 = D.lon[0];
+const region = {type: "Polygon", coordinates: [[[lon0 - res/2, lat0 + res/2], [D.lon[1] + res/2, lat0 + res/2],
+  [D.lon[1] + res/2, D.lat[1] - res/2], [lon0 - res/2, D.lat[1] - res/2], [lon0 - res/2, lat0 + res/2]]]};
+const proj = d3.geoConicEqualArea().parallels([38, 46]).rotate([92, 0]).fitExtent([[16, 16], [W - 16, H - 16]], region);
+// Projected corners of every cell, computed once.
+const corners = new Float32Array(CELLS * 8);
+for (let y = 0; y < NY; y++) for (let x = 0; x < NX; x++) {
+  const la = lat0 - y * res, lo = lon0 + x * res, i = (y * NX + x) * 8;
+  [[lo - res/2, la + res/2], [lo + res/2, la + res/2], [lo + res/2, la - res/2], [lo - res/2, la - res/2]]
+    .forEach((c, k) => { const p = proj(c); corners[i + 2*k] = p[0]; corners[i + 2*k + 1] = p[1]; });
+}
+const ramp = d3.interpolateRgbBasis(["#1d2633", "#5c3d1e", "#c46a0f", "#f5a623", "#ffe08a"]);
+document.getElementById("ramp").style.background = `linear-gradient(90deg, ${[0, .25, .5, .75, 1].map(t => ramp(t)).join(",")})`;
+document.getElementById("rampmax").textContent = `0 - ${Math.round(D.scale * 100)}%+`;
+let states = null;
+fetch("https://cdn.jsdelivr.net/npm/us-atlas@3.0.1/states-10m.json").then(r => r.json())
+  .then(t => { states = topojson.mesh(t, t.objects.states, (a, b) => a !== b); draw(cur); }).catch(() => {});
+
+function quad(i) {
+  const c = i * 8;
+  ctx.beginPath(); ctx.moveTo(corners[c], corners[c+1]);
+  for (let k = 1; k < 4; k++) ctx.lineTo(corners[c + 2*k], corners[c + 2*k + 1]);
+  ctx.closePath();
+}
+function draw(f) {
+  ctx.fillStyle = "#0b0e13"; ctx.fillRect(0, 0, W, H);
+  const o = f * CELLS;
+  let nf = 0, sum = 0, nOn = 0, nDry = 0;
+  for (let i = 0; i < CELLS; i++) {
+    if (!land[i]) continue;
+    const p = prob[o + i];
+    if (p !== 255) { ctx.fillStyle = ramp(p / 254); nf++; sum += p / 254 * D.scale; }
+    else if (dry[o + i]) { ctx.fillStyle = "#3a3550"; nDry++; }
+    else ctx.fillStyle = "#1a1f27";
+    quad(i); ctx.fill(); ctx.strokeStyle = ctx.fillStyle; ctx.lineWidth = 0.6; ctx.stroke();   // hide seams
+  }
+  if (states) {
+    ctx.strokeStyle = "rgba(230,237,243,.28)"; ctx.lineWidth = 1;
+    ctx.beginPath(); d3.geoPath(proj, ctx)(states); ctx.stroke();
+  }
+  // Drought Monitor D1+ outline: edges between a D1+ cell and a non-D1+ neighbour.
+  ctx.strokeStyle = "#58a6ff"; ctx.lineWidth = 1.6; ctx.beginPath();
+  for (let y = 0; y < NY; y++) for (let x = 0; x < NX; x++) {
+    const i = y * NX + x; if (!usdm[o + i]) continue;
+    const c = i * 8, nb = [[y-1, x, 0, 1], [y, x+1, 1, 2], [y+1, x, 2, 3], [y, x-1, 3, 0]];
+    for (const [yy, xx, a, b] of nb) {
+      const out = yy < 0 || yy >= NY || xx < 0 || xx >= NX || !usdm[o + yy * NX + xx];
+      if (out) { ctx.moveTo(corners[c + 2*a], corners[c + 2*a + 1]); ctx.lineTo(corners[c + 2*b], corners[c + 2*b + 1]); }
+    }
+  }
+  ctx.stroke();
+  // Actual onsets in the forecast window.
+  ctx.fillStyle = "#fff"; ctx.shadowColor = "rgba(255,255,255,.9)"; ctx.shadowBlur = 6;
+  for (let i = 0; i < CELLS; i++) if (onset[o + i]) {
+    nOn++; const c = i * 8, cx = (corners[c] + corners[c+4]) / 2, cy = (corners[c+1] + corners[c+5]) / 2;
+    ctx.beginPath(); ctx.arc(cx, cy, 2.2, 0, 2 * Math.PI); ctx.fill();
+  }
+  ctx.shadowBlur = 0;
+  document.getElementById("date").textContent = d3.timeFormat("%b %-d, %Y")(new Date(D.dates[f] + "T00:00"));
+  document.getElementById("stats").textContent =
+    `${nOn} cells with an onset ${leadTxt} · ${nDry} cells already in drought · mean forecast ${(100 * sum / Math.max(nf, 1)).toFixed(1)}%`;
+  cursor(f);
+}
+
+// Season chart: mean forecast vs observed rate.
+const svg = d3.select("#chart"), cw = svg.node().getBoundingClientRect().width, ch = 190, m = {l: 40, r: 12, t: 12, b: 24};
+const xs = d3.scaleTime().domain(d3.extent(D.dates, d => new Date(d))).range([m.l, cw - m.r]);
+const ys = d3.scaleLinear().domain([0, d3.max([...D.mean_pred, ...D.obs_rate]) * 1.1]).range([ch - m.b, m.t]);
+svg.append("g").attr("transform", `translate(0,${ch - m.b})`).call(d3.axisBottom(xs).ticks(7).tickSizeOuter(0)).call(g => g.select(".domain").attr("stroke", "#30363d"));
+svg.append("g").attr("transform", `translate(${m.l},0)`).call(d3.axisLeft(ys).ticks(4).tickFormat(d3.format(".0%"))).call(g => g.select(".domain").remove());
+const line = vals => d3.line().x((_, i) => xs(new Date(D.dates[i]))).y(v => ys(v))(vals);
+svg.append("path").attr("d", line(D.obs_rate)).attr("fill", "none").attr("stroke", "#fff").attr("stroke-width", 1.5).attr("stroke-dasharray", "4 3");
+svg.append("path").attr("d", line(D.mean_pred)).attr("fill", "none").attr("stroke", "#f5a623").attr("stroke-width", 2.2);
+svg.append("text").attr("x", m.l + 8).attr("y", m.t + 10).attr("fill", "#f5a623").text("mean forecast");
+svg.append("text").attr("x", m.l + 110).attr("y", m.t + 10).attr("fill", "#fff").text("what happened (share of cells with an onset)");
+const cur_line = svg.append("line").attr("y1", m.t).attr("y2", ch - m.b).attr("stroke", "#8b949e");
+function cursor(f) { const x = xs(new Date(D.dates[f])); cur_line.attr("x1", x).attr("x2", x); }
+
+const slider = document.getElementById("slider"); slider.max = N - 1;
+let cur = 0, timer = null;
+slider.oninput = () => { cur = +slider.value; draw(cur); };
+document.getElementById("play").onclick = e => {
+  if (timer) { clearInterval(timer); timer = null; e.target.textContent = "Play"; return; }
+  e.target.textContent = "Pause";
+  timer = setInterval(() => { cur = (cur + 1) % N; slider.value = cur; draw(cur); }, 220);
+};
+draw(0);
+</script>
+</body>
+</html>

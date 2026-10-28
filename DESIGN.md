@@ -269,3 +269,12 @@ Plan the story first, then make sure the pipeline writes the data it needs.
 - **County alert cards** from the agent, with its own track record.
 - Format: a static scrollytelling page; the 3-minute video cut from it. Interactive click-map: L2.
 - Build it first on 2012 (dev-year predictions), so the page exists before the model is frozen.
+
+**Prototype (Oct 28):** `python -m flashwatch.viz.replay --oof <stem> --year 2012` writes
+`data/viz/replay_2012.html` (map per issue date: week-2 risk, cells already in drought, actual onsets,
+Drought Monitor D1+ outline; play/scrub; season chart of mean forecast vs actual onset rate). Serve with
+the `viz` entry in `.claude/launch.json`. **Finding for the story:** in 2012 the actual week-2 onset rate
+spikes to ~35% of eligible cells in early May and ~20% in August, while the light M1's mean forecast stays
+at 3-5%: it ranks cells sensibly but does not see the regional bursts coming. Forecast features (M2) are
+the obvious test of whether they can; the replay should probably show relative risk (vs normal for the
+date) rather than raw probability so the map isn't uniformly dim.
