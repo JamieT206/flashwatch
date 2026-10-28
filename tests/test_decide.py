@@ -47,3 +47,21 @@ def test_config_builds_every_action():
         c = curve(a)
         assert len(c.notice) == len(c.avoided) and np.isfinite(c.cost_noevent), name
     assert load(overrides={"gpm_per_acre": 4.0})["irrigation"]["params"]["gpm_per_acre"] == 4.0
+
+
+def test_backtest_credits_hits_and_charges_false_alarms():
+    import pandas as pd
+    from flashwatch.decide import backtest
+    issues = pd.date_range("2012-06-01", "2012-08-31", freq="2D")
+    p = np.where(issues == pd.Timestamp("2012-07-01"), 0.6, 0.0)
+    p2 = np.where(issues == pd.Timestamp("2012-08-10"), 0.6, 0.0)       # a second start: false alarm
+    oof = pd.DataFrame({"year": 2012, "issue": issues, "iy": 0, "ix": 0,
+                        "M1_week1": p + p2, "M1_week2": p + p2})
+    ons = pd.DataFrame({"date": pd.to_datetime(["2012-07-06"]), "iy": [0], "ix": [0]})
+    act = load()["irrigation"]
+    bt = backtest.run(oof, ons, "M1", act, "careful")
+    c = curve(act)
+    assert bt.hits[0] == 1 and bt.false_alarms[0] == 1 and bt.onsets[0] == 1
+    assert np.isclose(bt.value[0], float(c.net(5)) - c.cost_noevent)
+    cal = backtest.run(oof, ons, "M1", act, "calendar", calendar="07-03")
+    assert cal.hits[0] == 0 and cal.false_alarms[0] == 1   # the calendar start (July 3) already covers the July 6 onset

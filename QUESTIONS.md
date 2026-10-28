@@ -187,6 +187,22 @@ is now close to BSS vs a seasonal base rate, i.e. an honest (harder) reference.
 - New forecast features (F8) kept in: neutral so far, physically sensible, and cheap.
 - Agent packs are refused for the test years until the model freeze.
 
+## Decisions (James, Oct 28, evening)
+- **Focus: "irrigate now or not?", decided day by day.** Notice is worth little beyond about a week
+  (DESIGN.md O1a), so week 1 is the core, week 2 a nice-to-have, and weeks 3-4 stay only in the
+  pre-registered evaluation.
+- **Dashboard centred on one farm:** enter a lat/lon and see everything for that place. Add a few
+  system-wide pages for the judges. The pitch is grounded in "a real idea to help real American farmers".
+- **Roll-up number** ("$X billion saved, Y more food, equivalent to Z"): compute all three scopes
+  separately: (1) irrigated corn and soy in the study region, backtested; (2) the same scaled up to
+  all US irrigated corn and soy (labelled as an extrapolation); (3) also rain-fed farms through other
+  actions (placeholder costs).
+- **Baselines for "usual practice": both,** side by side: a careful irrigator (starts 2 days after
+  stress begins) and a calendar irrigator (starts on a fixed date; before it, only once the crop shows
+  stress).
+- **Hosting:** a static site in the repo (`site/`), previewed locally; James switches on GitHub Pages.
+  Site data stays out of git until Q2 (ECMWF licence) is settled for anything forecast-derived.
+
 ## Defaults taken (Oct 28, evening)
 - Agent number checker ignores the sign of a figure ("2.6 below normal" matches -2.6) and exempts
   time spans ("28 days"); agent tools now return percentages. Found in the first live Muse run.

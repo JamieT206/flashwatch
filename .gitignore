@@ -5,3 +5,4 @@ access_report.json
 data/
 .venv/
 __pycache__/
+site/data/

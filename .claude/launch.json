@@ -4,8 +4,30 @@
     {
       "name": "viz",
       "runtimeExecutable": ".venv/Scripts/python.exe",
-      "runtimeArgs": ["-m", "http.server", "8811", "--bind", "127.0.0.1", "--directory", "data/viz"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8811",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "data/viz"
+      ],
       "port": 8811
+    },
+    {
+      "name": "site",
+      "runtimeExecutable": ".venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8812",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "site"
+      ],
+      "port": 8812
     }
   ]
 }

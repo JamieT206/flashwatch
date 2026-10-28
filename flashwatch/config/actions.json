@@ -5,21 +5,133 @@
     "kind": "irrigation",
     "per": "acre",
     "params": {
-      "awc_in_per_ft": {"value": 2.0, "source": "typical silt loam plant-available water (USDA NRCS soil surveys); sand ~1.0, loam ~1.8"},
-      "root_ft": {"value": 3.0, "source": "managed root zone for corn, typical extension guidance"},
-      "p": {"value": 0.55, "source": "FAO-56 (Allen et al. 1998) depletion fraction for maize"},
-      "et_peak": {"value": 0.30, "source": "peak corn water use in hot, dry weather, ~0.30-0.35 in/day (Great Plains extension guidance)"},
-      "gpm_per_acre": {"value": 5.0, "source": "pivot capacity; typical Nebraska 4-7 gpm/acre. Use your own"},
-      "efficiency": {"value": 0.85, "source": "centre-pivot application efficiency, typical"},
-      "ky": {"value": 1.5, "source": "FAO-33 (Doorenbos & Kassam 1979) yield response factor, maize around flowering (1.25 whole season)"},
-      "season_et": {"value": 24.0, "source": "seasonal corn water use, inches, typical"},
-      "yield_bu": {"value": 220.0, "source": "PLACEHOLDER: your expected yield, bu/acre"},
-      "price": {"value": 4.50, "source": "PLACEHOLDER: your expected price, $/bu (or a December futures quote)"},
-      "pump_cost_per_in": {"value": 10.0, "source": "PLACEHOLDER: your pumping cost per acre-inch (energy and wear; varies widely)"},
-      "spell_days": {"value": 35, "source": "length of the dry spell simulated"},
-      "reaction_days": {"value": 2, "source": "PLACEHOLDER: days after stress begins that you'd normally start (sensor or crop symptoms)"},
-      "false_alarm_waste": {"value": 0.6, "source": "PLACEHOLDER: share of water pumped ahead of a dry spell that never comes that is wasted (rain refills the profile)"},
-      "review_days": {"value": 7, "source": "days you'd keep the pivot on before re-deciding if no dry spell comes"}
+      "awc_in_per_ft": {
+        "value": 2.0,
+        "source": "typical silt loam plant-available water (USDA NRCS soil surveys); sand ~1.0, loam ~1.8"
+      },
+      "root_ft": {
+        "value": 3.0,
+        "source": "managed root zone for corn, typical extension guidance"
+      },
+      "p": {
+        "value": 0.55,
+        "source": "FAO-56 (Allen et al. 1998) depletion fraction for maize"
+      },
+      "et_peak": {
+        "value": 0.3,
+        "source": "peak corn water use in hot, dry weather, ~0.30-0.35 in/day (Great Plains extension guidance)"
+      },
+      "gpm_per_acre": {
+        "value": 5.0,
+        "source": "pivot capacity; typical Nebraska 4-7 gpm/acre. Use your own"
+      },
+      "efficiency": {
+        "value": 0.85,
+        "source": "centre-pivot application efficiency, typical"
+      },
+      "ky": {
+        "value": 1.5,
+        "source": "FAO-33 (Doorenbos & Kassam 1979) yield response factor, maize around flowering (1.25 whole season)"
+      },
+      "season_et": {
+        "value": 24.0,
+        "source": "seasonal corn water use, inches, typical"
+      },
+      "yield_bu": {
+        "value": 220.0,
+        "source": "PLACEHOLDER: your expected yield, bu/acre"
+      },
+      "price": {
+        "value": 4.5,
+        "source": "PLACEHOLDER: your expected price, $/bu (or a December futures quote)"
+      },
+      "pump_cost_per_in": {
+        "value": 10.0,
+        "source": "PLACEHOLDER: your pumping cost per acre-inch (energy and wear; varies widely)"
+      },
+      "spell_days": {
+        "value": 35,
+        "source": "length of the dry spell simulated"
+      },
+      "reaction_days": {
+        "value": 2,
+        "source": "PLACEHOLDER: days after stress begins that you'd normally start (sensor or crop symptoms)"
+      },
+      "false_alarm_waste": {
+        "value": 0.6,
+        "source": "PLACEHOLDER: share of water pumped ahead of a dry spell that never comes that is wasted (rain refills the profile)"
+      },
+      "review_days": {
+        "value": 7,
+        "source": "days you'd keep the pivot on before re-deciding if no dry spell comes"
+      }
+    }
+  },
+  "irrigation_soybeans": {
+    "label": "Start the pivot early (soybeans)",
+    "kind": "irrigation",
+    "per": "acre",
+    "params": {
+      "awc_in_per_ft": {
+        "value": 2.0,
+        "source": "typical silt loam plant-available water (USDA NRCS soil surveys); sand ~1.0, loam ~1.8"
+      },
+      "root_ft": {
+        "value": 3.0,
+        "source": "managed root zone for corn, typical extension guidance"
+      },
+      "p": {
+        "value": 0.5,
+        "source": "FAO-56 depletion fraction for soybean"
+      },
+      "et_peak": {
+        "value": 0.28,
+        "source": "peak soybean water use in hot, dry weather, typical"
+      },
+      "gpm_per_acre": {
+        "value": 5.0,
+        "source": "pivot capacity; typical Nebraska 4-7 gpm/acre. Use your own"
+      },
+      "efficiency": {
+        "value": 0.85,
+        "source": "centre-pivot application efficiency, typical"
+      },
+      "ky": {
+        "value": 0.85,
+        "source": "FAO-33 yield response factor, soybean whole season"
+      },
+      "season_et": {
+        "value": 22.0,
+        "source": "seasonal soybean water use, inches, typical"
+      },
+      "yield_bu": {
+        "value": 70.0,
+        "source": "PLACEHOLDER: your expected yield, bu/acre (irrigated)"
+      },
+      "price": {
+        "value": 11.0,
+        "source": "PLACEHOLDER: your expected price, $/bu (or a November futures quote)"
+      },
+      "pump_cost_per_in": {
+        "value": 10.0,
+        "source": "PLACEHOLDER: your pumping cost per acre-inch (energy and wear; varies widely)"
+      },
+      "spell_days": {
+        "value": 35,
+        "source": "length of the dry spell simulated"
+      },
+      "reaction_days": {
+        "value": 2,
+        "source": "PLACEHOLDER: days after stress begins that you'd normally start (sensor or crop symptoms)"
+      },
+      "false_alarm_waste": {
+        "value": 0.6,
+        "source": "PLACEHOLDER: share of water pumped ahead of a dry spell that never comes that is wasted (rain refills the profile)"
+      },
+      "review_days": {
+        "value": 7,
+        "source": "days you'd keep the pivot on before re-deciding if no dry spell comes"
+      }
     }
   },
   "hay": {
@@ -28,13 +140,37 @@
     "per": "farm",
     "note": "Partly zero-sum between neighbours (James): buying early moves the price rise onto someone else. The market tends to move when the Drought Monitor shows drought, a median 22 days after the soil crosses the drought line (eval/lead.py), so most of the value comes from acting before the market, and extra days of notice matter less.",
     "params": {
-      "tons": {"value": 50, "source": "PLACEHOLDER: hay you'd need to buy"},
-      "price_per_ton": {"value": 180, "source": "PLACEHOLDER: current price"},
-      "drought_rise": {"value": 0.30, "source": "PLACEHOLDER: price rise in a drought year, share"},
-      "carry_cost_share": {"value": 0.08, "source": "PLACEHOLDER: storage loss and interest if bought and not needed this season"}
+      "tons": {
+        "value": 50,
+        "source": "PLACEHOLDER: hay you'd need to buy"
+      },
+      "price_per_ton": {
+        "value": 180,
+        "source": "PLACEHOLDER: current price"
+      },
+      "drought_rise": {
+        "value": 0.3,
+        "source": "PLACEHOLDER: price rise in a drought year, share"
+      },
+      "carry_cost_share": {
+        "value": 0.08,
+        "source": "PLACEHOLDER: storage loss and interest if bought and not needed this season"
+      }
     },
-    "notice_days": [0, 7, 14, 21, 28],
-    "avoided_share_of_rise": [0.6, 0.8, 0.95, 1.0, 1.0]
+    "notice_days": [
+      0,
+      7,
+      14,
+      21,
+      28
+    ],
+    "avoided_share_of_rise": [
+      0.6,
+      0.8,
+      0.95,
+      1.0,
+      1.0
+    ]
   },
   "nitrogen": {
     "label": "Cut or delay side-dress nitrogen",
@@ -42,13 +178,36 @@
     "per": "acre",
     "note": "Needs agronomy input: how much N a drought-capped crop can use, and the yield cost of under-applying if rain comes. All placeholders.",
     "params": {
-      "n_cut_lb": {"value": 40, "source": "PLACEHOLDER: lb N/acre not applied"},
-      "n_price_per_lb": {"value": 0.60, "source": "PLACEHOLDER: $/lb N"},
-      "yield_cost_if_wrong_pct": {"value": 5.0, "source": "PLACEHOLDER: yield lost from the cut if no drought comes, %"},
-      "yield_bu": {"value": 220.0, "source": "PLACEHOLDER"},
-      "price": {"value": 4.50, "source": "PLACEHOLDER"}
+      "n_cut_lb": {
+        "value": 40,
+        "source": "PLACEHOLDER: lb N/acre not applied"
+      },
+      "n_price_per_lb": {
+        "value": 0.6,
+        "source": "PLACEHOLDER: $/lb N"
+      },
+      "yield_cost_if_wrong_pct": {
+        "value": 5.0,
+        "source": "PLACEHOLDER: yield lost from the cut if no drought comes, %"
+      },
+      "yield_bu": {
+        "value": 220.0,
+        "source": "PLACEHOLDER"
+      },
+      "price": {
+        "value": 4.5,
+        "source": "PLACEHOLDER"
+      }
     },
-    "notice_days": [0, 7, 14],
-    "avoided_share": [0.5, 1.0, 1.0]
+    "notice_days": [
+      0,
+      7,
+      14
+    ],
+    "avoided_share": [
+      0.5,
+      1.0,
+      1.0
+    ]
   }
 }

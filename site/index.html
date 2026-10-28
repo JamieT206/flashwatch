@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlashWatch: your farm</title>
+<meta name="description" content="Should you start irrigating today? Flash-drought warnings for your field, a week ahead.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='%23c4561f'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="brand"><span class="dot"></span>FlashWatch</div>
+  <nav><a class="on" href="index.html">Your farm</a><a href="region.html">The big picture</a></nav>
+  <div class="replay-note" id="replayNote">Replay of a past season</div>
+</div></header>
+
+<main class="wrap">
+  <div class="controls">
+    <div style="flex:1 1 320px">
+      <div class="place" id="place">Loading...</div>
+      <div class="place-sub" id="placeSub"></div>
+    </div>
+    <label>Latitude<input id="lat" type="number" step="0.01"></label>
+    <label>Longitude<input id="lon" type="number" step="0.01"></label>
+    <button class="primary" id="go">Go</button>
+    <label>Season<select id="year"></select></label>
+  </div>
+
+  <div class="dateline">
+    <button id="prev" aria-label="Previous forecast">&larr;</button>
+    <input id="date" type="range" min="0" max="100" value="0" aria-label="Forecast date">
+    <button id="next" aria-label="Next forecast">&rarr;</button>
+    <span class="d" id="dateLabel"></span>
+  </div>
+
+  <div class="grid">
+    <section class="card verdict" id="verdict">
+      <div class="q">Irrigate today?</div>
+      <div class="big" id="vBig"></div>
+      <div id="vWhy"></div>
+      <div class="ev">
+        <div><b id="evNow"></b><span>expected value of starting the pivot today, vs your usual start</span></div>
+        <div><b id="evWait"></b><span>expected value of deciding again at the next forecast (2 days)</span></div>
+      </div>
+      <div class="trigger" id="trigger"></div>
+    </section>
+
+    <section class="card">
+      <h3>Flash-drought risk at your farm</h3>
+      <div class="tiles">
+        <div class="tile"><div class="l">Chance a flash drought starts in the next 7 days</div><div class="v" id="t1"></div><div class="x" id="t1x"></div></div>
+        <div class="tile"><div class="l">... in days 8-14</div><div class="v" id="t2"></div><div class="x" id="t2x"></div></div>
+        <div class="tile"><div class="l">Root-zone soil moisture (0-40 cm)</div><div class="v" id="t3"></div><div class="l" id="t3x"></div></div>
+        <div class="tile"><div class="l">US Drought Monitor (latest map)</div><div class="v" id="t4" style="font-size:20px"></div><div class="l">official status</div></div>
+      </div>
+      <div id="picker" style="margin-top:12px"></div>
+      <div class="note">Click the map to move your farm.</div>
+    </section>
+
+    <section class="card full chart">
+      <h3>Your season: risk this week vs normal, and what happened</h3>
+      <div id="seasonChart"></div>
+      <div class="legend">
+        <span><i style="background:var(--risk)"></i>FlashWatch: chance of onset in the next 7 days</span>
+        <span><i style="background:var(--normal)"></i>Normal for the date</span>
+        <span>&#9650; a flash drought began</span>
+        <span>&#9679; FlashWatch said "start the pivot" (hollow: no dry spell came)</span>
+      </div>
+      <div id="soilChart" style="margin-top:10px"></div>
+      <div class="legend">
+        <span><i style="background:var(--soil)"></i>Soil moisture percentile (below 20 = drought)</span>
+        <span><i style="background:var(--drought)"></i>Drought Monitor D1 or worse</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>This season, if you had followed FlashWatch</h3>
+      <div class="tally" id="tally"></div>
+      <ul class="events" id="events"></ul>
+    </section>
+
+    <section class="card chart">
+      <h3>What a day of warning is worth on your farm</h3>
+      <div id="noticeChart"></div>
+      <div class="note" id="noticeNote"></div>
+    </section>
+
+    <section class="card full">
+      <h3>Your farm (saved in this browser)</h3>
+      <div class="settings" id="settings"></div>
+      <p class="note">Defaults are typical published values for a Nebraska centre pivot (FAO-56 water balance, FAO-33 yield response).
+        Replace them with your own: the advice and dollar figures update instantly.</p>
+    </section>
+  </div>
+
+  <footer id="foot">
+    How it works: every other day FlashWatch forecasts the chance that root-zone soil moisture crashes into drought
+    (a "flash drought") at your location in the next one and two weeks. A water-balance model of your field turns days of warning
+    into dollars, and the decision weighs starting today against waiting for a fresher forecast.
+    This page replays past seasons with forecasts from models that never saw that year.
+    <span id="modelNote"></span>
+    Data: ERA5-Land (Copernicus Climate Change Service), US Drought Monitor (NDMC, USDA, NOAA), USDA NASS, US Census Gazetteer.
+  </footer>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script src="assets/engine.js"></script>
+<script src="assets/farm.js"></script>
+</body>
+</html>

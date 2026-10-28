@@ -537,6 +537,20 @@ config, so editing a cost updates instantly with no server. Muse needs a server 
 the page), so the hackathon site shows precomputed agent output, and a small local server runs live
 questions in the demo.
 
+**Built (Oct 28 evening):** `site/index.html` (the farm page) and `site/region.html` ("the big
+picture" for judges). Data comes from `python -m flashwatch.site.build`, `flashwatch.site.evidence`
+and `flashwatch.decide.rollup` into `site/data/` (git-ignored until Q2). The engine is ported to
+`site/assets/engine.js`; `python -m flashwatch.site.parity` checks it gives identical numbers to
+the Python. The farm page:
+- the verdict (start the pivot today / not yet / no need), with expected value of today vs in 2 days;
+- what would change it: the forecast risk at which starting at the next forecast pays (weather
+  triggers come with O2);
+- risk tiles, a season chart with FlashWatch's starts and the real onsets, soil moisture and the
+  Drought Monitor;
+- the season tally against both usual practices;
+- the value-of-notice curve;
+- editable farm settings, kept in the browser.
+
 ### O6. The agent's job here (Muse Spark; extends G1)
 
 - New tools: `action_values(place, profile)` (expected value per action, scenario range, trigger) and
@@ -556,6 +570,45 @@ questions in the demo.
 - Replay track record: for 2012 and a quiet year, what a user following the rule would have spent and
   saved against never/always acting, with the (placeholder) costs stated.
 - The O0 caveat reported, and the yield link (O4) if built.
+
+### O9. Backtest and the headline number (built Oct 28 evening)
+
+`decide/backtest.py` replays the farm page's rule day by day (every forecast date, June 1 - August
+31, six development years, every other grid cell):
+- **start the pivot** when the engine says act now;
+- **a hit:** an onset within 14 days earns the avoided loss for that much notice, minus extra pumping;
+- **a false alarm:** no onset comes; the farmer pays a week of mostly wasted pumping;
+- **missed onsets** are handled the usual way, worth 0.
+
+Two usual practices: careful (starts 2 days after stress) and calendar (starts July 1; before that,
+7 days after stress). `decide/rollup.py` maps counties (NASS Census 2022 irrigated corn and soybean
+acres, Census Gazetteer centroids) to the nearest cell. Scope 1: the study region. Scope 2: all US
+irrigated corn and soy at the region's $/acre (an extrapolation). Scope 3: rain-fed corn, nitrogen
+cut (placeholder costs).
+
+Results, per year, against a careful irrigator. The full-season ECMWF forecasts are not downloaded
+yet, so the middle row is an *estimate*: weather blurred to correlation 0.7 with the truth, between
+ECMWF's measured week-1 (0.8-0.97) and week-2 (0.4-0.65) accuracy.
+
+| Forecasts | Region, irrigated | All US irrigated corn + soy | $/acre (corn / soy) | People fed (US) | Weight vs US retail food loss |
+| --- | --- | --- | --- | --- | --- |
+| Land only (measured) | $11M | $15M | 1.33 / 0.00 | 1.5M | 1.6% |
+| ECMWF quality (estimate) | $82M | **$107M** | 8.96 / 0.98 | **6.3M** | **6.4%** |
+| Perfect weather (ceiling) | $108M | $142M | 11.72 / 1.52 | 6.8M | 6.9% |
+
+Against a calendar irrigator, the estimate is $36M (US) and land-only is slightly negative (false
+alarms cost more than the early starts save). Rain-fed nitrogen (placeholder costs): $51M under the
+estimate.
+
+**Honest reading:**
+- the number is **about $100 million a year, not billions**;
+- that is because irrigated corn is ~11M acres, flash-drought onsets hit a given field in roughly
+  1 summer in 3, and a week's notice is worth about $80/acre per onset;
+- "people fed" counts the grain's calories (most corn goes to feed and ethanol);
+- the retail-loss comparison is by weight, dry grain vs mixed food;
+- per-farm numbers are larger where pivots are under-sized (4 gpm/acre roughly doubles the value of
+  notice), and smaller for soybeans (less sensitive, less value per acre);
+- the year-to-year swing is wide: drought years carry most of it.
 
 ### O8. Build order (proposed; see QUESTIONS Q8)
 
