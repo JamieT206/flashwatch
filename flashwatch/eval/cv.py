@@ -56,7 +56,7 @@ def fold_table(cube, fb: FeatureBuilder, ref_years, target_years, high=40, low=L
         cols[k] = feats.pop(k)[n, iy, ix]         # pop: free each full grid once copied
     for k, v in labels.items():
         cols[k] = v[n, iy, ix].astype(np.int8)
-    return pd.DataFrame(cols)                     # built once: no fragmented frame
+    return pd.DataFrame(cols, copy=False)         # built once, without copying the columns
 
 
 def run_cv(cube, models=("B0", "B1"), cv_years=CV_YEARS, pool_years=YEARS, fb=None, ff=None, log=print,
