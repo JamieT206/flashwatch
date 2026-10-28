@@ -244,6 +244,13 @@ cross-validation per horizon; keep the simpler option unless the improvement is 
   a small U-Net (two scales, a dilated middle block), masked cross-entropy on cells with a row, the latest
   training year held back for early stopping and a Platt map. Trained inside each CV fold on its training
   years only, so the leakage discipline is the fold's. First comparison: `--models B0 M1 M3 --fast`.
+  **First result (Oct 29, `m3`, land features, all dates, 6 folds).** M3 alone: week 1 Brier skill 2.4%
+  (M1 4.3%) but PR-AUC 0.116 (M1 0.113): it ranks as well as M1 and is worse calibrated (slope 0.85; the
+  Platt map rests on one held-back year). **Blend** (average of M1's and M3's log-odds, 50/50 fixed in
+  advance, `m3blend`): week 1 **5.4%** (90% range 4.2-6.4), PR-AUC **0.128**; paired against M1 +1.1 points
+  (0.8 to 1.5). Week 2: 1.6% vs 1.2% (+0.3, CI -0.3 to +0.8). So the map model sees something the
+  per-cell model doesn't, at week 1. Next: M3 with the forecast features against M2 (`m3fc`); a
+  cross-fitted calibration for M3; if it holds, the blend goes into the Nov 2 burst (B4 ensembling).
 - L2. Interactive map: click a location and watch two charts animate, the FlashWatch forecast
   [x] weeks out and the actual soil moisture catching up behind it.
 - L3. A full website (beyond the static replay page).
