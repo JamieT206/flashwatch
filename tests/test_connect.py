@@ -173,3 +173,19 @@ def test_voice_transcribe_request_shape(tmp_path):
     assert voice.transcribe(f, key="k", base="https://x/v1", post=post) == "corn curling"
     assert seen["url"].endswith("/asr/transcribe") and seen["req"]["audioEncoding"] == "WAV"
     assert seen["req"]["sampleRateHertz"] == 16000
+
+
+def test_pivot_finder_reads_sam_boxes():
+    from flashwatch.agent.pivots import boxes, segment, to_pivots
+    # Two SAM records (format: dev.meta.ai/docs/sam/reading-segmentation): a pivot ~780 m across and a long strip.
+    text = ("<0f>0<|box;x1=100;y1=100;x2=266;y2=267;w=1024;h=1024|><|mask;x=0;y=0;data=4,4,!abc|>,"
+            "<0f>1<|box;x1=10;y1=500;x2=900;y2=540;w=1024;h=1024|><|mask;x=0;y=0;data=4,4,!abc|>")
+    seen = {}
+    out = segment(b"jpeg", post=lambda url, body: seen.update(url=url, body=body) or text)
+    assert seen["url"].endswith("/responses") and seen["body"]["model"] == "sam-3.1"
+    assert seen["body"]["input"][0]["content"][1]["image_url"].startswith("data:image/jpeg;base64,")
+    bx = boxes(out)
+    assert len(bx) == 2
+    piv = to_pivots(bx, 42.45, -98.6, half_m=2400)
+    assert len(piv) == 1 and 100 < piv[0]["acres"] < 130
+    assert piv[0]["lat"] > 42.45 and piv[0]["lon"] < -98.6        # upper-left of the image centre
