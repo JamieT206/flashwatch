@@ -157,6 +157,24 @@ simple cap (no single week above the 28-day value) would tidy it if needed.
 
   In 2012 the perfect-weather model catches both waves (actual week-2 rate 28% on May 3 / 19% on Aug 13; M2 13% then 26% the next issue, and 19%), where M1 stays at 3-5%.
 - *Resolution barely matters.* The same test at the full 0.25 degree grid (`--oracle native`) gives week 1 28.2%, week 2 21.2%, any-28 45.0%: only 1-2 points above the 1.75 degree version. So the 1.5 degree ECMWF archive is not what limits us; forecast *accuracy* is.
+- *How good are the real ECMWF forecasts?* Correlation between the ECMWF ensemble-mean weekly anomaly and what actually happened (same smoothing; 200 forecast start dates downloaded so far, land cells, 2005-2024):
+
+| Variable | Week 1 | Week 2 | Week 3 | Week 4 |
+| --- | --- | --- | --- | --- |
+| Precipitation | 0.78 | 0.37 | 0.12 | 0.07 |
+| Temperature | 0.97 | 0.66 | 0.22 | 0.18 |
+| VPD (air dryness) | 0.90 | 0.55 | 0.32 | 0.20 |
+
+  So week 1 is close to perfect, week 2 is about half-way, and weeks 3-4 are weak. The blurred runs below cover exactly this range.
+- *Early M2 on real ECMWF forecasts* (Oct 28, `m2early`; only the 10 start dates downloaded so far, Apr 1 - May 19, so 60 of the fast loop's issue dates; M2 trained with forecasts on just those dates). Scored on those dates only, with year-bootstrap 90% ranges:
+
+| Lead | M1 | M2 (real ECMWF) | Gain | Perfect-weather gain, same dates | Share of the ceiling captured |
+| --- | --- | --- | --- | --- | --- |
+| Week 1 | 2.9% | **14.3%** | +11.4 (+7.6 to +14.6) | +24.9 | about half |
+| Week 2 | 0.6% | 2.0% | +1.4 (-0.5 to +2.9) | +20.0 | under a tenth |
+| Any in 28 days | 2.7% | 8.4% | +5.6 (+2.2 to +9.0) | +38.2 | about a seventh |
+
+  Week 1 is a clear win: real forecasts roughly quintuple the skill. Week 2 gains little so far, although the week-2 forecasts are half-way good (correlation 0.4-0.65). Possible reasons, to check as the download fills in: too few dates to learn from yet, or the features don't present the week-2 signal well (e.g. a combined "dry and hot" index, or the forecast soil moisture). The blurred runs below show what a forecast of that quality *should* deliver.
 - *Blurred forecasts* (`--oracle-skill r`): the same test with the perfect weather mixed with large-scale noise so it matches the truth with correlation r = 0.7 / 0.5 / 0.3, to map how flash-drought skill depends on forecast quality. Results below when in.
 - *Meaning.* The target is sound and the onset waves are not noise; they are what weather forecasts exist to see. The ceiling is about 15x M1's skill at week 2. The open question is how much of it the real ECMWF forecasts keep (good at week 1, weaker at week 2, weak beyond), so M2 on real forecasts is the decisive run. The `native` (0.25 degree) variant is the absolute upper bound.
 
