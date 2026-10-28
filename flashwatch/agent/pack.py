@@ -4,7 +4,7 @@
 
 For one issue date and every land cell: the forecast chance of an onset in weeks 1-4 and within
 28 days, the "normal" chance for that place and date (B0), the three features pushing the 28-day
-risk up the most (LightGBM per-prediction contributions), the current soil-moisture percentile,
+risk up the most (this week's conditions; place and season features excluded) (LightGBM per-prediction contributions), the current soil-moisture percentile,
 whether the cell is already in drought, the latest published Drought Monitor category and, for
 M2, the ECMWF weather outlook. Models are trained on the CV years minus the issue's own year, so a
 replay never sees its own year (light settings, every other training cell). Test years are refused
@@ -24,6 +24,8 @@ from flashwatch.obs import LAT, LON
 
 OUT = DATA / "agent"
 LEADS = ["week1", "week2", "week3", "week4", "any28"]
+# Features that describe the place or the season, not this week: left out of the drivers.
+NOT_DRIVERS = ("aridity", "gs_precip", "doy_sin", "doy_cos")
 OUTLOOK = [f"f_{v}_{w}_z" for v in ("tp", "t2m", "vpd") for w in ("w1", "w2", "w12")] + ["f_hotdry_w12_p"]
 
 
@@ -65,7 +67,7 @@ def build(issue: pd.Timestamp, model: str = "M2", depth: str = "0-40") -> pd.Dat
         m = MODELS[model](**LIGHT).fit(train, lead)
         out[f"p_{lead}"] = m.predict(test)
         if lead == "any28":
-            c = m.contributions(test).drop(columns="bias")
+            c = m.contributions(test).drop(columns=["bias", *[n for n in NOT_DRIVERS if n in m.cols]])
             top = np.argsort(-c.to_numpy(), axis=1)[:, :3]
             for r in range(3):
                 out[f"driver{r + 1}"] = np.array(c.columns)[top[:, r]]

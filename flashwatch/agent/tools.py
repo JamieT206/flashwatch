@@ -16,6 +16,7 @@ USDM = {-1: "none", 0: "D0 (abnormally dry)", 1: "D1 (moderate drought)", 2: "D2
 # Plain-language names for the features most likely to show up as drivers; others pass through.
 FEATURE_TEXT = {
     "rz_pct": "root-zone soil moisture percentile (low = dry)",
+    "rz_pct_max15": "highest soil-moisture percentile in the last 15 days (wet soil has further to fall)",
     "rz_pct_chg5": "soil moisture percentile change over 5 days",
     "rz_pct_chg10": "soil moisture percentile change over 10 days",
     "rz_pct_chg20": "soil moisture percentile change over 20 days",
@@ -30,17 +31,30 @@ FEATURE_TEXT = {
     "esi14": "evaporative stress over the last 14 days",
     "nbr_share_dry": "share of nearby land already in drought",
     "nbr_share_newly_dry": "share of nearby land that just entered drought",
-    "f_tp_w1_z": "forecast rainfall next week vs normal",
-    "f_tp_w2_z": "forecast rainfall in week 2 vs normal",
-    "f_tp_w12_z": "forecast rainfall over the next 2 weeks vs normal",
-    "f_t2m_w1_z": "forecast temperature next week vs normal",
-    "f_t2m_w12_z": "forecast temperature over the next 2 weeks vs normal",
-    "f_vpd_w12_z": "forecast air dryness over the next 2 weeks vs normal",
-    "f_hotdry_w1_p": "share of forecast scenarios with a hot, dry week next week",
-    "f_hotdry_w12_p": "share of forecast scenarios with a hot, dry fortnight",
-    "f_dryhot_w12_z": "forecast hot-and-dry index over the next 2 weeks",
-    "f_sm100chg_w3_z": "forecast soil drying by week 3",
 }
+
+
+VAR_TEXT = {"tp": "rainfall", "t2m": "temperature", "vpd": "air dryness (VPD)", "sm100": "soil moisture (0-100 cm)",
+            "sm100chg": "soil drying (0-100 cm, change from week 1)", "dryhot": "hot-and-dry index"}
+WEEK_TEXT = {"w1": "next week", "w2": "in week 2", "w3": "in week 3", "w4": "in week 4", "w12": "over the next 2 weeks"}
+
+
+def describe(name: str) -> str:
+    """Plain-language name of a feature (forecast features are spelled out from their parts)."""
+    if name in FEATURE_TEXT:
+        return FEATURE_TEXT[name]
+    parts = name.split("_")
+    if parts[0] == "f" and len(parts) == 4:
+        v, w, stat = parts[1:]
+        when = WEEK_TEXT.get(w, w)
+        if v == "hotdry":
+            return f"share of forecast scenarios with a hot, dry spell {when}"
+        if stat == "plow":
+            return f"share of forecast scenarios with low rainfall {when}"
+        if stat == "spread":
+            return f"forecast uncertainty in {VAR_TEXT.get(v, v)} {when}"
+        return f"forecast {VAR_TEXT.get(v, v)} {when} vs normal (standard deviations)"
+    return name
 
 
 def _r(x, d=3):
@@ -68,13 +82,13 @@ def _drivers(cells: pd.DataFrame, k: int = 3) -> list[dict]:
         return []
     g = d.groupby("f").agg(push=("push", "sum"), value=("value", "median"), cells=("push", "size"))
     g = g.sort_values("push", ascending=False).head(k)
-    return [{"feature": f, "meaning": FEATURE_TEXT.get(f, f), "typical_value": _r(v.value, 2),
+    return [{"feature": f, "meaning": describe(f), "typical_value": _r(v.value, 2),
              "share_of_cells": _r(v.cells / len(ok), 2)} for f, v in g.iterrows()]
 
 
 def _outlook(cells: pd.DataFrame) -> dict:
     cols = [c for c in cells.columns if c.startswith("f_")]
-    return {FEATURE_TEXT.get(c, c): _r(cells[c].mean(), 2) for c in cols}
+    return {describe(c): _r(cells[c].mean(), 2) for c in cols}
 
 
 class Tools:
