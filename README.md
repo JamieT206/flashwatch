@@ -16,7 +16,9 @@ against waiting two days for a fresher forecast.
   - **your pivots**: for a farm with several pivots, the Muse operator agent plans which ones to start
     today. Fixed farm rules (well capacity, water allocation, the advice) check every command, and
     nothing moves until the farmer replies YES. The commands then go to the pivots (simulated in the
-    demo; a signed webhook, or a to-do in FieldNET or Valley 365). See DESIGN.md O10.
+    demo; a signed webhook, or a to-do in FieldNET or Valley 365). See DESIGN.md O10;
+  - **voice field reports**: the farmer leaves a voice note ("the sandy pivot is curling by noon");
+    Muse Voice Transcribe and Spark turn it into a report on that pivot, which the operator uses.
 - **The big picture** (`site/region.html`):
   - what FlashWatch would be worth if every irrigated corn and soybean farm used it;
   - a regional risk map;

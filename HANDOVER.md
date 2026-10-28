@@ -228,6 +228,16 @@ training while the design moves; heavy burst ~Nov 2 Sydney (DESIGN.md B).
    (simulated, webhook, Leaf read-only, manual) + guard + Muse operator agent
    (`agent/operator.py`), shown as "Your pivots" on the farm page. Q10: autonomy and accounts.
 
+6c. **Overnight Oct 28-29 (James asleep):**
+   - site restyle (Public Sans, square, plainer text);
+   - pivot operator agent + connectors (O10);
+   - county-yield check (O4: rain-fed corn -20%, irrigated -2%, roll-up calibrated to ~$23M, Q11);
+   - hay/feed and nitrogen on the farm page;
+   - voice field reports (G3, Muse Voice Transcribe works at `/asr/transcribe`);
+   - Glimmer data prep: `ingest.usdm_text` (narratives, slow: ~3/min, running), `agent.glimmer_data`
+     -> data/glimmer/{train,val}.jsonl, `eval.glimmer_eval` (scores + Spark baseline).
+   S2S still at 13 complete dates. When new dates land: `forecast build`, then M2 `--fc-dates --members`.
+
 **Priorities (James, Oct 28): (1) anything that meaningfully improves prediction, (2) the farmer tool,
 (3) modelling nice-to-haves. Nothing is cut; what misses Nov 4 continues after.**
 7. Burst (Nov 2), freeze, test years once, replay, video, write-up.

@@ -790,9 +790,16 @@ product (judges assess "video, code and live product").
     - change the pivot capacity and watch the advice and the value of notice change.
   - 1:20-1:50: "not yet, but if ...": a not-yet day and what the next forecast would have to show.
     Ensemble members become weather triggers once the member predictions land.
+  - (added Oct 28 night) 1:35-2:05: the agent acts. The farmer leaves a voice note ("the sandy pivot
+    is curling by noon"); Muse Voice Transcribe plus Spark turn it into a report on N1. The Muse
+    operator plans the morning across four pivots. The farm's rules refuse N2 (the shared well can't
+    run both), so the agent starts the more valuable one and trims S2 to its water allocation. The
+    text asks for YES; on YES the pivots start (simulated). Two days later S2 stops when its
+    allocation runs out. Pivot makers' apps (FieldNET, Valley 365) are the path to real pivots.
   - 1:50-2:30: the big picture: the regional risk map catching the 2012 wave; skill (week 1 is
-    where it pays); 22 days ahead of the Drought Monitor; the honest roll-up (about $100M a year,
-    6.6M people's calories) and why it isn't billions.
+    where it pays); 22 days ahead of the Drought Monitor. County yields: flash droughts cost rain-fed
+    corn about 20% and irrigated corn about 2%. The honest roll-up is about $23M a year,
+    calibrated to those yields (Q11), and we say why it isn't billions.
   - 2:30-2:50: how it's built: ERA5-Land + ECMWF ensembles -> calibrated model -> water balance ->
     decision -> Muse Spark adviser with number checking; test years scored once, after the freeze.
   - 2:50-3:00: who it's for (irrigators first; hay and feed next); open source; link.

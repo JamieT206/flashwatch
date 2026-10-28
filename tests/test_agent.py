@@ -103,3 +103,13 @@ def test_map_check_compares_what_the_model_sees_with_the_tools(tmp_path, monkeyp
     assert out["model_saw"] == ["Bismarck", "Chicago"] and "Bismarck" in out["tool_hotspots"]
     assert out["agree"] == ["Bismarck"]
     assert sent[0]["messages"][0]["content"][1]["image_url"]["url"].startswith("data:image/png;base64,")
+
+
+def test_glimmer_scores():
+    from flashwatch.eval.glimmer_eval import direction, rouge_l, score, states_named
+    assert states_named("Drought expanded in Iowa and western KS.") == {"IA", "KS"}
+    assert direction("D1 expanded and conditions deteriorated") == 1 and direction("rains improved things") == -1
+    assert rouge_l("a b c d", "a b c d") == 1.0 and rouge_l("a b", "c d") == 0.0
+    inp = {"regions": {"Midwest": {"rain_percent_of_normal": 40, "D1_or_worse_change_pct": 3.0}}}
+    s = score("Rain was 40% of normal; drought expanded in Iowa. 77 counties.", "Drought expanded across Iowa.", inp)
+    assert s["untraced_figures"] == ["77"] and s["direction"] == 1.0 and s["states"] == 1.0
