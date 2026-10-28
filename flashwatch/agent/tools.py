@@ -7,6 +7,8 @@ normal chance for that place and date.
 
 from __future__ import annotations
 
+import re
+
 import numpy as np
 import pandas as pd
 
@@ -31,6 +33,14 @@ FEATURE_TEXT = {
     "esi14": "evaporative stress over the last 14 days",
     "nbr_share_dry": "share of nearby land already in drought",
     "nbr_share_newly_dry": "share of nearby land that just entered drought",
+    "nbr_rz_pct": "soil moisture percentile of the surrounding area",
+    "nbr_rz_pct_chg10": "soil moisture change over 10 days in the surrounding area",
+    "deep_pct": "deeper soil moisture percentile (0-100 cm)",
+    "deep_pct_chg10": "deeper soil moisture change over 10 days",
+    "rz_pct_acc5": "whether soil drying is speeding up",
+    "rz_days_since_p40": "days since soil moisture was above the 40th percentile",
+    "sf_minus_rz_pct": "surface soil drier or wetter than the root zone",
+    "vpd14_x_dryness": "dry air combined with already-dry soil",
 }
 
 
@@ -39,10 +49,17 @@ VAR_TEXT = {"tp": "rainfall", "t2m": "temperature", "vpd": "air dryness (VPD)", 
 WEEK_TEXT = {"w1": "next week", "w2": "in week 2", "w3": "in week 3", "w4": "in week 4", "w12": "over the next 2 weeks"}
 
 
+LAND_TEXT = {"precip": "rainfall", "t2m": "temperature", "vpd": "air dryness (VPD)", "ssrd": "sunshine (solar radiation)",
+             "rzsm": "root-zone soil moisture", "evap": "evaporation", "pet": "evaporative demand"}
+
+
 def describe(name: str) -> str:
     """Plain-language name of a feature (forecast features are spelled out from their parts)."""
     if name in FEATURE_TEXT:
         return FEATURE_TEXT[name]
+    m = re.fullmatch(r"([a-z]+?)(\d+)_z", name)
+    if m and m.group(1) in LAND_TEXT:
+        return f"{LAND_TEXT[m.group(1)]} over the last {m.group(2)} days vs normal (standard deviations)"
     parts = name.split("_")
     if parts[0] == "f" and len(parts) == 4:
         v, w, stat = parts[1:]

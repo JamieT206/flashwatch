@@ -23,7 +23,7 @@ NORTH, WEST, RES = 49.0, -104.0, 0.25
 
 def _colour(ratio: float):
     if not np.isfinite(ratio):
-        return (40, 44, 52)
+        return (16, 18, 22)                               # no forecast (e.g. lakes): background
     for (x0, c0), (x1, c1) in zip(RAMP, RAMP[1:]):
         if ratio <= x1:
             t = 0 if x1 == x0 else (max(ratio, x0) - x0) / (x1 - x0)
