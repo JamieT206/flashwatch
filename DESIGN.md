@@ -224,7 +224,17 @@ any-28 2.5% -> 3.4%; all three improvements clearly real (95% range excludes zer
 
 **F8. ECMWF forecast (M2)**: weekly forecast anomalies [x]; forecast soil moisture as a percentile (same units as the target) [ ]; forecast rainfall deficit added up over weeks [ ]
 
-**F9. Other sources**: Drought Monitor category and its 4-week change at the cell; ESI and EDDI (NOAA drought indices)
+**F9. Other sources**
+- [x] Drought Monitor category and its 4-week change at the cell; neighbourhood share at D1+ (`eval.cv --usdm`).
+  **Result: no gain** (week 1 -0.24 points, range crossing zero; weeks 2 and 28-day flat). It is largely a
+  lagged summary of the soil and rain signals the model already has. Left off by default.
+- [ ] ESI and EDDI (NOAA drought indices)
+
+**Where features stand (Oct 28, fast loop, 0-40 cm):** week-1 skill 4.4%, week 2 1.4%, any-28 5.3% vs
+climatology. Gains so far came from soil-moisture dynamics, dry spells and the neighbourhood (F1-F3, F5).
+The latest land-state additions (deep storage, ET/PET rapid change, VPD x dryness: +0.03 points) and the
+Drought Monitor added nothing, so the land-state signal looks close to saturated. The next big lever is
+weather forecasts (M2, F8), waiting on the ECMWF download.
 
 **F10. Year (diagnostic, James)**
 - [x] year as a number (does risk trend over time?)
