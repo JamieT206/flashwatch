@@ -261,6 +261,14 @@ cross-validation per horizon; keep the simpler option unless the improvement is 
   clear of zero. The single-M3 re-run moved from 2.4% to 2.8% (GPU training isn't bit-for-bit repeatable),
   which is why averaging several nets helps. Plan for the burst: M1 + mean of 3-5 M3s; and the same with
   M2 once summer forecast dates land.
+  **Four M3s (`m3seeds2` adds M3c, M3d; scored with `python -m flashwatch.eval.blend`).** The mean of
+  four M3s alone: week 1 6.0% (paired against M1 +1.7, CI 0.4 to 3.0), PR-AUC 0.149. Blended with M1:
+  week 1 **6.1%** (4.9-6.9), paired +1.8 (1.3 to 2.4); week 2 1.7% (+0.5, 0.1 to 0.9). Two M3s gave 6.0%
+  and 1.7%, so the gain from more nets has levelled off: the burst uses M1 + mean of 4 M3s (no more seeds).
+  Calibration: the blend's reliability slope is 1.4 (week 1) and 1.6 (week 2), i.e. its probabilities are
+  squeezed toward the middle (it under-states the riskiest farm-days). A leave-one-year-out Platt map
+  (`--recal`) brings the slope to 1.0 but costs Brier (5.75% against 5.99% with two M3s), because
+  calibration moves from year to year. Kept the plain blend; the error is on the cautious side.
 - L2. Interactive map: click a location and watch two charts animate, the FlashWatch forecast
   [x] weeks out and the actual soil moisture catching up behind it.
 - L3. A full website (beyond the static replay page).
