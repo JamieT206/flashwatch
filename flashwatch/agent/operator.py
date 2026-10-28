@@ -43,12 +43,15 @@ Each morning:
 1. Call farm_overview: each pivot's flash-drought advice, whether it is running, its well and water
    allocation, and any recent voice report from the farmer about the crop.
 2. Decide which pivots to start today. Start only pivots whose advice says to start, or whose crop
-   the farmer reports stressed (say so, quoting the farmer). Where pivots
+   the farmer reports stressed (say so, quoting the farmer), or whose root zone is at the stress line
+   (advice.root_zone_at_stress_line: the field's water account says water now, warning or not). Where pivots
    share a well that cannot run them all, start the one worth more money first. Call
    propose_commands with your list, most valuable first. The tool checks every command against the
    farm's rules and says what it refused and why; propose again if a change would help (for
    example a smaller depth per pass when the allocation is short). Stop a running pivot whose
-   water allocation is used up.
+   water allocation is used up, and one whose root zone is already full (root_zone.share_full 0.95
+   or more) unless its advice says to start: pumping into a full profile is wasted. For each start,
+   use root_zone.inches_to_fill as the depth (the tool keeps it between 0.3 and 1.5 inches).
 3. Reply with JSON only: {"sms": "...", "note": "..."}
    - sms: at most 140 characters: which pivots to start and the main reason. The system adds the
      approval request.
@@ -73,10 +76,37 @@ def connector_for(farm: dict, today: str):
     return make(kind, **cfg)
 
 
-def pivot_advice(data: FarmData, piv: dict, md: str) -> dict:
-    """The decision engine's advice for one pivot, with its own crop, soil and capacity."""
+def root_zone(data: FarmData, piv: dict, md: str, records: list[dict]) -> dict:
+    """The pivot's water account (decide/waterbook.py) up to the morning: ERA5-Land rain and crop water use
+    from the site data, public 5 days late (the last 5 days: no rain, the past week's use), and the water
+    the connector says the pivot put down."""
+    from flashwatch.decide.waterbook import account, kc
+    rec, d0 = data.record(piv["lat"], piv["lon"]), data.meta["water_days"][0]
+    start, today = dt.date.fromisoformat(f"{data.year}-{d0}"), dt.date.fromisoformat(f"{data.year}-{md}")
+    n = (today - start).days + 1
+    known = max(1, min(n - 5, len(rec["wr"])))
+    week = sum(rec["we"][max(0, known - 7):known]) / min(7, known) / 100
+    days = [(start + dt.timedelta(days=k)).strftime("%m-%d") for k in range(n)]
+    rain = [rec["wr"][k] / 100 if k < known else 0.0 for k in range(n)]
+    eto = [rec["we"][k] / 100 if k < known else week for k in range(n)]
+    irr: dict = {}
+    for r in records:
+        irr[r["date"][5:10]] = irr.get(r["date"][5:10], 0.0) + r["depth_in"]
+    taw = SOILS.get(piv["soil"], 2.0) * 3.0
+    crop = "soybeans" if piv["crop"].startswith("soy") else "corn"
+    acc = account(days, rain, eto, crop, taw, 0.5 if crop == "soybeans" else 0.55, irr)
+    dr, use = float(acc["deficit"][-1]), kc(crop, md) * week
+    cap = piv["gpm_per_acre"] * 24 * 60 / 27154 * 0.85
+    return {"share_full": round(1 - dr / taw, 2), "inches_to_fill": round(dr, 2),
+            "days_until_stress_if_no_rain": round(max(0.0, acc["raw"] - dr) / use, 1) if use > 0 else None,
+            "full_time_pumping_days_to_fill": round(dr / cap, 1), "deficit_in": dr}
+
+
+def pivot_advice(data: FarmData, piv: dict, md: str, deficit: float = 0.0) -> dict:
+    """The decision engine's advice for one pivot, with its own crop, soil and capacity, starting from
+    its root zone's deficit."""
     action = "irrigation_soybeans" if piv["crop"].startswith("soy") else "irrigation"
-    s = status(data, piv["lat"], piv["lon"], md, {"gpm_per_acre": piv["gpm_per_acre"],
+    s = status(data, piv["lat"], piv["lon"], md, {"gpm_per_acre": piv["gpm_per_acre"], "dr0": round(deficit, 2),
                                                    "awc_in_per_ft": SOILS.get(piv["soil"], 2.0)}, action)
     out = {k: v for k, v in s.items() if k not in ("how_to_read", "date")}
     if "value_of_starting_today_dollars_per_acre" in s:
@@ -115,11 +145,16 @@ def overview(data, farm, md, conn) -> dict:
     recent = (dt.date.fromisoformat(date) - dt.timedelta(days=3)).isoformat()
     for k, piv in farm["pivots"].items():
         st = conn.status(k)
+        rz = root_zone(data, piv, md, conn.applied(k, f"{data.year}-04-01"))
         pivots[k] = {"crop": piv["crop"], "acres": piv["acres"], "soil": piv["soil"],
                      "pivot_capacity_gpm_per_acre": piv["gpm_per_acre"], "pumps_gpm": round(flow_gpm(piv)),
                      "running": st.running, "water_put_down_last_7_days_in": st.applied_in_7d,
                      "water_allocation_left_in": piv.get("allocation_in_left"),
-                     "advice": pivot_advice(data, piv, md)}
+                     "root_zone": {kk: v for kk, v in rz.items() if kk != "deficit_in"},
+                     "advice": pivot_advice(data, piv, md, rz["deficit_in"])}
+        # The water account's own schedule: a root zone within 2 days of stress needs water now, warning or not.
+        if rz["days_until_stress_if_no_rain"] is not None and rz["days_until_stress_if_no_rain"] <= 2:
+            pivots[k]["advice"]["root_zone_at_stress_line"] = True
         if st.note:
             pivots[k]["connection"] = st.note
         if k in reports:
@@ -134,8 +169,13 @@ def overview(data, farm, md, conn) -> dict:
 def ranked(pivots: dict) -> list[str]:
     """Pivots the advice says to start, most money first (soil already dry counts as most urgent)."""
     ok = [k for k, p in pivots.items() if not p["running"] and (p["advice"].get("verdict", "").startswith(STARTABLE)
-                                                                or p["advice"].get("farmer_reports_stress"))]
-    return sorted(ok, key=lambda k: -pivots[k]["advice"].get("value_of_starting_today_dollars_whole_pivot", 1e9))
+                                                                or p["advice"].get("farmer_reports_stress")
+                                                                or p["advice"].get("root_zone_at_stress_line"))]
+    # Early starts by the money they're worth, then pivots the water account says are at the stress line,
+    # driest first.
+    return sorted(ok, key=lambda k: (not pivots[k]["advice"].get("verdict", "").startswith("start"),
+                                     -pivots[k]["advice"].get("value_of_starting_today_dollars_whole_pivot", 0),
+                                     pivots[k].get("root_zone", {}).get("share_full", 1)))
 
 
 def rule_plan(ov: dict, farm: dict, date: str) -> list[Command]:
@@ -143,9 +183,14 @@ def rule_plan(ov: dict, farm: dict, date: str) -> list[Command]:
     order with the depth cut to the allocation."""
     cmds = [Command(k, "stop", 0.0, "water allocation used up", date) for k, p in ov["pivots"].items()
             if p["running"] and p["water_allocation_left_in"] is not None and p["water_allocation_left_in"] < 0.3]
+    cmds += [Command(k, "stop", 0.0, "root zone full", date) for k, p in ov["pivots"].items()
+             if p["running"] and k not in {c.pivot for c in cmds} and p.get("root_zone", {}).get("share_full", 0) >= 0.95
+             and not p["advice"].get("verdict", "").startswith(STARTABLE)]
     for k in ov["suggested_order"]:
         left = farm["pivots"][k].get("allocation_in_left")
-        depth = DEPTH_IN if left is None else round(min(DEPTH_IN, left), 2)
+        fill = ov["pivots"][k].get("root_zone", {}).get("inches_to_fill")
+        depth = round(min(1.5, max(0.3, fill)), 2) if fill else DEPTH_IN
+        depth = depth if left is None else round(min(depth, left), 2)
         cmds.append(Command(k, "start", depth, "advice says start today", date))
     return cmds
 

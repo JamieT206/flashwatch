@@ -64,6 +64,10 @@
       "review_days": {
         "value": 7,
         "source": "days you'd keep the pivot on before re-deciding if no dry spell comes"
+      },
+      "dr0": {
+        "value": 0.0,
+        "source": "root-zone deficit when the dry spell begins, inches (0 = full); from the field's water account when known"
       }
     }
   },
@@ -131,6 +135,10 @@
       "review_days": {
         "value": 7,
         "source": "days you'd keep the pivot on before re-deciding if no dry spell comes"
+      },
+      "dr0": {
+        "value": 0.0,
+        "source": "root-zone deficit when the dry spell begins, inches (0 = full); from the field's water account when known"
       }
     }
   },

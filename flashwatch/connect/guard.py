@@ -56,7 +56,8 @@ def _why_not(c, pivots, wells, advice, status, running):
     if not (SEASON[0] <= c.date[5:] <= SEASON[1]):
         return "outside the irrigation season (June to August)"
     verdict = advice.get(c.pivot, {}).get("verdict", "")
-    if not verdict.startswith(STARTABLE) and not advice.get(c.pivot, {}).get("farmer_reports_stress"):
+    a = advice.get(c.pivot, {})
+    if not verdict.startswith(STARTABLE) and not a.get("farmer_reports_stress") and not a.get("root_zone_at_stress_line"):
         return f"today's advice for {c.pivot} is '{verdict}', not a start"
     lo, hi = pivots[c.pivot].get("depth_range_in", DEPTH_RANGE)
     if not lo <= c.depth_in <= hi:
