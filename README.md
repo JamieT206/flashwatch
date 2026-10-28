@@ -18,7 +18,7 @@ It covers the Corn Belt and northern Plains (36-49 N, 104-80 W): 143 million acr
 | --- | --- |
 | **Your farm** | Pick the farm on a map (or search an address). **Irrigated**: "Extra irrigation today?" with the dollars of starting now against waiting for the next forecast, what would change the answer, the field's water account (root zone % full, days to stress, irrigation logged or read from the pivot), the season replayed. **Rain-fed**: a card per decision (fungicide, side-dress nitrogen, silage, hay) with a gauge of today's chance against the chance at which acting pays, adjustable assumptions and the season replayed. **Today** follows the latest forecast; **Replay** steps through a past season. Starting values are local (USDA prices, county yields) and labelled. |
 | **The big picture** | What FlashWatch is worth to a typical irrigated and rain-fed farm, how good the forecasts are, value by corn price, a regional risk map, and the lead over the US Drought Monitor. |
-| **Agents** | Real runs of each agent: SAM 3.1 finding pivots, the Muse Spark operator planning a morning (with the farm-rule checks and the farmer's approval), a voice note, a weekly briefing, and the Glimmer narrative writer. |
+| **Agents** | Real runs of each agent: SAM 3.1 finding pivots (full, part and half circles), the Muse Spark operator planning a morning (with the farm-rule checks and the farmer's approval), the watcher's texts through a season with how often they were right, a voice note, a weekly briefing, and the Glimmer narrative writer. |
 | **Help, About** | What every number means; contact. |
 
 ## Results so far
