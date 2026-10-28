@@ -236,7 +236,9 @@ training while the design moves; heavy burst ~Nov 2 Sydney (DESIGN.md B).
    - voice field reports (G3, Muse Voice Transcribe works at `/asr/transcribe`);
    - Glimmer data prep: `ingest.usdm_text` (narratives, slow: ~3/min, running), `agent.glimmer_data`
      -> data/glimmer/{train,val}.jsonl, `eval.glimmer_eval` (scores + Spark baseline).
-   S2S still at 13 complete dates. When new dates land: `forecast build`, then M2 `--fc-dates --members`.
+   S2S at 16 complete dates (Oct 29): fcst.zarr rebuilt, M2 re-run (`m2fc16`: week 1 16.8%, week 2
+   3.8%; members `m2mem16` slightly worse, DESIGN P11), evidence.json rebuilt. Next rebuild when
+   June-August start dates land (watcher: `data/logs/wait_s2s.sh`, threshold in the script).
 
 **Priorities (James, Oct 28): (1) anything that meaningfully improves prediction, (2) the farmer tool,
 (3) modelling nice-to-haves. Nothing is cut; what misses Nov 4 continues after.**

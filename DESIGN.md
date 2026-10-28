@@ -209,6 +209,13 @@ survives); M1 skill week 1 **4.3%**, week 2 **1.2%**, any-28 **4.6%** (before: 4
   really is in the forecasts, not in how we summarise them. **Decision:** the forecast stays on the
   ensemble mean (the standard M2). Per-member predictions are used only for the "what are we waiting
   for" triggers (O2), where the members stand for the next forecast's possible outcomes.
+  **Re-run with 16 start dates (Oct 29, `m2fc16` / `m2mem16`; Apr 1 - May 19, gaps at Apr 19-23, May 9, May 13-17;
+  hindcasts of those calendar days in 2005-2024).** Standard M2 week 1 **16.8%** (90% range 11.8-20.3), week 2 **3.8%** (1.2-5.4), any 28 days
+  **8.4%**; M1 on the same dates 1.7% / 0.8% / 1.4%. A little better than at 13 dates (16.3 / 2.6 /
+  7.2), mostly at week 2. Member by member is again slightly worse (week 1 -1.2 points, CI -2.1 to
+  -0.5; week 2 -0.4, CI -0.6 to 0.0), so the decision stands. Still spring dates only: the site keeps
+  M1 for the summer, and the roll-up keeps the blurred-forecast stand-in for M2 until June-August
+  start dates arrive.
 - *Meaning.* The target is sound and the onset waves are not noise; they are what weather forecasts exist to see. The ceiling is about 15x M1's skill at week 2. The open question is how much of it the real ECMWF forecasts keep (good at week 1, weaker at week 2, weak beyond), so M2 on real forecasts is the decisive run. The `native` (0.25 degree) variant is the absolute upper bound.
 
 ---
@@ -416,15 +423,15 @@ James: an abstract predictor isn't compelling; a tool that tells a farmer *what 
 their place* is. The forecasting spec doesn't change; this is a layer on top of it. Nothing here is
 built yet except the evidence in O0.
 
-### O0. Evidence so far (spring forecast dates, 6 development years, fast loop; `eval/lead.py`)
+### O0. Evidence so far (16 spring forecast dates since Oct 29, 6 development years, fast loop; `eval/lead.py`)
 
 *Watch list.* Flag the riskiest 10% of land cells each issue date and count real onsets:
 
 | | Week 1: onsets caught, hit rate | Week 2 |
 | --- | --- | --- |
 | Seasonal normal (B0) | 12%, 6% | 10%, 5% |
-| Land only (M1) | 22%, 11% | 15%, 8% |
-| With ECMWF forecasts (M2) | **42%, 21%** | 19%, 11% |
+| Land only (M1) | 20%, 11% | 15%, 8% |
+| With ECMWF forecasts (M2) | **42%, 23%** | 21%, 11% |
 
 *Lead over the Drought Monitor* (2006-2021, 64,765 onsets at 0-40 cm; each date counted from when it is
 public: Monitor maps 2 days after their valid date, ERA5-Land 5 days after). Monitor response = the

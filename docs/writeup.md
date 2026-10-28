@@ -73,10 +73,10 @@ ERA5-Land soil, rain, heat (as of each forecast date)     ECMWF extended-range e
 ## Results (development years 2005-2021; test years TODO)
 
 - **A week ahead is where the forecasts pay.** With ECMWF weather forecasts:
-  - week-1 skill is about 16% better than the seasonal normal (Brier skill score), against 3% for
+  - week-1 skill is about 17% better than the seasonal normal (Brier skill score), against 2% for
     soil and past weather alone, on the same dates;
   - the riskiest tenth of the region catches 42% of the flash droughts that start in the next 7 days;
-  - beyond two weeks, the forecasts can't see the dry spells (week 2: about 3%).
+  - beyond two weeks, the forecasts can't see the dry spells (week 2: about 4%).
 - **Ahead of the Drought Monitor.** The soil crosses the drought line a median 22 days before the
   Monitor first shows moderate drought (D1) at that place. FlashWatch is first in 86% of cases.
 - **Flash droughts cost crops** (county yields, above). Onsets the Monitor never flags cost no yield
