@@ -31,7 +31,9 @@ SUBSCRIBERS = [
 RAINFED = ("fungicide", "nitrogen", "hay")
 WRITER = """You write one short text message (at most 160 characters) for a farmer from FlashWatch, about the event
 in the JSON. Start with what to do. Plain words, no dates (it is sent that day), whole numbers, "today" or
-"now" instead of 0 days. Every number must come from the JSON. Reply with the message only."""
+"now" instead of 0 days. Every number must come from the JSON. times_normal_next_7_days is the flash-drought
+chance as a multiple of the normal chance for this date (not rain). A negative dollar value means starting
+early costs more than it saves: say so in words or leave it out. Reply with the message only."""
 
 
 def usual_irrigation(sub: dict, year: int, upto: str) -> dict:
@@ -71,16 +73,24 @@ def events(prev: dict | None, s: dict, sub: dict, last_stress: str | None, date:
     if s["drought"] and not (prev or {}).get("drought") and not (prev or {}).get("drought_recent"):
         ev.append({"kind": "drought", "level": "info", "facts": {"what": "the soil around your farm is now in drought"}})
     if sub["watering"] == "irrigated" and "verdict" in s:
-        v, pv = s["verdict"], (prev or {}).get("verdict", "")
+        # What the farmer was last told (start / watch / calm). Risk easing must hold for two forecasts in a
+        # row before we say so, so a one-off dip doesn't send "eased" and then "rising" again two days later.
+        v, told = s["verdict"], (prev or {}).get("told", "calm")
+        level = "start" if v.startswith("start") else "watch" if v.startswith("not yet") else "calm"
+        s["level"], s["told"] = level, told
         a = s["advice"]
         facts = {k: a[k] for k in ("chance_flash_drought_next_7_days_pct", "times_normal_next_7_days", "value_of_starting_today_dollars_per_acre")
                  if k in a}
-        if v.startswith("start") and not pv.startswith("start"):
+        if level == "start" and told != "start":
             ev.append({"kind": "start", "level": "urgent", "facts": {"advice": v, **facts}})
-        elif v.startswith("not yet") and not pv.startswith(("not yet", "start")):
+            s["told"] = "start"
+        elif level == "watch" and told == "calm":
             ev.append({"kind": "watch", "level": "heads-up", "facts": {"advice": v, **facts}})
-        elif pv.startswith(("start", "not yet")) and not v.startswith(("start", "not yet")) and not s["drought"]:
-            ev.append({"kind": "ease", "level": "info", "facts": {"advice": v, **facts}})
+            s["told"] = "watch"
+        elif level == "calm" and told != "calm" and (prev or {}).get("level") == "calm":
+            if not s["drought"]:
+                ev.append({"kind": "ease", "level": "info", "facts": {"advice": v, **facts}})
+            s["told"] = "calm"
         dts = s.get("days_to_stress")
         if dts is not None and dts <= 2 and not s["drought"] and (last_stress is None or _days(last_stress, date) >= 7):
             ev.append({"kind": "water_now", "level": "urgent",
@@ -109,8 +119,10 @@ def template(e: dict, sub: dict) -> str:
     if e["kind"] == "ease":
         return f"{sub['name']}: risk has eased. Irrigate as usual."
     if e["kind"] == "water_now":
-        return (f"{sub['name']}: your pivot isn't keeping up. Root zone {f['root_zone_full_pct']}% full, stress in "
-                f"{f['days_until_stress_if_no_rain']} days without rain. Run it full time.")
+        d = f["days_until_stress_if_no_rain"]
+        when = "today" if d < 1 else "tomorrow" if d < 2 else f"in {round(d)} days"
+        return (f"{sub['name']}: your pivot isn't keeping up. Root zone {f['root_zone_full_pct']}% full, crop stress {when} "
+                f"without rain. Run it full time.")
     if e["kind"] == "drought":
         return f"{sub['name']}: the soil around you is now in drought (rain alone isn't keeping up)."
     if e["kind"].startswith("act_"):
@@ -125,13 +137,20 @@ def follow(sub: dict, year: int, dates=None, chat=None, llm: int = 0) -> tuple[l
     """One farm through one season: (alerts, forecast dates checked, Muse Spark drafts left)."""
     farm0 = Farm(sub["lat"], sub["lon"], year, "06-01", sub["crop"], sub["soil"], sub["gpm"] or 5.0, irrigation={})
     ds = dates or [d for d in farm0.data.dates if "06-01" <= d <= "08-31"]
-    prev, last_stress, alerts = None, None, []
+    prev, last_stress, last_drought, alerts = None, None, None, []
     usual = usual_irrigation(sub, year, ds[-1]) if sub["watering"] == "irrigated" else {}
     for md in ds:
         irr = {k: v for k, v in usual.items() if k < md}
         farm = Farm(sub["lat"], sub["lon"], year, md, sub["crop"], sub["soil"], sub["gpm"] or 5.0, irrigation=irr)
         s = state(farm, sub)
-        for e in events(prev, s, sub, last_stress, f"{year}-{md}"):
+        if prev is not None:
+            prev["drought_recent"] = last_drought is not None and _days(last_drought, f"{year}-{md}") < 28
+        evs = events(prev, s, sub, last_stress, f"{year}-{md}")
+        if any(e["kind"] == "water_now" for e in evs):
+            evs = [e for e in evs if e["kind"] != "ease"]
+        for e in evs:
+            if e["kind"] == "drought":
+                last_drought = f"{year}-{md}"
             if e["kind"] == "water_now":
                 last_stress = f"{year}-{md}"
             text, by = template(e, sub), "template"

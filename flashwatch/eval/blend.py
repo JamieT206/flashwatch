@@ -9,7 +9,7 @@ equal-weight log-odds mean of the terms. Weights are fixed, not fitted, so the s
 out-of-fold. Prints each model alone, every growing mean of the "+" term, and the blend: Brier
 skill against B0 and paired against --base, each with a year-bootstrap range, and the reliability
 slope (1 is calibrated; below 1, too spread out). --recal adds the blend after a leave-one-year-out
-Platt map.
+Platt map. --write E1 saves the joined OOF with the blend as model E1, for site.build --model E1.
 """
 
 from __future__ import annotations
@@ -66,6 +66,7 @@ def main(args=None):
     ap.add_argument("--base", default="M1")
     ap.add_argument("--blend", nargs="+", required=True, help='terms, e.g. M1 "M3+M3b"')
     ap.add_argument("--leads", nargs="+", default=["week1", "week2"])
+    ap.add_argument("--write", metavar="NAME", help="save the joined OOF with the blend as model NAME (for site.build)")
     ap.add_argument("--recal", action="store_true", help="also score the blend after a leave-one-year-out Platt map")
     a = ap.parse_args(args)
     df = join(a.stems)
@@ -78,6 +79,8 @@ def main(args=None):
             for k in range(1, len(parts) + 1):
                 cand["+".join(parts[:k]) if k > 1 else parts[0]] = mean_prob([df[f"{m}_{lead}"].to_numpy() for m in parts[:k]])
         cand[" & ".join(a.blend)] = mean_prob([cand[t] for t in a.blend])
+        if a.write:
+            df[f"{a.write}_{lead}"] = cand[" & ".join(a.blend)]
         if a.recal:
             cand[" & ".join(a.blend) + " recal"] = recalibrate(df.year.to_numpy(), y, cand[" & ".join(a.blend)])
         for name, p in cand.items():
@@ -87,6 +90,10 @@ def main(args=None):
                          f"vs_{a.base}": dv, "vs_range": f"{dlo:.3f} to {dhi:.3f}", "slope": reliability(y, p)[1],
                          "pr_auc": pr_auc(y, p)})
     print(pd.DataFrame(rows).to_string(index=False, float_format=lambda x: f"{x:.4f}"))
+    if a.write:
+        f = DATA / "oof" / f"{a.stems[0]}_{a.write}.parquet"
+        df.to_parquet(f)
+        print("wrote", f)
 
 
 if __name__ == "__main__":
