@@ -41,6 +41,7 @@ def build(oof: pd.DataFrame, model: str, out: Path = SITE / "data", note: str = 
     thin = int(np.gcd.reduce(np.r_[cells.iy.to_numpy(), cells.ix.to_numpy()])) or 1
     members = sum(1 for c in oof.columns if c.startswith(f"{model}_week1_m"))
     udates, ucat = usdm_cube(list(range(min(years) - 1, max(years) + 1)))
+    frozen = frozen_days(years, md)
     ons = onsets_table()
     ons = ons[ons.date.dt.year.isin(years)]
     (out / "tiles").mkdir(parents=True, exist_ok=True)
@@ -74,6 +75,8 @@ def build(oof: pd.DataFrame, model: str, out: Path = SITE / "data", note: str = 
             rec = {"iy": int(iy), "ix": int(ix),
                    **{k: (_r(v, 0 if k == "rz" else 3) if isinstance(v, np.ndarray) else v) for k, v in series.items()},
                    "usdm": [int(ucat[k][iy, ix]) if k >= 0 else -1 for k in j],
+                   # dates with no forecast because of snow or frozen soil (not drought)
+                   "fz": [int(k) for k in np.nonzero(frozen[y][:, iy, ix] & np.isnan(series["rz"]))[0]],
                    "onsets": sorted(on[on.dt.year == y].dt.strftime("%m-%d").tolist())}
             tiles.setdefault((iy // thin // TILE, ix // thin // TILE), []).append(rec)
         (out / "tiles" / str(y)).mkdir(parents=True, exist_ok=True)
@@ -85,6 +88,21 @@ def build(oof: pd.DataFrame, model: str, out: Path = SITE / "data", note: str = 
             "counties": counties()}
     (out / "meta.json").write_text(json.dumps(meta, separators=(",", ":")))
     return meta
+
+
+def frozen_days(years, md) -> dict:
+    """(date, lat, lon) bool per year: snow or frozen soil on the last ERA5-Land day public on each
+    forecast date. Those dates have no forecast row, like cells already in drought."""
+    from flashwatch.features.asof import as_of
+    from flashwatch.labels.onset import mask_days
+    from flashwatch.obs import open_obs
+    ds = open_obs()
+    out = {}
+    for y in years:
+        t = [as_of("era5land", pd.Timestamp(f"{y}-{m}")) for m in md]
+        s = ds.sel(time=t)
+        out[y] = mask_days(s["snow_depth"].values, s["soil_temperature_level_1"].values)
+    return out
 
 
 def counties() -> list:

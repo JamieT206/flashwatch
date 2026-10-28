@@ -4,135 +4,150 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FlashWatch: your farm</title>
-<meta name="description" content="Should you start irrigating today? A week's warning of flash drought for your field.">
+<meta name="description" content="Extra irrigation today? Flash-drought warnings and irrigation advice for your field.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='2' y='2' width='12' height='12' fill='%23d83933'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 <header class="top"><div class="wrap">
   <div class="brand"><span class="dot"></span>FlashWatch</div>
-  <nav><a class="on" href="index.html">Your farm</a><a href="region.html">The big picture</a></nav>
-  <div class="replay-note" id="replayNote">Replay of a past season</div>
+  <nav><a class="on" href="index.html">Your farm</a><a href="region.html">The big picture</a><a href="help.html">Help</a><a href="about.html">About</a></nav>
 </div></header>
 
 <main class="wrap">
   <div class="controls">
-    <div style="flex:1 1 320px">
+    <div class="placebox">
       <div class="place" id="place">Loading...</div>
       <div class="place-sub" id="placeSub"></div>
     </div>
-    <label>Latitude<input id="lat" type="number" step="0.01"></label>
-    <label>Longitude<input id="lon" type="number" step="0.01"></label>
-    <button class="primary" id="go">Go</button>
-    <label>Season<select id="year"></select></label>
+    <div class="seg" role="group" aria-label="Today or a past season">
+      <button id="modeToday" aria-pressed="true">Today</button><button id="modeReplay" aria-pressed="false">Replay a past season</button>
+    </div>
+    <label id="yearBox" hidden>Season<select id="year"></select></label>
+  </div>
+  <div class="banner" id="banner" hidden></div>
+
+  <div class="strip-wrap">
+    <div class="strip" id="strip" role="slider" tabindex="0" aria-label="Forecast date"></div>
+    <div class="strip-legend" id="stripLegend"></div>
   </div>
 
-  <div class="dateline">
-    <button id="prev" aria-label="Previous forecast">&larr;</button>
-    <input id="date" type="range" min="0" max="100" value="0" aria-label="Forecast date">
-    <button id="next" aria-label="Next forecast">&rarr;</button>
-    <span class="d" id="dateLabel"></span>
+  <div class="top2">
+    <div class="col">
+      <section class="verdict" id="verdict">
+        <div class="q" id="vQ">Extra irrigation today? <a class="help" href="help.html#advice" title="What the advice means">?</a></div>
+        <div class="big" id="vBig"></div>
+        <div class="sub" id="vSub"></div>
+        <div id="vWhy"></div>
+        <div class="ev" id="evBox">
+          <div><b id="evNow"></b><span>Start today</span></div>
+          <div><b id="evWait"></b><span>Decide at the next forecast (in 2 days)</span></div>
+        </div>
+        <div class="note" id="evNote">Average gain per acre from extra irrigation, compared with starting the pivot the usual way.
+          <a href="help.html#dollars">How this is worked out</a></div>
+        <div class="trigger" id="trigger"></div>
+      </section>
+
+      <section class="card" id="valueCard">
+        <h3>FlashWatch value <a class="help" href="help.html#value" title="How the season value is worked out">?</a></h3>
+        <div class="tally" id="seasonTally"></div>
+        <ul class="events" id="events"></ul>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="card first">
+        <h3>Flash-drought risk <a class="help" href="help.html#risk" title="What these numbers mean">?</a></h3>
+        <div class="tiles">
+          <div class="tile"><div class="l">Next 7 days</div><div class="v" id="t1"></div><div class="x" id="t1x"></div></div>
+          <div class="tile"><div class="l">Days 8-14</div><div class="v" id="t2"></div><div class="x" id="t2x"></div></div>
+          <div class="tile"><div class="l">Soil moisture</div><div class="v" id="t3"></div><div class="l" id="t3x"></div></div>
+          <div class="tile"><div class="l">Drought Monitor</div><div class="v small" id="t4"></div></div>
+        </div>
+      </section>
+      <section class="card">
+        <div class="mapbar">
+          <form id="search" class="search"><input id="q" type="search" placeholder="Find your farm: address, town, or lat, lon" aria-label="Find your farm"><button class="primary">Find</button></form>
+          <div class="seg small" role="group" aria-label="Map type">
+            <button id="mapStreet" aria-pressed="true">Street map</button><button id="mapDrought" aria-pressed="false">Drought map</button>
+          </div>
+        </div>
+        <div id="map"></div>
+        <div class="legend" id="mapLegend"></div>
+        <div class="note" id="searchNote">Click the map or drag the pin to move your farm.</div>
+      </section>
+    </div>
   </div>
 
-  <div class="grid">
-    <section class="card verdict" id="verdict">
-      <div class="q">Irrigate today?</div>
-      <div class="big" id="vBig"></div>
-      <div id="vWhy"></div>
-      <div class="ev">
-        <div><b id="evNow"></b><span>Start today</span></div>
-        <div><b id="evWait"></b><span>Decide at the next forecast (2 days)</span></div>
+  <section class="card full" id="noteCard" hidden>
+    <h3>Morning note</h3>
+    <div class="notewrap">
+      <div><div class="sms-from">Text message</div><div id="sms"></div></div>
+      <div><p id="note" style="margin:0 0 8px"></p>
+        <div class="note">Written by Meta's Muse Spark from FlashWatch's numbers. Every number is checked against them before sending.</div></div>
+    </div>
+  </section>
+
+  <section class="card full" id="opsCard" hidden>
+    <h3>Your pivots</h3>
+    <div class="notewrap">
+      <div><div class="sms-from">Text message: needs your YES</div><div id="opsSms" class="sms-ask"></div>
+        <div class="note" id="opsState" style="margin-top:8px"></div></div>
+      <div><div id="opsTable" style="overflow-x:auto"></div><p id="opsNote" style="margin:10px 0 6px"></p>
+        <div class="note">Muse Spark plans the starts; fixed farm rules (advice, well capacity, water allocation, season) check every command;
+          nothing moves until you reply YES. Pivots connect through a webhook, or show as a to-do in FieldNET or Valley 365.</div></div>
+    </div>
+  </section>
+
+  <section class="card full chart">
+    <h3>This season</h3>
+    <div class="chart-title">Chance of a flash drought in the next 7 days</div>
+    <div id="seasonChart"></div>
+    <div class="legend" id="riskLegend"></div>
+    <div class="chart-title">Soil moisture percentile for the date <a class="help" href="help.html#percentile" title="What the percentile means">?</a></div>
+    <div id="soilChart"></div>
+    <div class="legend" id="soilLegend"></div>
+    <div id="valueBlock">
+      <div class="chart-title">Value of extra irrigation today ($ an acre)</div>
+      <div id="valueChart"></div>
+      <div class="legend"><span><i style="background:var(--act-bg);height:10px"></i>Starting today pays</span><span><i style="background:var(--normal)"></i>Doesn't pay</span></div>
+    </div>
+  </section>
+
+  <section class="card full">
+    <h3>Other actions <a class="help" href="help.html#other" title="About these decisions">?</a></h3>
+    <div id="other" style="overflow-x:auto"></div>
+    <div class="settings" id="otherSettings" style="margin-top:14px"></div>
+  </section>
+
+  <section class="card full">
+    <h3>Your farm</h3>
+    <div class="farmwrap">
+      <div>
+        <div class="settings" id="settings"></div>
+        <p class="note">Starting values are local averages (labelled under each box). Change any of them to match your farm; everything updates.
+          <button id="resetAll" class="linkish">Reset all to local values</button></p>
       </div>
-      <div class="note">Average dollars per acre, compared with starting the pivot the usual way.</div>
-      <div class="trigger" id="trigger"></div>
-    </section>
-
-    <section class="card">
-      <h3>Flash-drought risk</h3>
-      <div class="tiles">
-        <div class="tile"><div class="l">Next 7 days</div><div class="v" id="t1"></div><div class="x" id="t1x"></div></div>
-        <div class="tile"><div class="l">Days 8-14</div><div class="v" id="t2"></div><div class="x" id="t2x"></div></div>
-        <div class="tile"><div class="l">Soil moisture</div><div class="v" id="t3"></div><div class="l" id="t3x"></div></div>
-        <div class="tile"><div class="l">Drought Monitor</div><div class="v" id="t4" style="font-size:20px"></div></div>
+      <div class="chart" id="noticeCard">
+        <div class="chart-title">What a day of warning is worth on this field</div>
+        <div id="noticeChart"></div>
+        <div class="note" id="noticeNote"></div>
       </div>
-      <div id="picker" style="margin-top:16px"></div>
-      <div class="note">Click the map to move your farm.</div>
-    </section>
+    </div>
+  </section>
 
-    <section class="card full" id="noteCard" hidden>
-      <h3>Morning note</h3>
-      <div class="notewrap">
-        <div><div class="sms-from">Text message</div><div id="sms"></div></div>
-        <div><p id="note" style="margin:0 0 8px"></p>
-          <div class="note">Written by Meta's Muse Spark from FlashWatch's numbers. Every number is checked before it is sent.</div></div>
-      </div>
-    </section>
-
-    <section class="card full" id="opsCard" hidden>
-      <h3>Your pivots</h3>
-      <div class="notewrap">
-        <div><div class="sms-from">Text message: needs your YES</div><div id="opsSms" class="sms-ask"></div>
-          <div class="note" id="opsState" style="margin-top:8px"></div></div>
-        <div><div id="opsTable" style="overflow-x:auto"></div><p id="opsNote" style="margin:10px 0 6px"></p>
-          <div class="note">Muse Spark plans the starts; fixed farm rules (advice, well capacity, water allocation, season) check every command;
-            nothing moves until you reply YES. Pivots connect through a webhook, or show as a to-do in FieldNET or Valley 365.</div></div>
-      </div>
-    </section>
-
-    <section class="card full chart">
-      <h3>This season</h3>
-      <div id="seasonChart"></div>
-      <div class="legend">
-        <span><i style="background:var(--risk)"></i>Chance of a flash drought in the next 7 days</span>
-        <span><i style="background:var(--normal)"></i>Normal</span>
-        <span>&#9650; Flash drought began</span>
-        <span>&#9679; "Start the pivot" (hollow: no dry spell came)</span>
-      </div>
-      <div id="soilChart" style="margin-top:10px"></div>
-      <div class="legend">
-        <span><i style="background:var(--soil)"></i>Soil moisture percentile (below 20 is drought)</span>
-        <span><i style="background:var(--drought)"></i>Drought Monitor D1 or worse</span>
-      </div>
-    </section>
-
-    <section class="card">
-      <h3>If you had followed FlashWatch</h3>
-      <div class="tally" id="tally"></div>
-      <ul class="events" id="events"></ul>
-    </section>
-
-    <section class="card chart">
-      <h3>What a day of warning is worth</h3>
-      <div id="noticeChart"></div>
-      <div class="note" id="noticeNote"></div>
-    </section>
-
-    <section class="card full">
-      <h3>Other actions</h3>
-      <div id="other" style="overflow-x:auto"></div>
-      <div class="settings" id="otherSettings" style="margin-top:12px"></div>
-      <p class="note">Rough starting values, not researched like the irrigation model: put in your own. Buying hay early
-        is partly a race with your neighbours, so FlashWatch puts irrigation first.</p>
-    </section>
-
-    <section class="card full">
-      <h3>Your farm</h3>
-      <div class="settings" id="settings"></div>
-      <p class="note">Defaults are for a typical Nebraska centre pivot. Change them to match your farm; everything updates. Saved in this browser.</p>
-    </section>
-  </div>
-
-  <footer id="foot">
+  <footer>
     Every other day, FlashWatch forecasts the chance that the soil at your farm drops into drought in the next one and two weeks.
-    A water-balance model of your field turns days of warning into dollars. This page replays past seasons, using forecasts from models
-    that never saw that year. <span id="modelNote"></span>
+    A water-balance model of your field calculates the financial impact of supplemental irrigation.
     Data: ERA5-Land (Copernicus Climate Change Service), US Drought Monitor (NDMC, USDA, NOAA), USDA NASS, US Census Gazetteer.
+    Map: &copy; OpenStreetMap contributors. Search: Nominatim.
   </footer>
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="assets/engine.js"></script>
 <script src="assets/farm.js"></script>
 </body>

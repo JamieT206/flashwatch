@@ -1,79 +1,133 @@
-// FlashWatch region page: the roll-up, a regional risk map and the evidence.
+// FlashWatch region page: value to a typical farm, forecast quality, a regional risk map, the lead
+// over the Drought Monitor.
 "use strict";
 
 const $ = id => document.getElementById(id);
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
-const R = { meta: null, year: 2012, i: 0, recs: null, states: null, roll: {}, ev: null };
+const R = { meta: null, year: 2012, i: 0, recs: null, states: null, roll: null, prices: [], ev: null, defaults: null };
+const usd0 = v => (v < -0.5 ? "-$" : "$") + Math.abs(Math.round(v)).toLocaleString("en-US");
+const usd2 = v => (v < -0.005 ? "-$" : "$") + Math.abs(v).toFixed(2);
+const pct1 = v => (100 * v).toFixed(1) + "%";
+const PRICES = [3.5, 4.5, 5.5, 6.5, 7.5];
 
-const money = v => {
-  const a = Math.abs(v), s = v < 0 ? "-$" : "$";
-  return a >= 1e9 ? `${s}${(a / 1e9).toFixed(2)} billion` : a >= 1e6 ? `${s}${(a / 1e6).toFixed(0)} million` : a >= 1e3 ? `${s}${(a / 1e3).toFixed(0)}k` : `${s}0`;
-};
-const dollars2 = v => (v < -0.005 ? "-$" : "$") + Math.abs(v).toFixed(2);
-const people = v => v >= 1e6 ? `${(v / 1e6).toFixed(1)} million` : `${(v / 1e3).toFixed(0)}k`;
-const VARIANTS = [["m1", "Soil and past weather only (measured)"],
-                  ["blur07", "With ECMWF-quality weather forecasts (estimate)"],
-                  ["perfect", "With perfect weather forecasts (upper limit)"]];
+// ---------- a typical farm ----------
 
-function headline(tag, base) {
-  const r = R.roll[tag + ($("spell").value === "cal" ? "_cal" : "")];
-  return r ? r.headline.find(h => h.baseline === base) : null;
+function perAcre(scope, year) {
+  if (!scope) return null;
+  const r = year === undefined ? scope.region : scope.region_by_year.find(x => x.year === year);
+  return r && r.acres ? r.dollars / r.acres : null;
 }
 
-function renderRoll() {
-  const base = $("base").value;
-  const main = headline("blur07", base) || headline("m1", base);
-  if (!main) { $("kpis").textContent = "Roll-up not computed yet."; return; }
-  $("kpis").innerHTML = `
-    <div><div class="bignum">${money(main.us_irrigated_dollars)}</div><div class="note">a year, after extra pumping and false alarms</div></div>
-    <div><div class="bignum">${people(main.us_people_fed)}</div><div class="note">people's yearly calories, in grain saved from drought</div></div>
-    <div><div class="bignum">${(100 * main.us_share_of_retail_loss_by_weight).toFixed(1)}%</div><div class="note">of the food US stores throw away, by weight</div></div>`;
-  const rows = VARIANTS.filter(([t]) => headline(t, base)).map(([t, label]) => {
-    const h = headline(t, base);
-    return `<tr><td>${label}</td><td>${money(h.region_irrigated_dollars)}</td><td>${money(h.us_irrigated_dollars)}</td>
-      <td>${dollars2(h.per_acre_corn)} / ${dollars2(h.per_acre_soy)}</td><td>${people(h.us_people_fed)}</td><td>${money(h.rainfed_nitrogen_dollars)}</td></tr>`;
-  }).join("");
-  $("rollTable").innerHTML = `<table>
-    <thead><tr><th>Forecasts</th><th>Study region, irrigated</th><th>All US irrigated corn and soy</th>
-    <th>Per acre a year (corn / soy)</th><th>People fed</th><th>Rain-fed corn, nitrogen (rough costs)</th></tr></thead><tbody>${rows}</tbody></table>`;
-  $("rollNote").innerHTML = `The headline is the middle row, an estimate until the summer ECMWF forecasts finish downloading: it uses observed weather
-    blurred to ECMWF's measured accuracy. Most of the value is in corn; soybeans suffer less in a dry spell. Drought years carry most of it.
-    ${$("spell").value === "cal"
-      ? "Dry spells are set to 21 days, so the yield loss per flash drought matches what irrigated counties actually lost (USDA county yields, 2005-2021: 1.5 to 3.6% of yield)."
-      : "Dry spells are the textbook worst case, 35 days without rain: about 3 times the yield loss irrigated counties actually show."}`;
+function renderFarms() {
+  const base = $("base").value, s = R.roll && R.roll.scopes[base];
+  if (!s) { $("farmTable").textContent = "Not computed yet."; return; }
+  const fs = (R.defaults && R.defaults.farm_sizes) || {};
+  const round = v => Math.round(v / 50) * 50;
+  const fx = (R.defaults && R.defaults.fixed) || {};
+  // One flash drought with a week's warning: the farm page's water balance (21-day dry spell).
+  const week = crop => { const c = FW.curve({ ...FW.DEFAULTS[crop], spell_days: 21 }, 21); return FW.netAt(c, 7); };
+  const nSaved = (fx.n_cut_lb ? fx.n_cut_lb.value : 40) * (fx.n_price ? fx.n_price.value : 0.66);
+  const cols = [
+    { name: "Irrigated corn farm", acres: round(fs.corn_irrigated || 350), scope: s.corn, event: week("corn") },
+    { name: "Irrigated soybean farm", acres: round(fs.soybeans_irrigated || 250), scope: s.soybeans, event: week("soybeans") },
+    { name: "Rain-fed corn farm", acres: round(fs.corn_all || 300), scope: s.rainfed_nitrogen, event: nSaved },
+  ];
+  const cell = (perA, acres) => perA === null ? "<td>-</td>" : `<td><strong>${usd0(perA * acres)}</strong><br><span class="note">${usd2(perA)} an acre</span></td>`;
+  const rows = [
+    ["A flash drought, with a week's warning", c => cell(c.event, c.acres)],
+    ["2012, a flash-drought year", c => cell(perAcre(c.scope, 2012), c.acres)],
+    [`Average year (${R.roll.years[0]}-${R.roll.years[R.roll.years.length - 1]})`, c => cell(perAcre(c.scope), c.acres)],
+  ];
+  $("farmTable").innerHTML = `<table class="farms"><thead><tr><th></th>${cols.map(c => `<th>${c.name}<br><span class="note">${c.acres} acres</span></th>`).join("")}</tr></thead>
+    <tbody>${rows.map(([label, f]) => `<tr><td>${label}</td>${cols.map(f).join("")}</tr>`).join("")}</tbody></table>`;
 }
+
+// ---------- forecast quality: how often a flagged farm gets a flash drought ----------
+
+function renderFlags() {
+  const f = R.ev && R.ev.flagged;
+  if (!f) { $("flagKpis").textContent = "Not computed yet."; return; }
+  const w1 = f.M2.week1;
+  $("flagKpis").innerHTML = `
+    <div><div class="bignum">${w1.lift.toFixed(1)}x</div><div class="note">the normal chance of a flash drought in the next 7 days, on the farms FlashWatch flags</div></div>
+    <div><div class="bignum">${Math.round(100 * w1.caught)}%</div><div class="note">of the flash droughts that begin in the next 7 days are on flagged farms</div></div>`;
+  const W = 520, H = 220, m = { l: 40, r: 10, t: 16, b: 40 };
+  const leads = ["week1", "week2"], names = { week1: "Next 7 days", week2: "Days 8-14" };
+  const groups = [["base", "Normal chance", css("--normal")], ["H1", "Flagged by a hot-and-dry rule of thumb", css("--wait")], ["M2", "Flagged by FlashWatch", css("--risk")]];
+  const val = (g, lead) => g === "base" ? f.M2[lead].base : f[g][lead].hit_rate;
+  const x0 = d3.scaleBand().domain(leads).range([m.l, W - m.r]).padding(0.25);
+  const x1 = d3.scaleBand().domain(groups.map(g => g[0])).range([0, x0.bandwidth()]).padding(0.08);
+  const y = d3.scaleLinear().domain([0, Math.max(0.3, d3.max(leads, l => val("M2", l)) * 1.15)]).range([H - m.b, m.t]);
+  const svg = d3.select("#flagChart").html("").append("svg").attr("viewBox", `0 0 ${W} ${H}`);
+  svg.append("g").attr("class", "axis").attr("transform", `translate(0,${H - m.b})`).call(d3.axisBottom(x0).tickFormat(l => names[l]));
+  svg.append("g").attr("class", "axis").attr("transform", `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(5).tickFormat(d3.format(".0%")));
+  for (const lead of leads) for (const [g, , col] of groups) {
+    const v = val(g, lead), bx = x0(lead) + x1(g);
+    svg.append("rect").attr("x", bx).attr("width", x1.bandwidth()).attr("y", y(v)).attr("height", y(0) - y(v)).attr("fill", col);
+    svg.append("text").attr("x", bx + x1.bandwidth() / 2).attr("y", y(v) - 4).attr("text-anchor", "middle").attr("font-size", 11).attr("fill", css("--ink")).text(pct1(v));
+  }
+  $("flagNote").innerHTML = groups.map(([, label, col]) => `<span style="display:inline-block;width:10px;height:10px;background:${col}"></span> ${label}`).join(" &nbsp; ") +
+    `<br>Chance that a flash drought begins, on all farm-days and on the riskiest tenth by each method. Scored on ${R.ev.m2_dates} spring forecast dates
+     in six past seasons; summer forecast dates are still downloading.`;
+}
+
+// ---------- value by corn price ----------
+
+function renderPrice() {
+  const pts = R.prices.filter(p => p.v !== null);
+  if (!pts.length) { $("priceChart").textContent = "Not computed yet."; return; }
+  const W = 520, H = 220, m = { l: 48, r: 14, t: 14, b: 36 };
+  const x = d3.scaleLinear().domain([3, 8]).range([m.l, W - m.r]);
+  const y = d3.scaleLinear().domain([0, d3.max(pts, p => p.v) * 1.2]).range([H - m.b, m.t]).nice();
+  const svg = d3.select("#priceChart").html("").append("svg").attr("viewBox", `0 0 ${W} ${H}`);
+  svg.append("g").attr("class", "axis").attr("transform", `translate(0,${H - m.b})`).call(d3.axisBottom(x).ticks(6).tickFormat(v => "$" + v));
+  svg.append("g").attr("class", "axis").attr("transform", `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(5).tickFormat(v => "$" + v));
+  svg.append("text").attr("x", W - m.r).attr("y", H - 2).attr("text-anchor", "end").attr("font-size", 11).attr("fill", css("--muted")).text("corn price ($ a bushel)");
+  svg.append("text").attr("x", m.l + 4).attr("y", m.t + 2).attr("font-size", 11).attr("fill", css("--muted")).text("$ an acre a year");
+  const now = R.defaults && R.defaults.states && R.defaults.states.NE ? R.defaults.states.NE.corn_price : null;
+  if (now) {
+    svg.append("line").attr("x1", x(now)).attr("x2", x(now)).attr("y1", m.t).attr("y2", H - m.b).attr("stroke", css("--line")).attr("stroke-dasharray", "3 3");
+    svg.append("text").attr("x", x(now) + 4).attr("y", m.t + 16).attr("font-size", 11).attr("fill", css("--muted")).text(`${R.defaults.price_year} Nebraska price, $${now.toFixed(2)}`);
+  }
+  svg.append("path").attr("d", d3.line().x(p => x(p.price)).y(p => y(p.v))(pts)).attr("fill", "none").attr("stroke", css("--calm")).attr("stroke-width", 2.5);
+  for (const p of pts) {
+    svg.append("circle").attr("cx", x(p.price)).attr("cy", y(p.v)).attr("r", 4).attr("fill", css("--calm"));
+    svg.append("text").attr("x", x(p.price)).attr("y", y(p.v) - 8).attr("text-anchor", "middle").attr("font-size", 11).attr("fill", css("--ink")).text(usd2(p.v));
+  }
+}
+
+// ---------- risk map ----------
 
 function tileKeys() {
   const m = R.meta, keys = new Set();
   for (const [iy, ix] of m.cells) keys.add(`${Math.floor(iy / m.thin / m.tile)}_${Math.floor(ix / m.thin / m.tile)}`);
   return [...keys];
 }
-
 async function loadYear(y) {
   const files = await Promise.all(tileKeys().map(k => fetch(`data/tiles/${y}/${k}.json`).then(r => r.ok ? r.json() : [])));
   R.recs = files.flat();
 }
-
 function renderMap() {
   const m = R.meta, i = R.i, W = 960, H = 520;
   const md = m.dates[i];
   $("dateLabel").textContent = new Date(Date.UTC(R.year, +md.slice(0, 2) - 1, +md.slice(3, 5)))
     .toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
   const proj = d3.geoMercator().fitExtent([[4, 4], [W - 4, H - 4]], { type: "MultiPoint", coordinates: [[-104, 36], [-80, 36], [-80, 49], [-104, 49]] });
-  const svg = d3.select("#map").html("").append("svg").attr("viewBox", `0 0 ${W} ${H}`);
+  const svg = d3.select("#rmap").html("").append("svg").attr("viewBox", `0 0 ${W} ${H}`);
   const color = d3.scaleSequential(d3.interpolateYlOrRd).domain([0, Math.log2(8)]);
   const step = m.res * m.thin;
-  const day = (s) => Date.UTC(R.year, +s.slice(0, 2) - 1, +s.slice(3, 5)) / 864e5;
+  const day = s => Date.UTC(R.year, +s.slice(0, 2) - 1, +s.slice(3, 5)) / 864e5;
   const t0 = day(md);
   for (const r of R.recs) {
     const lat = m.lat0 - r.iy * m.res, lon = m.lon0 + r.ix * m.res;
     const [x0, y0] = proj([lon - step / 2, lat + step / 2]), [x1, y1] = proj([lon + step / 2, lat - step / 2]);
+    const frozen = (r.fz || []).includes(i);
     let fill;
-    if (r.p1[i] === null) fill = r.rz[i] === null ? css("--drought") : css("--line");
+    if (r.p1[i] === null) fill = frozen ? css("--off-bg") : r.rz[i] === null ? css("--drought") : css("--line");
     else fill = color(Math.max(0, Math.log2(r.p1[i] / Math.max(r.n1[i], 1e-4))));
     svg.append("rect").attr("x", x0).attr("y", y0).attr("width", x1 - x0 + 0.5).attr("height", y1 - y0 + 0.5)
-      .attr("fill", fill).attr("opacity", r.p1[i] === null && r.rz[i] === null ? 0.45 : 1).style("cursor", "pointer")
-      .on("click", () => { location.href = `index.html#lat=${lat.toFixed(2)}&lon=${lon.toFixed(2)}&year=${R.year}&date=${md}`; });
+      .attr("fill", fill).attr("opacity", r.p1[i] === null && r.rz[i] === null && !frozen ? 0.45 : 1).style("cursor", "pointer")
+      .on("click", () => { location.href = `index.html#lat=${lat.toFixed(2)}&lon=${lon.toFixed(2)}&mode=replay&year=${R.year}&date=${md}`; });
     if (r.onsets.some(o => { const d = day(o); return d > t0 && d <= t0 + 7; })) {
       svg.append("circle").attr("cx", (x0 + x1) / 2).attr("cy", (y0 + y1) / 2).attr("r", 2.6).attr("fill", css("--ink"));
     }
@@ -86,84 +140,30 @@ function renderMap() {
     `<span><i style="background:${css("--drought")};opacity:.45;height:10px;width:16px"></i>already in drought</span><span>&#9679; a flash drought began within 7 days</span>`;
 }
 
-function renderSkill() {
-  const ev = R.ev, W = 520, H = 230, m = { l: 40, r: 10, t: 10, b: 40 };
-  const groups = [["all dates", "M1", "Soil and past weather", css("--normal")], ["forecast dates", "M2", "With ECMWF forecasts", css("--risk")],
-                  ["perfect weather", "M2", "Perfect weather (upper limit)", css("--line")]];
-  const leads = ["week1", "week2", "any28"], names = { week1: "Next 7 days", week2: "Days 8-14", any28: "Within 28 days" };
-  const val = (g, mod, lead) => (ev.skill[g] || []).find(r => r.model === mod && r.lead === lead);
-  const x0 = d3.scaleBand().domain(leads).range([m.l, W - m.r]).padding(0.2);
-  const x1 = d3.scaleBand().domain(groups.map(g => g[2])).range([0, x0.bandwidth()]).padding(0.08);
-  const y = d3.scaleLinear().domain([0, 0.5]).range([H - m.b, m.t]);
-  const svg = d3.select("#skill").html("").append("svg").attr("viewBox", `0 0 ${W} ${H}`);
-  svg.append("g").attr("class", "axis").attr("transform", `translate(0,${H - m.b})`).call(d3.axisBottom(x0).tickFormat(l => names[l]));
-  svg.append("g").attr("class", "axis").attr("transform", `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(5).tickFormat(d3.format(".0%")));
-  for (const lead of leads) for (const [g, mod, label, col] of groups) {
-    const v = val(g, mod, lead); if (!v) continue;
-    const bx = x0(lead) + x1(label);
-    svg.append("rect").attr("x", bx).attr("width", x1.bandwidth()).attr("y", y(Math.max(0, v.bss))).attr("height", y(0) - y(Math.max(0, v.bss))).attr("fill", col);
-    svg.append("text").attr("x", bx + x1.bandwidth() / 2).attr("y", y(Math.max(0, v.bss)) - 4).attr("text-anchor", "middle").attr("font-size", 10).attr("fill", css("--muted")).text((100 * v.bss).toFixed(0) + "%");
-  }
-  $("skillNote").innerHTML = groups.map(([, , label, col]) => `<span style="display:inline-block;width:10px;height:10px;background:${col};"></span> ${label}`).join(" &nbsp; ") +
-    `<br>Skill compared with the seasonal normal (0 = no better). "With ECMWF forecasts" is scored on the ${ev.m2_dates} spring dates downloaded so far. Week 1 is where forecasts pay.`;
-}
-
-function renderValue() {
-  const ev = R.ev, W = 520, H = 230, m = { l: 40, r: 10, t: 10, b: 34 };
-  const x = d3.scaleLog().domain([0.02, 0.5]).range([m.l, W - m.r]);
-  const y = d3.scaleLinear().domain([-0.1, 0.8]).range([H - m.b, m.t]);
-  const svg = d3.select("#value").html("").append("svg").attr("viewBox", `0 0 ${W} ${H}`);
-  svg.append("g").attr("class", "axis").attr("transform", `translate(0,${H - m.b})`).call(d3.axisBottom(x).tickValues(ev.alphas).tickFormat(d3.format("~g")));
-  svg.append("g").attr("class", "axis").attr("transform", `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(5));
-  svg.append("text").attr("x", W - m.r).attr("y", H - 2).attr("text-anchor", "end").attr("font-size", 11).attr("fill", css("--muted")).text("cost of acting / loss it avoids");
-  svg.append("rect").attr("x", x(0.1)).attr("width", x(0.2) - x(0.1)).attr("y", m.t).attr("height", H - m.t - m.b).attr("fill", css("--calm-bg"));
-  svg.append("text").attr("x", x(0.1) + 4).attr("y", m.t + 12).attr("font-size", 10).attr("fill", css("--muted")).text("early pivot start");
-  const series = [["forecast dates|M2", "week1", css("--risk"), "Week 1, with ECMWF"], ["forecast dates|M1", "week1", css("--normal"), "Week 1, soil and past weather"],
-                  ["forecast dates|M2", "week2", css("--wait"), "Week 2, with ECMWF"]];
-  for (const [k, lead, col, label] of series) {
-    const v = ev.value[k]?.[lead]; if (!v) continue;
-    svg.append("path").attr("d", d3.line().x((d, j) => x(ev.alphas[j])).y(d => y(d))(v)).attr("fill", "none").attr("stroke", col).attr("stroke-width", 2.2);
-    svg.append("text").attr("x", x(ev.alphas[1]) + 4).attr("y", y(v[1]) + (label.includes("land") ? 14 : -5)).attr("font-size", 11).attr("fill", col).text(label);
-  }
-  svg.append("line").attr("x1", m.l).attr("x2", W - m.r).attr("y1", y(0)).attr("y2", y(0)).attr("stroke", css("--line"));
-}
+// ---------- ahead of the Drought Monitor ----------
 
 function renderMonitor() {
   const mo = R.ev.monitor;
   const card = (t, s, sub) => `<div class="row"><div class="note">${t}</div><div class="v">${s}</div><div class="note">${sub}</div></div>`;
+  $("leadDays").textContent = `${mo.crossing_vs_d1.median_days_ahead.toFixed(0)} days`;
   $("monitor").innerHTML =
-    card("Soil drops into drought, compared with the Monitor's first D1", `${mo.crossing_vs_d1.median_days_ahead.toFixed(0)} days earlier`, `typical; FlashWatch first ${(100 * mo.crossing_vs_d1.share_flashwatch_first).toFixed(0)}% of the time`) +
-    card("Compared with the Monitor's first change of any kind", `${mo.crossing_vs_worsening.median_days_ahead.toFixed(0)} days earlier`, `typical; FlashWatch first ${(100 * mo.crossing_vs_worsening.share_flashwatch_first).toFixed(0)}% of the time`);
-  $("monitorNote").textContent = `Across ${mo.onsets.toLocaleString()} flash droughts, 2006-2021, counted from the day the data are public. The week-1 forecast adds about a week. The Monitor never reacts to about half of them, and those cost no yield on average (see county yields).`;
-}
-
-function renderWatch() {
-  const w = R.ev.watch;
-  const card = (t, k) => w[k] ? `<div class="row"><div class="note">${t}</div><div class="v">${(100 * w[k].week1.caught).toFixed(0)}% caught</div><div class="note">1 in ${Math.round(1 / w[k].week1.hit_rate)} flagged squares had one</div></div>` : "";
-  $("watch").innerHTML = card("Soil and past weather, next 7 days", "forecast dates|M1") + card("With ECMWF forecasts, next 7 days", "forecast dates|M2");
-}
-
-function renderYields(y) {
-  const r = k => y.results[k]?.raw, pc = v => (v > 0 ? "+" : "") + v.toFixed(0) + "%";
-  const card = (t, k, sub) => r(k) ? `<div class="row"><div class="note">${t}</div>
-    <div class="v ${r(k)["mean_most (half or more)"] < 0 ? "neg" : "pos"}">${pc(r(k)["mean_most (half or more)"])}</div>
-    <div class="note">vs ${pc(r(k).mean_none)} with none nearby. ${sub}</div></div>` : "";
-  $("yields").innerHTML =
-    card("Rain-fed corn, where most of the county had a summer flash drought", "corn|non-irrigated", "Flash droughts hit unwatered corn hard.") +
-    card("Irrigated corn, same counties and years", "corn|irrigated", "Irrigation saves most of the crop; the small loss left is what earlier pumping can win back.") +
-    `<div class="row"><div class="note">All corn, where most of the county had a flash drought the Drought Monitor never marked D1</div>
-      <div class="v pos">${pc(r("corn|all").most_exposed_monitor_not_flagged_mean)}</div>
-      <div class="note">No loss on average: these dry spells broke in time. When the Monitor did mark D1: ${pc(r("corn|all").most_exposed_monitor_flagged_mean)}.</div></div>`;
-  $("yieldNote").textContent = `Yield against each county's own trend (USDA NASS county yields). "Most of the county": half or more of its land within 40 km had a flash drought begin June to August.
-    ${y.results["corn|irrigated"].county_years} irrigated and ${y.results["corn|all"].county_years.toLocaleString()} all-corn county-years. This is why the dollar figures above use 21-day dry spells: irrigated losses of 1.5 to 3.6% per flash drought.`;
-  $("yieldCard").hidden = false;
+    card("Soil drops into drought, compared with the Monitor's first D1 (moderate drought)", `${mo.crossing_vs_d1.median_days_ahead.toFixed(0)} days earlier`,
+         `median; FlashWatch first ${(100 * mo.crossing_vs_d1.share_flashwatch_first).toFixed(0)}% of the time`) +
+    card("Compared with the Monitor's first change of any kind", `${mo.crossing_vs_worsening.median_days_ahead.toFixed(0)} days earlier`,
+         `median; FlashWatch first ${(100 * mo.crossing_vs_worsening.share_flashwatch_first).toFixed(0)}% of the time`);
+  $("monitorNote").textContent = `Across ${mo.onsets.toLocaleString()} flash droughts, 2006-2021, counted from the day each data set is public.
+    The forecasts add one to two weeks on top. The Monitor never marks about half of these flash droughts; on average those cost no yield, because rain came in time.`;
 }
 
 async function init() {
-  R.meta = await fetch("data/meta.json").then(r => r.json());
-  R.ev = await fetch("data/evidence.json").then(r => r.json()).catch(() => null);
-  for (const [t] of VARIANTS) for (const sfx of ["", "_cal"])
-    R.roll[t + sfx] = await fetch(`data/rollup_${t}${sfx}.json`).then(r => r.ok ? r.json() : null).catch(() => null);
+  const get = (u, fallback = null) => fetch(u).then(r => r.ok ? r.json() : fallback).catch(() => fallback);
+  [R.meta, R.ev, R.roll, R.defaults] = await Promise.all([get("data/meta.json"), get("data/evidence.json"),
+    get("data/rollup_blur07_cal.json"), get("data/defaults.json")]);
+  R.prices = await Promise.all(PRICES.map(async p => {
+    const r = await get(`data/rollup_price${String(p).replace(".", "")}.json`);
+    const h = r && r.headline.find(x => x.baseline === "careful");
+    return { price: p, v: h ? h.per_acre_corn : null };
+  }));
   try {
     const us = await fetch("https://cdn.jsdelivr.net/npm/us-atlas@3.0.1/states-10m.json").then(r => r.json());
     R.states = topojson.feature(us, us.objects.states);
@@ -172,19 +172,17 @@ async function init() {
   $("date").max = R.meta.dates.length - 1;
   R.i = R.meta.dates.indexOf("07-03");
   $("date").value = R.i;
-  $("base").onchange = renderRoll;
-  $("spell").onchange = renderRoll;
+  $("base").onchange = renderFarms;
   $("year").onchange = async () => { R.year = +$("year").value; await loadYear(R.year); renderMap(); };
   const setI = i => { R.i = Math.max(0, Math.min(R.meta.dates.length - 1, i)); $("date").value = R.i; renderMap(); };
   $("date").oninput = () => setI(+$("date").value);
   $("prev").onclick = () => setI(R.i - 1);
   $("next").onclick = () => setI(R.i + 1);
-  renderRoll();
+  renderFarms();
+  renderPrice();
+  if (R.ev) { renderFlags(); renderMonitor(); }
   await loadYear(R.year);
   renderMap();
-  if (R.ev) { renderSkill(); renderValue(); renderMonitor(); renderWatch(); }
-  const y = await fetch("data/yields.json").then(r => r.ok ? r.json() : null).catch(() => null);
-  if (y) renderYields(y);
 }
 
 init();

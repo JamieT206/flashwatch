@@ -1,4 +1,5 @@
-"""Reference forecasts B0 (climatology) and B1 (logistic on current soil-moisture state).
+"""Reference forecasts B0 (climatology), B1 (logistic on current soil-moisture state) and H1
+(logistic on recent rain and heat: a farmer's rule of thumb).
 
 Each model: fit(train_df, label) then predict(df) -> probabilities. Frames carry the columns
 built by eval.cv.fold_table: iy, ix (cell indices, never features), woy, and the features.
@@ -87,12 +88,21 @@ class StateLogistic:
         return self.model.predict_proba(df[list(self.inputs)].fillna(self.fill))[:, 1]
 
 
+class WeatherRule(StateLogistic):
+    """H1: a farmer's rule of thumb, "it's been hot and it hasn't rained": logistic regression on
+    the last two weeks' rain and temperature against normal for the date. The public comparison
+    for FlashWatch (James, Oct 29), in place of our own land-only model M1."""
+
+    name = "H1"
+    inputs = ("precip14_z", "t2m14_z")
+
+
 def _gbm(name, **kw):
     from flashwatch.models import gbm
     return {"M1": gbm.GBM, "M2": gbm.GBMForecast}[name](**kw)
 
 
-MODELS = {"B0": Climatology, "B1": StateLogistic, "M1": lambda **kw: _gbm("M1", **kw),
+MODELS = {"B0": Climatology, "B1": StateLogistic, "H1": WeatherRule, "M1": lambda **kw: _gbm("M1", **kw),
           "M2": lambda **kw: _gbm("M2", **kw)}
 # Light GBM training for fast design iteration (eval.cv --fast); heavy training comes later.
 LIGHT = {"params": {"learning_rate": 0.1}, "n_rounds": 150}

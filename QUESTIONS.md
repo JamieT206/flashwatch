@@ -130,6 +130,57 @@ in about two. Cost: the 3 requests now in ECMWF's queue are lost and may block n
 A different IP address wouldn't help: ECMWF's queue limit is per account, not per address.
 **Recommendation:** restart now. **Default until you answer:** leave it running; I won't stop it.
 
+### Q14. Rain-fed farms: give them equal billing? (Oct 29)
+The coverage area has 130 million rain-fed acres of corn and soybeans against 13 million irrigated (2022 Census). Even the
+rough nitrogen estimate (~$50M a year in the region) is larger than the irrigation one (~$19M). The farm page now has a
+Watering setting (pivot-irrigated / rain-fed); rain-fed switches the advice box to drought decisions (side-dress nitrogen,
+hay and feed). Candidates to add, each with 1-2 weeks' notice: skip the mid-July fungicide pass (~$25-35 an acre; dry
+spells mean little disease), early silage harvest of drought-hit corn, herd and pasture decisions. Not crop insurance
+(choices close in March) and not grain marketing (prices already carry the forecasts; edges into trading advice).
+DESIGN L9.
+**Recommendation:** yes; research cost and benefit figures for fungicide and silage, add them as decisions, and add a
+rain-fed scope to the big picture. **Default until you answer:** rain-fed mode as built; fungicide and silage after the
+summer M2 work.
+
+### Q15. Track the water a farmer has already put on? (Oct 29)
+You asked whether FlashWatch can credit irrigation already applied ("they irrigated 2 days, so they can stop now").
+The current engine can't: it assumes the soil is full when a dry spell begins, so water put on earlier doesn't count.
+Doing it properly means a day-by-day soil-water account for the field (the "checkbook method" irrigators use): rain and
+crop water use from ERA5-Land, plus irrigation the farmer enters (or reads from the pivot through Leaf), with advice
+based on today's actual deficit. It also gives the "how much" answer exactly (inches to put on now).
+**Recommendation:** build it; it's the most useful single addition for irrigators. Changes the engine in Python and the
+browser (with the parity check). **Default until you answer:** after the summer M2 rebuild and before the Nov 2 burst,
+if time allows; the farm page meanwhile says "run full time until about an inch of rain or the risk drops".
+
+### Q16. Crop water use by date (Oct 29)
+Your percentile question, taken further: the engine uses one heat-wave water use (0.30 in a day for corn) all summer.
+Real use and yield sensitivity peak around silking (mid-July) and are lower in early June. FAO-56 crop coefficients by
+growth stage would make June advice more cautious and July advice stronger.
+**Recommendation:** add it together with Q15 (same engine change). **Default:** with Q15.
+
+### Q17. Contact form, your name, copyright (Oct 29)
+A static site can't send email itself. Options: (a) a form service such as Formspree (free tier ~50 messages a month,
+spam filtering, forwards to any address you choose; you create the account); (b) a plain email link to a dedicated
+address (bots harvest it, so expect spam). The About page has the form built, with a hidden "leave this empty" field
+that catches simple bots; it says "not connected yet" until it has an endpoint.
+Copyright: your work is copyrighted automatically; a "© 2026 Your Name" line is customary but optional. The licence for
+the code (e.g. MIT) is a separate choice, tied to Q2.
+**Recommendation:** (a) with a new address used only for FlashWatch, and a "© 2026 [name]" footer line.
+**Default until you answer:** form not connected; no name on the site. Send me the endpoint (not a password) and the name to use.
+
+### Q18. Forecast every day, not every other day? (Oct 29)
+ECMWF runs its extended-range forecast every day and ERA5-Land updates daily, so a live service can forecast daily
+and compare "start today" with tomorrow's forecast. The replay is every other day because that's how the archived
+forecasts we trained on are spaced.
+**Recommendation:** daily when live. **Default:** footer keeps your "every other day" wording (true for the replay).
+
+### Q19. A live feed for Today mode (Oct 29)
+Today mode is built (moves on by itself at midnight, date bar locked), but shows July 3, 2012 as a labelled demo.
+Going live needs current ERA5-Land (free, ~5-day delay) and current ECMWF extended-range forecasts. The free S2S archive
+we use is released 3 weeks late, so live forecasts need ECMWF's real-time product (a licence, probably paid) or a free
+substitute such as NOAA's GEFS (Q7).
+**Recommendation:** after the hackathon; the demo label stays until then. **Default:** demo.
+
 ### Q10. Pivot control: may the agent ever act without the farmer's YES? Which accounts to pursue?
 The operator agent (DESIGN.md O10) plans pivot starts and stops, and the guard checks them. Nothing
 is sent without an approval. Two decisions:
@@ -145,7 +196,7 @@ out" as a farmer setting later. (b) Demo with the simulated pivots and the signe
 Leaf, Deere and FieldView as the path in the write-up and video. **Default until you answer:**
 exactly that. No sign-ups and no messages sent.
 
-### Q11. County yields say our irrigation dollars are about 3 times too high. Calibrate?
+### Q11. County yields say our irrigation dollars are about 3 times too high. Calibrate? **Applied Oct 29: your big-picture wording uses 21-day dry spells, so the farm page now defaults to 21 days too (the field is still editable). Say if you'd rather keep 35.**
 New check (DESIGN.md O4, `eval/yields.py`). Irrigated corn in counties hit hard by summer flash
 droughts yields only about 1.5-3.6% below trend. Our water-balance model, with its 35-day rainless
 spell, has a careful irrigator losing 8.6%. A 21-day spell matches the counties (2.7%). Calibrated,

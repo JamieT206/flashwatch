@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlashWatch: about</title>
+<meta name="description" content="About FlashWatch, and how to get in touch.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='2' y='2' width='12' height='12' fill='%23d83933'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="brand"><span class="dot"></span>FlashWatch</div>
+  <nav><a href="index.html">Your farm</a><a href="region.html">The big picture</a><a href="help.html">Help</a><a class="on" href="about.html">About</a></nav>
+</div></header>
+
+<main class="wrap doc">
+  <h1>About FlashWatch</h1>
+  <p class="intro">FlashWatch warns farmers of flash droughts one to two weeks ahead and works out whether extra irrigation pays.
+    It covers the Corn Belt and northern Plains: 143 million acres of corn and soybeans.</p>
+
+  <div class="top2">
+    <div class="col">
+      <section class="card">
+        <h3>How it works</h3>
+        <ol class="steps">
+          <li><strong>Soil and weather now.</strong> ERA5-Land soil moisture, rain and heat for each 28 km square, as known on the forecast date.</li>
+          <li><strong>Weather ahead.</strong> ECMWF's extended-range forecasts: 11 runs, each a possible next four weeks.</li>
+          <li><strong>The forecast.</strong> A machine-learning model (LightGBM) gives the chance a flash drought begins in the next 7 days and in days 8-14.
+            It was trained on 2005-2021 and tested on seasons it never saw.</li>
+          <li><strong>The decision.</strong> A water balance of the field (pivot, soil, crop, prices) turns that chance into dollars: start extra
+            irrigation today, or wait for the next forecast.</li>
+          <li><strong>The agents.</strong> Meta's Muse Spark writes the morning text and plans pivot starts; Muse Voice Transcribe takes voice
+            notes from the field. Nothing moves without the farmer's YES.</li>
+        </ol>
+        <p class="note">Built for the Meta Global AI Developer Hackathon, October-November 2026. More detail in <a href="help.html">Help</a>.</p>
+      </section>
+    </div>
+    <div class="col">
+      <section class="card" id="contact">
+        <h3>Contact FlashWatch</h3>
+        <form id="contactForm" class="contact">
+          <label>Your name<input name="name" autocomplete="name" required></label>
+          <label>Your email<input name="email" type="email" autocomplete="email" required></label>
+          <label>Message<textarea name="message" rows="6" required></textarea></label>
+          <label class="hp" aria-hidden="true">Leave this empty<input name="website" tabindex="-1" autocomplete="off"></label>
+          <button class="primary" type="submit">Send</button>
+          <p class="note" id="contactNote"></p>
+        </form>
+      </section>
+    </div>
+  </div>
+
+  <footer>Data: ERA5-Land (Copernicus Climate Change Service), ECMWF S2S reforecasts, US Drought Monitor (NDMC, USDA, NOAA), USDA NASS, US Census Gazetteer.</footer>
+</main>
+<script>
+// The contact form posts to a form service (e.g. Formspree), which filters spam and forwards to email.
+// Until an endpoint is set, the form says so instead of sending.
+const FORM_ENDPOINT = "";
+const form = document.getElementById("contactForm"), note = document.getElementById("contactNote");
+if (!FORM_ENDPOINT) note.textContent = "The contact form isn't connected yet.";
+form.addEventListener("submit", async ev => {
+  ev.preventDefault();
+  if (!FORM_ENDPOINT) { note.textContent = "The contact form isn't connected yet. Please try again soon."; return; }
+  if (form.website.value) return;                      // bots fill the hidden field
+  note.textContent = "Sending...";
+  try {
+    const r = await fetch(FORM_ENDPOINT, { method: "POST", body: new FormData(form), headers: { Accept: "application/json" } });
+    note.textContent = r.ok ? "Thanks: your message is on its way." : "Sorry, that didn't send. Please try again.";
+    if (r.ok) form.reset();
+  } catch (e) { note.textContent = "Sorry, that didn't send. Please try again."; }
+});
+</script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 """Evidence for the region page (site/region.html): skill by lead, the watch list, economic value by
 cost/loss ratio and the lead over the Drought Monitor, from out-of-fold predictions only.
 
-    python -m flashwatch.site.evidence --m1 <oof> --m2 <oof> [--perfect <oof>]
+    python -m flashwatch.site.evidence --m1 <oof> --m2 <oof> [--perfect <oof>] [--h1 <oof>]
 
 Writes site/data/evidence.json. M2 is scored on the ECMWF start dates downloaded so far (spring).
 """
@@ -38,11 +38,23 @@ def watch_list(d, m, lead, top=0.10):
     return {"caught": round(float(y[flag].sum() / y.sum()), 3), "hit_rate": round(float(y[flag].mean()), 3)}
 
 
+def flagged(d, m, lead, top=0.10):
+    """Flag the riskiest tenth of all farm-days (pooled over dates, so a quiet date can flag none:
+    James, Oct 29), then: how often a flash drought follows, against the overall rate."""
+    y = d[lead].to_numpy(float)
+    p = d[f"{m}_{lead}"].to_numpy()
+    flag = p >= np.quantile(p, 1 - top)
+    base = y.mean()
+    return {"base": round(float(base), 4), "hit_rate": round(float(y[flag].mean()), 4),
+            "lift": round(float(y[flag].mean() / base), 2), "caught": round(float(y[flag].sum() / y.sum()), 3)}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--m1", required=True, help="full-season OOF with B0 and M1")
     ap.add_argument("--m2", required=True, help="OOF with B0, M1 and M2 on forecast dates")
     ap.add_argument("--perfect", help="perfect-weather OOF (diagnostic ceiling)")
+    ap.add_argument("--h1", help="OOF with B0, H1 (hot-and-dry rule of thumb) and M2 on forecast dates")
     args = ap.parse_args()
     ev = {"leads": ["week1", "week2", "any28"], "skill": {}, "value": {}, "watch": {}, "alphas": ALPHAS}
     m2 = pd.read_parquet(args.m2)
@@ -58,6 +70,11 @@ def main():
             ev["value"][f"{name}|{m}"] = {lead: value_curve(d[lead].to_numpy(float), d[f"{m}_{lead}"].to_numpy())
                                           for lead in ("week1", "week2")}
             ev["watch"][f"{name}|{m}"] = {lead: watch_list(d, m, lead) for lead in ("week1", "week2")}
+    if args.h1:
+        d = pd.read_parquet(args.h1)
+        ev["flagged"] = {m: {lead: flagged(d, m, lead) for lead in ("week1", "week2")} for m in ("B0", "H1", "M2")}
+        r = report(d, ["H1", "M2"], n_boot=300, labels=ev["leads"])
+        ev["skill"]["vs rule of thumb"] = r[["lead", "model", "bss", "bss_lo", "bss_hi"]].round(4).to_dict("records")
     # Lead over the Drought Monitor (DESIGN.md O0), recomputed.
     from flashwatch.config import YEARS
     from flashwatch.eval.lead import PERSIST, onsets_table, summarise, usdm_response
@@ -75,7 +92,7 @@ def main():
                      "onsets": int(len(ons))}
     (SITE / "data").mkdir(parents=True, exist_ok=True)
     (SITE / "data" / "evidence.json").write_text(json.dumps(ev, default=float))
-    print(json.dumps({k: ev[k] for k in ("skill", "watch")}, indent=1, default=float)[:3000])
+    print(json.dumps({k: ev.get(k) for k in ("skill", "watch", "flagged")}, indent=1, default=float)[:4000])
 
 
 if __name__ == "__main__":

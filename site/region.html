@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FlashWatch: the big picture</title>
-<meta name="description" content="What a week's warning of flash drought is worth to American irrigators, and how good the forecasts are.">
+<meta name="description" content="Advance warning of flash-drought conditions and advice on supplemental irrigation, for US corn and soybean farms.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='2' y='2' width='12' height='12' fill='%23d83933'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap">
 <link rel="stylesheet" href="assets/style.css">
@@ -12,86 +12,78 @@
 <body>
 <header class="top"><div class="wrap">
   <div class="brand"><span class="dot"></span>FlashWatch</div>
-  <nav><a href="index.html">Your farm</a><a class="on" href="region.html">The big picture</a></nav>
-  <div class="replay-note">Development years only. Test years are scored once, after the freeze.</div>
+  <nav><a href="index.html">Your farm</a><a class="on" href="region.html">The big picture</a><a href="help.html">Help</a><a href="about.html">About</a></nav>
 </div></header>
 
 <main class="wrap">
-  <section style="padding:32px 0 24px">
-    <p class="lede">A flash drought can dry out a field in two or three weeks.
-      FlashWatch gives irrigators a week's warning, and tells them when starting the pivot early pays.</p>
+  <section style="padding:32px 0 20px">
+    <p class="lede">FlashWatch gives farmers advance warning of flash-drought conditions and advises them on supplemental irrigation strategy.</p>
+    <p class="intro">A flash drought can dry a field out in two or three weeks, usually in a summer hot spell.
+      FlashWatch combines ECMWF's weather forecasts with ERA5-Land soil moisture (satellite and weather-station data, blended by
+      the EU's Copernicus service) in a machine-learning model that gives the chance of a flash drought at each farm one and two weeks ahead.
+      A water-balance model of the field, with USDA crop prices and county yields, turns that chance into dollars: start extra irrigation today, or wait.
+      AI agents built on Meta's Muse models send the advice by text each morning and, once the farmer replies YES, pass it to their
+      farm-management and pivot-control software. FlashWatch sees a flash drought coming a median <span id="leadDays">three weeks</span>
+      before the US Drought Monitor marks it.</p>
   </section>
 
   <section class="card full">
-    <h3>If every irrigated corn and soybean farm in the US used FlashWatch</h3>
+    <h3>What FlashWatch is worth to a typical farm</h3>
     <div class="controls" style="padding:0 0 14px">
-      <label>Compared with<select id="base"><option value="careful">starting 2 days after stress shows</option><option value="calendar">starting on July 1</option></select></label>
-      <label>Yield loss per flash drought<select id="spell"><option value="cal">as measured in county yields (21-day dry spells)</option><option value="text">textbook worst case (35-day dry spells)</option></select></label>
+      <label>Compared with<select id="base"><option value="careful">starting irrigation 2 days after stress shows</option><option value="calendar">starting irrigation on July 1</option></select></label>
     </div>
-    <div class="kpis" id="kpis"></div>
-    <div id="rollTable" style="margin-top:20px;overflow-x:auto"></div>
-    <p class="note" id="rollNote"></p>
+    <div id="farmTable" style="overflow-x:auto"></div>
+    <p class="note" id="farmNote">Values calculated based on average flash-drought duration of 21 days and actual USDA county yields, 2005-2021
+      (1.5 to 3.6% of yield). Farm sizes: 2022 Census of Agriculture averages for the region. Rain-fed nitrogen values are rough.</p>
   </section>
 
-  <div class="grid">
-    <section class="card full chart">
-      <h3>Risk of a flash drought in the next 7 days, compared with normal</h3>
-      <div class="controls" style="padding:0 0 8px">
-        <label>Season<select id="year"></select></label>
-        <div class="dateline" style="flex:1;padding:0">
-          <button id="prev" aria-label="Previous forecast">&larr;</button><input id="date" type="range" min="0" value="0" aria-label="Forecast date"><button id="next" aria-label="Next forecast">&rarr;</button>
-          <span class="d" id="dateLabel"></span>
-        </div>
-      </div>
-      <div id="map"></div>
-      <div class="legend" id="mapLegend"></div>
-      <p class="note">Click a square to open its farm page. This map uses the land-only model until the summer weather forecasts finish downloading.</p>
-    </section>
-
-    <section class="card chart">
-      <h3>How good are the forecasts?</h3>
-      <div id="skill"></div>
-      <p class="note" id="skillNote"></p>
-    </section>
-
-    <section class="card chart">
-      <h3>When is a warning worth acting on?</h3>
-      <div id="value"></div>
-      <p class="note">Share of a perfect forecast's savings captured, by how much acting costs compared with the loss it avoids.
-        Starting a pivot early is around 0.1 to 0.2, where the week-1 forecast pays.</p>
-    </section>
-
-    <section class="card full" id="yieldCard" hidden>
-      <h3>Do flash droughts cost crops? County yields, 2005-2021</h3>
-      <div class="tally" id="yields" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))"></div>
-      <p class="note" id="yieldNote"></p>
-    </section>
-
-    <section class="card">
-      <h3>Ahead of the Drought Monitor</h3>
-      <div class="tally" id="monitor"></div>
-      <p class="note" id="monitorNote"></p>
-    </section>
-
-    <section class="card">
-      <h3>A weekly watch list</h3>
-      <div class="tally" id="watch"></div>
-      <p class="note">Flag the riskiest tenth of the region on each forecast date, then count the flash droughts that actually begin.</p>
-    </section>
+  <div class="top2">
+    <div class="col">
+      <section class="card chart">
+        <h3>How good are the forecasts?</h3>
+        <div class="kpis two" id="flagKpis"></div>
+        <div id="flagChart" style="margin-top:14px"></div>
+        <p class="note" id="flagNote"></p>
+      </section>
+    </div>
+    <div class="col">
+      <section class="card chart">
+        <h3>Value by corn price</h3>
+        <div id="priceChart"></div>
+        <p class="note" id="priceNote">Irrigated corn, average year, a typical Nebraska pivot. Higher prices make each bushel saved worth more,
+          so warnings pay more often.</p>
+      </section>
+      <section class="card">
+        <h3>Ahead of the Drought Monitor</h3>
+        <div class="tally" id="monitor"></div>
+        <p class="note" id="monitorNote"></p>
+      </section>
+    </div>
   </div>
 
+  <section class="card full chart">
+    <h3>Risk of a flash drought in the next 7 days, compared with normal</h3>
+    <div class="controls" style="padding:0 0 8px">
+      <label>Season<select id="year"></select></label>
+      <div class="dateline">
+        <button id="prev" aria-label="Previous forecast">&larr;</button><input id="date" type="range" min="0" value="0" aria-label="Forecast date"><button id="next" aria-label="Next forecast">&rarr;</button>
+        <span class="d" id="dateLabel"></span>
+      </div>
+    </div>
+    <div id="rmap"></div>
+    <div class="legend" id="mapLegend"></div>
+    <p class="note">Click a square to open its farm page. Until the summer weather forecasts finish downloading, this map shows FlashWatch without them.</p>
+  </section>
+
   <footer>
-    How these numbers are made: every forecast comes from a model that never saw that year. The dollar figures replay the farm page's
-    advice day by day over six past seasons, for a typical Nebraska pivot, then scale up by irrigated acres in the 2022 Census of Agriculture.
-    They assume a flash drought in the soil record means a dry spell that would stress an irrigated crop.
-    Calories: USDA FoodData Central (corn 365, soybeans 446 kcal per 100 g; 2,000 kcal a person a day).
-    Retail food loss: USDA ERS, 43 billion lb in 2010. Data: ERA5-Land (Copernicus Climate Change Service), ECMWF S2S reforecasts,
-    US Drought Monitor, USDA NASS.
+    Data: ERA5-Land (Copernicus Climate Change Service), ECMWF S2S reforecasts, US Drought Monitor (NDMC, USDA, NOAA), USDA NASS
+    (county yields, 2022 Census of Agriculture, prices received).
   </footer>
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script src="assets/engine.js"></script>
 <script src="assets/region.js"></script>
 </body>
 </html>

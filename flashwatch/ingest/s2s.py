@@ -231,9 +231,13 @@ def main(limit: int | None = None):
 
 def main_packed():
     """Remaining dates per group, in packs of PACK same-month dates, months in season order."""
+    # FW_S2S_MONTHS="8,9,10": only these months, so a second machine (with its own ECDS account)
+    # can take part of the season; copy its data/raw/s2s/<date>_*.grib files here afterwards.
+    only = {int(m) for m in os.getenv("FW_S2S_MONTHS", "").split(",") if m.strip()}
     tasks = []
     for g in GROUPS:
-        left = [d for d in issue_dates() if not (OUT / f"{d.isoformat()}_{g}.grib").exists()]
+        left = [d for d in issue_dates() if not (OUT / f"{d.isoformat()}_{g}.grib").exists()
+                and (not only or d.month in only)]
         for m in sorted({d.month for d in left}):
             ms = [d for d in left if d.month == m]
             tasks += [(ms[i:i + PACK], g) for i in range(0, len(ms), PACK)]

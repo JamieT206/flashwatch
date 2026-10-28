@@ -251,6 +251,19 @@ cross-validation per horizon; keep the simpler option unless the improvement is 
   and for non-specialists; worth pulling forward if time allows.
 - L6. More ECMWF lead time (days 29-46), downloaded two weeks at a time, to see how far ahead M2 can go (A3).
 - L7. Year as a category (diagnostic, F10).
+- L8. **Should I install irrigation? (James, Oct 29; a separate product, parked.)** A business case for
+  a rain-fed field: how often flash droughts hit it now (ERA5-Land, our labels) and under climate
+  projections (e.g. NASA NEX-GDDP-CMIP6), the irrigated vs rain-fed yield gap (NASS county yields),
+  installation and pumping costs (USDA Irrigation and Water Management Survey), and whether water is
+  available at all (USGS groundwater levels, state and district well permits; many Nebraska districts
+  restrict new wells, the Ogallala is falling). Output: a map of where irrigation newly pays, now and
+  around 2040. Most promising in the humid east (IN, OH, MI, WI), where supplemental irrigation is growing
+  and water is easier to get.
+- L9. **Rain-fed decisions with equal billing (James, Oct 29; QUESTIONS Q14).** 130 million rain-fed
+  acres against 13 million irrigated in the coverage area. Candidates with 1-2 weeks' notice: skip or cut
+  side-dress nitrogen (built, rough), skip the mid-July fungicide pass, hay and feed purchases and herd
+  numbers (built, rough), early silage harvest. Not crop insurance (choices close in March). Not grain
+  marketing (prices already carry the forecasts; edges into trading advice).
 
 ### W. Weather forecast sources (Oct 28, James: "are we using the best available forecasts?")
 
@@ -432,6 +445,14 @@ built yet except the evidence in O0.
 | Seasonal normal (B0) | 12%, 6% | 10%, 5% |
 | Land only (M1) | 20%, 11% | 15%, 8% |
 | With ECMWF forecasts (M2) | **42%, 23%** | 21%, 11% |
+
+*Flagged farms, pooled (Oct 29, James: "top 10% of all farm-days", so a quiet date can flag nothing; `evidence.flagged`,
+16 spring dates).* Flash drought begins in the next 7 days on 28.8% of the farm-days M2 rates riskiest, against 5.3% overall:
+**5.4x**, and those flags hold **54%** of all onsets (per-date top 10%: 4.2x, 43%). Days 8-14: 2.4x, 24%. The farmer's rule of
+thumb **H1** (logistic on the last two weeks' rain and temperature against normal; `models/baselines.WeatherRule`, run
+`h1fc16`): 1.65x in week 1, 0.5x in week 2, below the seasonal calendar alone (B0 pooled: 1.9x, because it picks the
+high-risk time of year). Brier skill: H1 0.8% (CI -0.2 to 1.7) at week 1, -0.2% at week 2; M2 16.8% and 3.8%. H1 replaces
+M1 as the public comparison (M1 stays as our internal ablation).
 
 *Lead over the Drought Monitor* (2006-2021, 64,765 onsets at 0-40 cm; each date counted from when it is
 public: Monitor maps 2 days after their valid date, ERA5-Land 5 days after). Monitor response = the
