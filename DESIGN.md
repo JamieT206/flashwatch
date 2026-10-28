@@ -660,17 +660,26 @@ product (judges assess "video, code and live product").
 - **Live product**: a static site (GitHub Pages or similar) with the replay, skill-by-horizon charts and
   this week's agent briefings. If O is agreed, the replay becomes the decision dashboard (O5). Static means it can't break live. Q2 decides whether M2's forecast-derived
   maps can be on it.
-- **3-minute video** (draft storyboard):
-  - 0:00-0:10: one line that everything shown was built during the hackathon (the FAQ asks videos to
-    say what, if anything, was pre-existing).
-  - 0:10-0:35: the problem. Flash droughts arrive in weeks (2012 cost tens of billions); official maps
-    describe them after they arrive.
-  - 0:35-1:30: 2012 replay. What happened, the land-only forecast, then the forecast with weather
-    forecasts catching the waves; the lead time over the Drought Monitor.
-  - 1:30-2:20: the agent. This week's briefing for a county, numbers checked live, the map cross-check,
-    the Glimmer narrative.
-  - 2:20-2:50: honest skill. Skill by lead with uncertainty ranges; the test years were scored once, after the freeze.
-  - 2:50-3:00: who benefits; open source; link.
+- **3-minute video** (storyboard v2, Oct 28: farmer first, per James):
+  - 0:00-0:10: everything shown was built during the hackathon (the FAQ asks videos to say what, if
+    anything, was pre-existing).
+  - 0:10-0:30: a farmer's problem. Early July, corn about to tassel, the pivot is off. Flash droughts
+    empty the soil in two or three weeks, and the Drought Monitor reports them weeks later.
+  - 0:30-1:20: the farm page, Edmunds County SD, 2012 replay:
+    - July 1: "no need" at 3%;
+    - July 3: "start the pivot today", 14%, about 5x normal, with the expected dollars per acre;
+    - the flash drought begins July 5;
+    - the text message from the Muse adviser;
+    - scrub the date slider through the season;
+    - change the pivot capacity and watch the advice and the value of notice change.
+  - 1:20-1:50: "not yet, but if ...": a not-yet day and what the next forecast would have to show.
+    Ensemble members become weather triggers once the member predictions land.
+  - 1:50-2:30: the big picture: the regional risk map catching the 2012 wave; skill (week 1 is
+    where it pays); 22 days ahead of the Drought Monitor; the honest roll-up (about $100M a year,
+    6.6M people's calories) and why it isn't billions.
+  - 2:30-2:50: how it's built: ERA5-Land + ECMWF ensembles -> calibrated model -> water balance ->
+    decision -> Muse Spark adviser with number checking; test years scored once, after the freeze.
+  - 2:50-3:00: who it's for (irrigators first; hay and feed next); open source; link.
 - **Repo**: README as the front door (what it does, results, how to run, architecture diagram); the
   process docs (DESIGN, QUESTIONS) are a strength for "technical depth" and stay, tidied.
 - **Most Viral bonus**: post the video on X by Nov 8 (optional).
