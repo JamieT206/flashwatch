@@ -60,12 +60,12 @@ def fold_table(cube, fb: FeatureBuilder, ref_years, target_years, high=40, low=L
 
 
 def run_cv(cube, models=("B0", "B1"), cv_years=CV_YEARS, pool_years=YEARS, fb=None, ff=None, log=print,
-           labels=LABELS, holdout=None, thin=1, light=False, gbm_kw=None, drop=(), fc_dates=False):
+           labels=LABELS, holdout=None, thin=1, light=False, gbm_kw=None, drop=(), fc_dates=None):
     """holdout: the held-out years to run (default all of cv_years; training always uses the
     rest of cv_years). thin: keep every thin-th cell in each direction. light: LIGHT GBMs.
     drop: feature names or prefixes left out of the models (ablations).
-    fc_dates: keep only issue dates that have forecast features (train and test), e.g. while the
-    ECMWF download is incomplete."""
+    fc_dates: month-days ("04-01", ...) to keep, train and test, e.g. the ECMWF start dates
+    downloaded so far."""
     fb = fb or FeatureBuilder(cube, model_issue_dates(pool_years), pool_years)
     kw = {m: ({**(LIGHT if light else {}), **(gbm_kw or {})} if m.startswith("M") else {}) for m in models}
     parts = []
@@ -76,7 +76,7 @@ def run_cv(cube, models=("B0", "B1"), cv_years=CV_YEARS, pool_years=YEARS, fb=No
         if thin > 1:
             df = df[(df.iy % thin == 0) & (df.ix % thin == 0)]
         if fc_dates:
-            df = df[df["f_tp_w1_z"].notna().groupby(df.issue).transform("any")]
+            df = df[pd.DatetimeIndex(df.issue).strftime("%m-%d").isin(fc_dates)]
         if drop:
             df = df.drop(columns=[c for c in df.columns if c.startswith(tuple(drop)) and c not in LABELS
                                   and c not in ("year", "issue", "iy", "ix", "woy", "rz_pct")])
@@ -138,12 +138,12 @@ def main():
     fb = FeatureBuilder(cube, issues, YEARS, nino=nino.load(), usdm=usdm_cube(YEARS) if args.usdm else None,
                         **indices.load_all())
     ff = None
+    import xarray as xr
     from flashwatch.forecast import FCST_STORE
     if args.oracle:
         from flashwatch.eval.oracle import PerfectWeather
         ff = PerfectWeather(cube, issues, coarse=args.oracle == "coarse", skill=args.oracle_skill)
     elif FCST_STORE.exists():
-        import xarray as xr
         from flashwatch.features.forecast import ForecastFeatures
         ff = ForecastFeatures(xr.open_zarr(FCST_STORE).load(), issues)
     # The builders hold everything the folds need; keep only the masks from the raw cube.
@@ -154,7 +154,9 @@ def main():
     gbm_kw = {k: v for k, v in (("calibration", args.calibration), ("inner_groups", args.inner_groups),
                                 ("calibrator", args.calibrator)) if v}
     oof = run_cv(cube, args.models, fb=fb, ff=ff, labels=args.leads, holdout=holdout, thin=thin, light=args.fast,
-                 gbm_kw=gbm_kw, drop=args.drop, fc_dates=args.fc_dates)
+                 gbm_kw=gbm_kw, drop=args.drop,
+                 fc_dates=set(pd.DatetimeIndex(xr.open_zarr(FCST_STORE).issue.values).strftime("%m-%d"))
+                 if args.fc_dates else None)
     out = DATA / "oof"
     out.mkdir(parents=True, exist_ok=True)
     name = ("_".join(args.models + args.leads) + ("_fast" if args.fast else "")
