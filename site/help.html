@@ -22,6 +22,7 @@
     <li><a href="#flash">What is a flash drought?</a></li>
     <li><a href="#advice">The advice</a></li>
     <li><a href="#howmuch">How much to irrigate</a></li>
+    <li><a href="#water">Your field's water</a></li>
     <li><a href="#risk">Flash-drought risk</a></li>
     <li><a href="#percentile">Soil moisture percentile</a></li>
     <li><a href="#dollars">The dollar figures</a></li>
@@ -61,8 +62,20 @@
     <p>"Start extra irrigation" means run the pivot full time, so the soil is as full as it can be when the dry spell arrives.
       Most pivots put down less water a day than a corn crop uses in a heat wave (the farm page shows both numbers for your field),
       so a pivot started late can't catch up. Keep going until about an inch of rain falls or the risk drops back to normal.</p>
-    <p>FlashWatch doesn't yet know how much you've already put on. Telling it (by hand, or from your pivot's records) so it can say when
-      you can stop is on our list.</p>
+    <p>Once you log what you've put on (see <a href="#water">Your field's water</a>), the advice says how many days of full-time pumping
+      fill your root zone.</p>
+  </section>
+
+  <section class="card" id="water">
+    <h3>Your field's water</h3>
+    <p>A day-by-day account of the water in your root zone, the way irrigators keep a "checkbook": rain and irrigation go in,
+      the crop's water use comes out. Crop water use is the day's evaporation demand (from ERA5-Land temperature, humidity and sunshine,
+      by the FAO-56 method) times a crop coefficient that follows the growth stage: low after planting, highest from about tasseling
+      to dent. The account starts full on April 1. ERA5-Land arrives five days late, so the last five days are estimated (no rain,
+      the past week's water use); a rain gauge reading would replace that.</p>
+    <p><strong>Logging irrigation</strong> (by hand, or read from the pivot's own records) does two things: the account counts it, and
+      the advice above starts from your actual deficit instead of assuming a full root zone. A field you've just filled gains less
+      from extra irrigation, so FlashWatch can tell you when you can stop.</p>
   </section>
 
   <section class="card" id="risk">

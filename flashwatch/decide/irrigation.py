@@ -42,6 +42,7 @@ class Field:
     pump_cost_per_in: float = 10.0   # $ per acre-inch pumped (energy + wear; varies widely)
     spell_days: int = 35             # length of the dry spell simulated
     reaction_days: int = 2           # reactive start: days after stress begins
+    dr0: float = 0.0                 # root-zone deficit when the dry spell begins, inches (0 = full; the water account)
 
     @property
     def taw(self) -> float:
@@ -54,10 +55,10 @@ class Field:
 
 
 def simulate(f: Field, start: int | None) -> dict:
-    """Dry spell from a full profile; pivot on from day `start` (None = never). Returns the crop's
-    water shortfall (in), water pumped (in) and the depletion each day."""
+    """Dry spell from the field's current deficit (full unless f.dr0); pivot on from day `start` (None =
+    never). Returns the crop's water shortfall (in), water pumped (in) and the depletion each day."""
     taw, raw = f.taw, f.p * f.taw
-    dr = shortfall = pumped = 0.0
+    dr, shortfall, pumped = min(f.dr0, taw), 0.0, 0.0
     trace = []
     for t in range(f.spell_days):
         if start is not None and t >= start:

@@ -64,7 +64,10 @@ function loadOver() {
 }
 function saveOver() { try { localStorage.setItem("fw.over", JSON.stringify(S.over)); } catch (e) { /* ignore */ } }
 const irrigated = () => S.farm.watering !== "rain-fed";
-function params() { return { ...S.farm, awc_in_per_ft: FW.SOILS[S.farm.soil] ?? 2.0 }; }
+function params() {
+  const f = { ...S.farm, awc_in_per_ft: FW.SOILS[S.farm.soil] ?? 2.0 };
+  return S.water && S.water.useIt ? { ...f, dr0: S.water.now } : f;
+}
 
 // ---------- drought decisions other than irrigation (site/assets/rainfed.js) ----------
 
@@ -221,7 +224,8 @@ function adviceAt(i, c, full = false) {
     return { ...a, big: "Start extra irrigation today", sub: "Flash-drought risk high",
       why: `A flash drought is <strong>${(p1 / (r.n1[i] || 1e-9)).toFixed(1)} times</strong> as likely as normal this week.
             Run the pivot full time: it puts down ${c.capacity.toFixed(2)} in a day, and the crop uses up to ${S.farm.et_peak.toFixed(2)} in a heat wave.
-            Keep going until about an inch of rain falls or the risk drops back to normal. On average: ${total(d.evNow)}.`,
+            ${S.water && S.water.useIt ? `Your root zone is ${S.water.now.toFixed(1)} in short of full: about ${Math.ceil(S.water.now / c.capacity)} days of full-time pumping fills it.`
+              : "Keep going until about an inch of rain falls or the risk drops back to normal."} On average: ${total(d.evNow)}.`,
       trigger: `<strong>Why not wait?</strong> Each day of warning is worth about $${perDay.toFixed(0)} an acre on your field right now.` };
   }
   if (a.cls === "wait") {
@@ -262,6 +266,7 @@ const fmtShort = md => new Date(Date.UTC(2001, +md.slice(0, 2) - 1, +md.slice(3,
 function renderAll() {
   if (!S.rec) return;
   S.farm = farm();
+  S.water = irrigated() ? waterAccount() : null;
   const c = FW.curve(params(), 21);
   renderNote();
   renderOps();
@@ -272,6 +277,7 @@ function renderAll() {
   renderSeason(c);
   renderValue(c);
   renderNotice(c);
+  renderWater(c);
   renderMapState();
   $("wIrr").setAttribute("aria-pressed", irrigated());
   $("wRain").setAttribute("aria-pressed", !irrigated());
@@ -552,6 +558,94 @@ function renderNotice(c) {
     With no rain, stress starts ${c.stressDay} days into a dry spell. ${sat > 0 ? `Warning helps up to about <strong>${sat} days</strong>. After that, the soil is already full when the pivot starts.` : "Warning barely matters: your pivot keeps up with the crop if started on time."}`;
 }
 
+// ---------- the field's water account (Q15/Q16; flashwatch/decide/waterbook.py) ----------
+
+const irrKey = () => `fw.irr.${S.lat.toFixed(2)},${S.lon.toFixed(2)},${S.year}`;
+function loadIrr() { try { return JSON.parse(localStorage.getItem(irrKey()) || "{}") || {}; } catch (e) { return {}; } }
+function saveIrr(v) { try { localStorage.setItem(irrKey(), JSON.stringify(v)); } catch (e) { /* ignore */ } }
+
+// Days of the water record (from meta.water_days) up to the forecast date. ERA5-Land is public 5 days
+// late, so the last days before the forecast date use no rain and the past week's crop water use.
+function waterAccount() {
+  const r = S.rec, wd = S.meta.water_days;
+  if (!r || !r.wr || !wd) return null;
+  const start = dateOf(wd[0]), today = dateOf(S.meta.dates[S.i]);
+  const n = Math.round((today - start) / 864e5) + 1, known = Math.min(n, n - 5, r.wr.length);
+  const days = [], rain = [], eto = [];
+  for (let k = 0; k < n; k++) {
+    const d = new Date(start.getTime() + k * 864e5);
+    days.push(`${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`);
+    if (k < known) { rain.push(r.wr[k] / 100); eto.push(r.we[k] / 100); }
+    else { rain.push(0); eto.push(d3.mean(r.we.slice(Math.max(0, known - 7), known)) / 100); }
+  }
+  const irr = loadIrr(), f = { ...S.farm, awc_in_per_ft: FW.SOILS[S.farm.soil] ?? 2.0 };
+  const taw = f.awc_in_per_ft * f.root_ft, eff = f.efficiency ?? 0.85;
+  const acc = FW.account(days, rain, eto, f.crop, taw, f.p, irr, eff);
+  const useNow = FW.kc(f.crop, days[days.length - 1]) * d3.mean(eto.slice(-7));
+  return { days, rain, eto, known, irr, ...acc, now: acc.deficit[acc.deficit.length - 1], useNow,
+           useIt: Object.keys(irr).length > 0, cap: FW.capacity(f), eff };
+}
+
+function renderWater(c) {
+  const w = S.water, card = $("waterCard");
+  card.hidden = !w;
+  if (!w) return;
+  const full = 1 - w.now / w.taw, toStress = w.now >= w.raw ? 0 : (w.raw - w.now) / w.useNow;
+  const stat = (t, v, sub, cls = "") => `<div class="row"><div class="note">${t}</div><div class="v ${cls}">${v}</div><div class="note">${sub}</div></div>`;
+  $("waterNow").innerHTML =
+    stat("Root zone", `${Math.round(100 * full)}% full`, `${w.now.toFixed(1)} in short of full (holds ${w.taw.toFixed(1)} in)`, w.now > w.raw ? "neg" : "") +
+    stat("With no rain, stress in", toStress < 1 ? "now" : `${Math.floor(toStress)} day${Math.floor(toStress) === 1 ? "" : "s"}`, `the crop is using ${w.useNow.toFixed(2)} in a day`, toStress < 4 ? "neg" : "") +
+    stat("Full-time pumping to fill", w.now < 0.05 ? "full" : `${(w.now / w.cap).toFixed(1)} days`, `your pivot puts down ${w.cap.toFixed(2)} in a day`);
+  $("waterNote").innerHTML = w.useIt
+    ? `Counting the irrigation you've logged. FlashWatch's advice above now starts from this deficit.`
+    : `No irrigation logged yet, so this is the soil with rain alone, and the advice above assumes a full root zone. Add what you've put on, or read it from your pivot.`;
+  const ev = Object.entries(w.irr).sort();
+  $("irrList").innerHTML = ev.length ? ev.map(([md, v]) => `<li>${fmtShort(md)}: ${(+v).toFixed(2)} in <button class="linkish" data-del="${md}">remove</button></li>`).join("")
+    : `<li class="note">Nothing logged for ${S.year}.</li>`;
+  $("irrList").querySelectorAll("[data-del]").forEach(b => b.onclick = () => { const v = loadIrr(); delete v[b.dataset.del]; saveIrr(v); renderAll(); });
+  if (!$("irrDate").value) { $("irrDate").value = S.meta.dates[S.i]; $("irrIn").value = w.cap.toFixed(2); }
+  waterChart(w);
+}
+
+function waterChart(w) {
+  const W = 640, H = 260, m = { l: 44, r: 10, t: 12, b: 24 };
+  const dt = w.days.map(dateOf);
+  const x = d3.scaleUtc().domain([dateOf(S.meta.water_days[0]), dateOf(S.meta.water_days[1])]).range([m.l, W - m.r]);
+  const y = d3.scaleLinear().domain([0, w.taw]).range([H - m.b, m.t]);
+  const svg = d3.select("#waterChart").html("").append("svg").attr("viewBox", `0 0 ${W} ${H}`);
+  svg.append("rect").attr("x", m.l).attr("width", W - m.l - m.r).attr("y", y(w.taw - w.raw)).attr("height", y(0) - y(w.taw - w.raw)).attr("fill", css("--act-bg"));
+  svg.append("text").attr("x", W - m.r - 4).attr("y", y(0) - 4).attr("text-anchor", "end").attr("font-size", 11).attr("fill", css("--act")).text("crop short of water");
+  svg.append("g").attr("class", "axis").attr("transform", `translate(0,${H - m.b})`).call(d3.axisBottom(x).ticks(7).tickFormat(d3.utcFormat("%b")));
+  svg.append("g").attr("class", "axis").attr("transform", `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(4).tickFormat(v => v + " in"));
+  const bw = Math.max(1, (x(dt[1]) - x(dt[0])) * 0.8), ry = d3.scaleLinear().domain([0, 2]).range([0, 40]);
+  w.rain.forEach((r, k) => { if (r > 0.02 && k < w.known) svg.append("rect").attr("x", x(dt[k])).attr("width", bw).attr("y", m.t).attr("height", ry(Math.min(r, 2))).attr("fill", css("--soil")).attr("opacity", 0.5); });
+  const avail = w.deficit.map(d => w.taw - d);
+  const line = d3.line().x((v, k) => x(dt[k])).y(v => y(v));
+  svg.append("path").attr("d", line(avail.slice(0, w.known))).attr("fill", "none").attr("stroke", css("--soil")).attr("stroke-width", 2.4);
+  if (avail.length > w.known) svg.append("path").attr("d", d3.line().x((v, k) => x(dt[k + w.known - 1])).y(v => y(v))(avail.slice(w.known - 1)))
+    .attr("fill", "none").attr("stroke", css("--soil")).attr("stroke-width", 2.4).attr("stroke-dasharray", "4 3");
+  for (const [md, v] of Object.entries(w.irr)) {
+    const k = w.days.indexOf(md); if (k < 0) continue;
+    svg.append("path").attr("d", `M${x(dt[k])},${H - m.b} l-5,-9 l10,0 z`).attr("fill", css("--accent"));
+  }
+  cursor(svg, x(dateOf(S.meta.dates[S.i])), m.t, H - m.b);
+}
+
+// Demo of reading as-applied water from the pivot (FieldNET via Leaf, or the webhook): the farmer's usual
+// schedule, simulated: a full day of pumping whenever the root zone is past 80% of the stress line.
+function importFromPivot() {
+  const w = waterAccount();
+  if (!w) return;
+  const irr = {}, f = { ...S.farm, awc_in_per_ft: FW.SOILS[S.farm.soil] ?? 2.0 };
+  const gross = +(w.cap / w.eff).toFixed(2);
+  for (let k = 0; k < w.days.length; k++) {
+    const acc = FW.account(w.days.slice(0, k + 1), w.rain, w.eto, f.crop, w.taw, f.p, irr, w.eff);
+    if (w.days[k] >= "05-15" && acc.deficit[k] > 0.8 * w.raw) irr[w.days[k]] = gross;
+  }
+  saveIrr(irr);
+  renderAll();
+}
+
 // ---------- decision cards: nitrogen, fungicide, silage, hay ----------
 
 function renderDecisions() {
@@ -815,6 +909,14 @@ async function init() {
   const setWatering = w => { S.over.watering = w; delete S.over.acres; delete S.over.yield_bu; saveOver(); renderSettings(); renderAll(); };
   $("wIrr").onclick = () => setWatering("pivot-irrigated");
   $("wRain").onclick = () => setWatering("rain-fed");
+  $("irrForm").onsubmit = ev => {
+    ev.preventDefault();
+    const md = $("irrDate").value.trim(), v = +$("irrIn").value;
+    if (!/^\d\d-\d\d$/.test(md) || !(v > 0)) return;
+    const irr = loadIrr(); irr[md] = +((irr[md] || 0) + v).toFixed(2); saveIrr(irr); renderAll();
+  };
+  $("pivotImport").onclick = importFromPivot;
+  $("irrClear").onclick = () => { saveIrr({}); renderAll(); };
   $("modeToday").onclick = () => setMode("today");
   $("modeReplay").onclick = () => setMode("replay");
   $("year").onchange = async () => { S.year = +$("year").value; S.rec = await loadTile(S.year, S.cell); renderAll(); };

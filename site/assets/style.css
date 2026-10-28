@@ -271,3 +271,12 @@ table.farms td strong { font-size: 20px; }
 .dparams .src { font-size: 11px; line-height: 1.3; }
 .dparams .src.over { color: var(--wait); }
 @media (max-width: 860px) { .dbody { grid-template-columns: 1fr; } .dparams { grid-template-columns: 1fr; } }
+
+/* Water account (Oct 29). */
+.waterwrap { display: grid; grid-template-columns: 1fr 1.3fr; gap: 0 32px; align-items: start; }
+.waterwrap .tally.three { grid-template-columns: repeat(3, 1fr); }
+.waterwrap .tally .v { font-size: 22px; }
+.irrform { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; }
+.irrform label { display: flex; flex-direction: column; font-size: 13px; color: var(--muted); gap: 4px; }
+.irrform input { font: inherit; width: 90px; padding: 6px 8px; border: 1px solid var(--muted); border-radius: 0; background: var(--panel); color: var(--ink); }
+@media (max-width: 860px) { .waterwrap { grid-template-columns: 1fr; } }

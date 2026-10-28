@@ -22,7 +22,7 @@ const FW = (() => {
 
   function simulate(f, start) {
     const T = taw(f), R = f.p * T, cap = capacity(f);
-    let dr = 0, shortfall = 0, pumped = 0;
+    let dr = Math.min(f.dr0 || 0, T), shortfall = 0, pumped = 0;   // dr0: deficit at the start (water account)
     const depletion = [];
     for (let t = 0; t < f.spell_days; t++) {
       if (start !== null && t >= start) {
@@ -198,6 +198,25 @@ const FW = (() => {
     return out;
   }
 
+  // The field's water account (mirrors flashwatch/decide/waterbook.py): FAO-56 crop coefficients by
+  // date, a root-zone deficit day by day from rain, crop water use and irrigation.
+  const KC = { corn: [["04-01", 0.3], ["05-31", 0.3], ["07-05", 1.2], ["08-25", 1.2], ["09-25", 0.6], ["10-31", 0.6]],
+               soybeans: [["04-01", 0.4], ["06-15", 0.4], ["07-20", 1.15], ["08-30", 1.15], ["09-30", 0.5], ["10-31", 0.5]] };
+  const doy = md => [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334][+md.slice(0, 2) - 1] + +md.slice(3, 5);
+  const kc = (crop, md) => { const p = KC[crop]; return interp(doy(md), p.map(q => doy(q[0])), p.map(q => q[1])); };
+
+  function account(days, rain, eto, crop, tawIn, p = 0.55, irrigation = {}, efficiency = 0.85) {
+    const raw = p * tawIn, deficit = [], use = [];
+    let dr = 0;
+    days.forEach((md, i) => {
+      const etc = kc(crop, md) * eto[i];
+      const ks = dr <= raw ? 1 : Math.max(0, (tawIn - dr) / (tawIn - raw));
+      dr = Math.min(tawIn, Math.max(0, dr + ks * etc - rain[i] - (irrigation[md] || 0) * efficiency));
+      deficit.push(dr); use.push(ks * etc);
+    });
+    return { deficit, use, raw, taw: tawIn };
+  }
+
   return { DEFAULTS, SOILS, simulate, stressDay, curve, netAt, daily, evAct, twoWay, decide, season, capacity,
-           decideMembers, trigger };
+           decideMembers, trigger, account, kc };
 })();

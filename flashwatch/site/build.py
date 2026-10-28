@@ -42,6 +42,7 @@ def build(oof: pd.DataFrame, model: str, out: Path = SITE / "data", note: str = 
     members = sum(1 for c in oof.columns if c.startswith(f"{model}_week1_m"))
     udates, ucat = usdm_cube(list(range(min(years) - 1, max(years) + 1)))
     frozen = frozen_days(years, md)
+    water = daily_water(years)
     ons = onsets_table()
     ons = ons[ons.date.dt.year.isin(years)]
     (out / "tiles").mkdir(parents=True, exist_ok=True)
@@ -77,12 +78,15 @@ def build(oof: pd.DataFrame, model: str, out: Path = SITE / "data", note: str = 
                    "usdm": [int(ucat[k][iy, ix]) if k >= 0 else -1 for k in j],
                    # dates with no forecast because of snow or frozen soil (not drought)
                    "fz": [int(k) for k in np.nonzero(frozen[y][:, iy, ix] & np.isnan(series["rz"]))[0]],
+                   # daily rain and reference ET (hundredths of an inch) from WATER_DAYS[0], for the water account;
+                   # the page uses only days public by each forecast date (ERA5-Land latency)
+                   "wr": water[y][0][:, iy, ix].tolist(), "we": water[y][1][:, iy, ix].tolist(),
                    "onsets": sorted(on[on.dt.year == y].dt.strftime("%m-%d").tolist())}
             tiles.setdefault((iy // thin // TILE, ix // thin // TILE), []).append(rec)
         (out / "tiles" / str(y)).mkdir(parents=True, exist_ok=True)
         for (ty, tx), recs in tiles.items():
             (out / "tiles" / str(y) / f"{ty}_{tx}.json").write_text(json.dumps(recs, separators=(",", ":")))
-    meta = {"model": model, "note": note, "years": years, "dates": md, "thin": thin, "tile": TILE,
+    meta = {"model": model, "note": note, "years": years, "dates": md, "thin": thin, "tile": TILE, "water_days": list(WATER_DAYS),
             "lat0": float(LAT[0]), "lon0": float(LON[0]), "res": float(LAT[0] - LAT[1]),
             "cells": [[int(a), int(b)] for a, b in cells.itertuples(index=False, name=None)],
             "counties": counties()}
@@ -102,6 +106,25 @@ def frozen_days(years, md) -> dict:
         t = [as_of("era5land", pd.Timestamp(f"{y}-{m}")) for m in md]
         s = ds.sel(time=t)
         out[y] = mask_days(s["snow_depth"].values, s["soil_temperature_level_1"].values)
+    return out
+
+
+WATER_DAYS = ("04-01", "10-15")
+
+
+def daily_water(years) -> dict:
+    """{year: (rain, eto)}, each (day, lat, lon) int16 in hundredths of an inch, WATER_DAYS inclusive."""
+    from flashwatch.decide.waterbook import MM_PER_IN, eto_pm
+    from flashwatch.obs import open_obs
+    ds = open_obs()
+    out = {}
+    for y in years:
+        s = ds.sel(time=slice(f"{y}-{WATER_DAYS[0]}", f"{y}-{WATER_DAYS[1]}"))
+        rain = s["total_precipitation_sum"].values * 1000 / MM_PER_IN
+        doy = pd.DatetimeIndex(s.time.values).dayofyear.to_numpy()[:, None, None]
+        eto = eto_pm(s["temperature_2m"].values, s["dewpoint_temperature_2m"].values,
+                     s["surface_solar_radiation_downwards_sum"].values, s.lat.values[:, None], doy) / MM_PER_IN
+        out[y] = tuple(np.nan_to_num(np.round(100 * a), nan=0).astype(np.int16) for a in (rain, eto))
     return out
 
 

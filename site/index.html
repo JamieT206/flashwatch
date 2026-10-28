@@ -84,6 +84,32 @@
     </div>
   </div>
 
+  <section class="card full" id="waterCard" hidden>
+    <h3>Your field's water <a class="help" href="help.html#water" title="How the water account works">?</a></h3>
+    <div class="waterwrap">
+      <div>
+        <div class="tally three" id="waterNow"></div>
+        <p class="note" id="waterNote"></p>
+        <div class="chart-title">Irrigation you've put on</div>
+        <form id="irrForm" class="irrform">
+          <label>Date (MM-DD)<input id="irrDate" size="6"></label>
+          <label>Inches<input id="irrIn" type="number" step="0.05" min="0"></label>
+          <button class="primary">Add</button>
+        </form>
+        <ul class="events" id="irrList"></ul>
+        <p class="note"><button id="pivotImport">Read from your pivot</button> <button id="irrClear" class="linkish">clear</button><br>
+          Demo: fills in your usual schedule. On a real farm this comes from the pivot's own records (Lindsay FieldNET through Leaf) or the FlashWatch webhook.</p>
+      </div>
+      <div class="chart">
+        <div class="chart-title">Water the crop can use in the root zone (inches)</div>
+        <div id="waterChart"></div>
+        <div class="legend"><span><i style="background:var(--soil)"></i>Soil water (dashed: last 5 days estimated)</span>
+          <span><i style="background:var(--soil);opacity:.5;height:10px"></i>Rain</span><span>&#9650; Irrigation</span>
+          <span><i style="background:var(--act-bg);height:10px"></i>Crop short of water</span></div>
+      </div>
+    </div>
+  </section>
+
   <section class="card full" id="noteCard" hidden>
     <h3>Morning note</h3>
     <div class="notewrap">
