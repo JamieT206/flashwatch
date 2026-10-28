@@ -1,6 +1,7 @@
 """Side-by-side scores of design variants from their OOF files (the --fast iteration loop).
 
     python -m flashwatch.eval.compare base=B0_B1_M1_week1_week2_any28_fast cf4=B0_M1_week1_week2_any28_fast_cf4
+    python -m flashwatch.eval.compare --model=M2 ens=<stem> members=<stem>
 
 Each argument is name=<file stem in data/oof/> (the first is the baseline). Per lead: M1's Brier,
 BSS vs B0 with a 95% year-bootstrap CI, reliability slope, PR-AUC, and the paired BSS of each
@@ -23,23 +24,24 @@ KEYS = ["year", "issue", "iy", "ix"]
 
 def main(args=None):
     args = args or sys.argv[1:]
-    named = [a.split("=", 1) for a in args]
+    model = next((a.split("=", 1)[1] for a in args if a.startswith("--model=")), "M1")
+    named = [a.split("=", 1) for a in args if not a.startswith("--")]
     frames = {n: pd.read_parquet(DATA / "oof" / f"{stem}.parquet") for n, stem in named}
     base_name = named[0][0]
     base = frames[base_name]
     rows = []
     for lead in ("week1", "week2", "week3", "week4", "any28"):
-        if f"M1_{lead}" not in base:
+        if f"{model}_{lead}" not in base:
             continue
         for name, df in frames.items():
-            if f"M1_{lead}" not in df:
+            if f"{model}_{lead}" not in df:
                 continue
-            j = base[KEYS + [lead, f"M1_{lead}", f"B0_{lead}"]].merge(
-                df[KEYS + [f"M1_{lead}"]], on=KEYS, suffixes=("_base", ""))
+            j = base[KEYS + [lead, f"{model}_{lead}", f"B0_{lead}"]].merge(
+                df[KEYS + [f"{model}_{lead}"]], on=KEYS, suffixes=("_base", ""))
             if len(j) != len(base):
                 raise SystemExit(f"{name}: {len(j)} rows match the baseline's {len(base)}; not comparable")
-            y, p, b0, pb = (j[lead].to_numpy(float), j[f"M1_{lead}"].to_numpy(), j[f"B0_{lead}"].to_numpy(),
-                            j[f"M1_{lead}_base"].to_numpy())
+            y, p, b0, pb = (j[lead].to_numpy(float), j[f"{model}_{lead}"].to_numpy(), j[f"B0_{lead}"].to_numpy(),
+                            j[f"{model}_{lead}_base"].to_numpy())
             v, lo, hi = year_bootstrap_bss(j.year, y, p, b0)
             row = {"lead": lead, "variant": name, "brier": brier(y, p), "bss_vs_B0": v,
                    "ci": f"[{lo:.4f}, {hi:.4f}]", "slope": reliability(y, p)[1], "pr_auc": pr_auc(y, p)}

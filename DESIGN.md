@@ -201,7 +201,14 @@ survives); M1 skill week 1 **4.3%**, week 2 **1.2%**, any-28 **4.6%** (before: 4
   ensemble *mean* blurs the strong hot, dry spells. So: train M2 on each of the 11 members' own weather
   (z against all members' climatology; one copy of each training row per member), and average its
   predictions over the members. The ensemble-level features (spread, share hot-and-dry) stay as they
-  are. This is the same machinery O2 needs for "risk given this kind of week". Results: pending.
+  are. This is the same machinery O2 needs for "risk given this kind of week".
+  **Result (Oct 28, 13 start dates, `m2mem13` vs `m2fc13`, paired year-bootstrap): no gain.** Week 1
+  15.3% vs 16.3% (-1.2 points, 95% CI -3.0 to -0.05); week 2 2.4% vs 2.6% (-0.3, CI -0.7 to +0.2); any
+  28 days 6.4% vs 7.2%. A single member's weather is a noisier guide than the ensemble mean, and
+  averaging member-level predictions doesn't recover the strong spells either. So the week-2 limit
+  really is in the forecasts, not in how we summarise them. **Decision:** the forecast stays on the
+  ensemble mean (the standard M2). Per-member predictions are used only for the "what are we waiting
+  for" triggers (O2), where the members stand for the next forecast's possible outcomes.
 - *Meaning.* The target is sound and the onset waves are not noise; they are what weather forecasts exist to see. The ceiling is about 15x M1's skill at week 2. The open question is how much of it the real ECMWF forecasts keep (good at week 1, weaker at week 2, weak beyond), so M2 on real forecasts is the decisive run. The `native` (0.25 degree) variant is the absolute upper bound.
 
 ---
