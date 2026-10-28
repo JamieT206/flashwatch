@@ -175,7 +175,15 @@ simple cap (no single week above the 28-day value) would tidy it if needed.
 | Any in 28 days | 2.7% | 8.4% | +5.6 (+2.2 to +9.0) | +38.2 | about a seventh |
 
   Week 1 is a clear win: real forecasts roughly quintuple the skill. Week 2 gains little so far, although the week-2 forecasts are half-way good (correlation 0.4-0.65). Possible reasons, to check as the download fills in: too few dates to learn from yet, or the features don't present the week-2 signal well (e.g. a combined "dry and hot" index, or the forecast soil moisture). The blurred runs below show what a forecast of that quality *should* deliver.
-- *Blurred forecasts* (`--oracle-skill r`): the same test with the perfect weather mixed with large-scale noise so it matches the truth with correlation r = 0.7 / 0.5 / 0.3, to map how flash-drought skill depends on forecast quality. Results below when in.
+- *Blurred forecasts* (`--oracle-skill r`): the same test with the perfect weather mixed with large-scale noise so it matches the truth with correlation r, to map how flash-drought skill depends on forecast quality (all fast-loop dates):
+
+| Forecast quality (correlation with what happened) | 1.0 (perfect) | 0.7 | 0.5 | 0.3 | none (M1) |
+| --- | --- | --- | --- | --- | --- |
+| Week 1 skill | 26.7% | 16.6% | 12.3% | 8.3% | 4.4% |
+| Week 2 skill | 20.0% | 10.5% | 6.9% | 3.9% | 1.4% |
+| Any in 28 days | 42.7% | 27.7% | 20.2% | 12.4% | 5.4% |
+
+  Reading it against the real ECMWF accuracy: week 1 forecasts sit at 0.8-0.97, so M2 "should" reach roughly 17-25% at week 1 (it gets 14.3% so far); week 2 sits at 0.4-0.65, so roughly 5-9% (it gets 2.0%). So **M2 is not yet using the forecasts as well as forecasts of that quality allow**, most of all at week 2. That points at our side (training data and features), which we control, not at the forecasts. Caveats: blur noise is a simplification of real forecast errors, and early M2 is scored on spring dates only. Next: re-run M2 as dates arrive; try forecast features built the way the land features are (combined dry-and-hot index, forecast soil-moisture change, week 1+2 totals).
 - *Meaning.* The target is sound and the onset waves are not noise; they are what weather forecasts exist to see. The ceiling is about 15x M1's skill at week 2. The open question is how much of it the real ECMWF forecasts keep (good at week 1, weaker at week 2, weak beyond), so M2 on real forecasts is the decisive run. The `native` (0.25 degree) variant is the absolute upper bound.
 
 ---
