@@ -220,7 +220,10 @@ training while the design moves; heavy burst ~Nov 2 Sydney (DESIGN.md B).
 3. Planned tests P1-P9 (DESIGN.md P).
 4. M2 once fcst.zarr is complete; B2 (raw ECMWF) not built.
 5. Visual story (DESIGN.md V), built first on dev-year OOF predictions.
-6. Agent (DESIGN.md G): weekly alert emails, number-checked.
+6. Agent (DESIGN.md G): weekly alert emails, number-checked. Muse Spark works live (G1 test, Oct 28).
+6a. **Decision dashboard (DESIGN.md O, proposed by James Oct 28; scope in QUESTIONS Q8):** cost/loss
+   engine by days of notice, "not yet, but if ..." triggers from ensemble members, a per-farm page,
+   agent alerts. Wait for Q8 before building beyond the engine.
 7. Burst (Nov 2), freeze, test years once, replay, video, write-up.
 
 ---

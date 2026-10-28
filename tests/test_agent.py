@@ -9,6 +9,8 @@ def test_validator_accepts_traced_numbers_and_flags_the_rest():
     ok = "Week 2 risk is 12% (12.3% exactly), about 4 times the normal 3.1%, across 412 cells in 2012."
     assert unsupported(ok, tools) == []                    # "4 times" is a small count: exempt
     assert unsupported("Risk is 18% this week.", tools) == ["18%"]
+    assert unsupported("Rain 3.1 below normal over the next 28 days.", [{"z": -3.1}]) == []   # sign, span
+    assert unsupported("Rain 3.2 below normal.", [{"z": -3.1}]) == ["3.2"]
     assert unsupported("It covers 500 cells.", tools) == ["500"]
     assert drop_sentences("Risk is 12%. It covers 500 cells. Watch it.", ["500"]) == "Risk is 12%. Watch it."
 
@@ -57,7 +59,7 @@ def test_tools_return_traceable_numbers():
     from flashwatch.agent.tools import Tools
     t = Tools(fake_pack())
     a = t.area_summary(46.5, -101.5, 60)
-    assert a["land_cells"] > 0 and 0 <= a["onset_risk"]["any28"]["chance"] <= 0.2
+    assert a["land_cells"] > 0 and 0 <= a["onset_risk"]["any28"]["chance_pct"] <= 20
     assert a["top_drivers"][0]["meaning"]
     hs = t.hotspots(3)
     assert len(hs) >= 1 and hs[0]["times_normal"] >= hs[-1]["times_normal"]

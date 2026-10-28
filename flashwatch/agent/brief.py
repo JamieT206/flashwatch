@@ -35,11 +35,11 @@ hotspots. Then write a briefing of at most 180 words with these headings:
 Risk this week / Why / What to watch / Suggested actions.
 
 Rules:
-- Every number you write must come from a tool result. Probabilities are fractions in the tools
-  (0.12 = 12%); you may write them as percentages. Do not compute new numbers, except "times normal"
-  values that a tool already gives.
+- Every number you write must come from a tool result (percentages are already in percent). Round
+  percentages to whole numbers. Do not compute new numbers. Describe standard-deviation values in
+  words ("well below normal", "far above normal") or to one decimal, and give at most a few of them.
 - Say how the risk compares with normal for this time of year; that matters more than the raw chance.
-- Translate drivers into plain language for farmers; no model jargon.
+- Write for farmers: short plain sentences, no model jargon, no coordinates.
 - You do not know what happens after this week. Do not use outside knowledge of past events or years.
 - Be honest about uncertainty: these are probabilities, and most weeks with elevated risk do not end
   in a flash drought."""

@@ -84,6 +84,20 @@ few MB), a new ingest module, about half a day of my time, and its archive stops
 forecasts keep of the perfect-weather ceiling and how steeply skill rises with forecast quality
 (both runs queued). **Default until you answer:** ECMWF only; no GEFS work started.
 
+### Q8. Decision dashboard (DESIGN.md O): scope and what gives
+Your idea, fleshed out in DESIGN.md O: per-location action cards (act now / not yet / trigger) from a
+cost/loss engine with user-edited costs by days of notice, triggers from the ECMWF ensemble members,
+dollars via crop yield response and a price, Muse alerts and Q&A. Evidence so far: week-1 forecasts
+are worth 40-60% of a perfect forecast for cheap actions (cost under a tenth of the loss avoided),
+and little for expensive ones. Three choices:
+(a) scope for Nov 4: engine + triggers + dashboard in replay mode + agent alerts (O8 steps 1-4),
+    yield link only if time allows;
+(b) what gives: G3 voice and M3 out, Glimmer (G2) smaller;
+(c) alerts are drafted and shown, not sent (sending needs a messaging account and your go-ahead).
+**Recommendation:** (a), (b) and (c) as written; keep pushing M2 performance in parallel, since every
+dollar figure scales with it. **Default until you answer:** none of O is built until we've discussed
+it, except the cost/loss engine and value curves (O8 step 1, useful either way); I keep improving M2 and the agent.
+
 ### Q6. B0 (the BSS reference) is miscalibrated: strengthen its smoothing? **RESOLVED Oct 28: (a)**
 Done before any M1 score was read. `python -m flashwatch.models.tune_b0` grid-searches B0's time
 half-width tw, spatial radius sr and shrinkage k per lead (4 year-groups of 2005-2021, pooled
@@ -164,3 +178,9 @@ is now close to BSS vs a seasonal base rate, i.e. an honest (harder) reference.
   baselines are being re-run, and all earlier skill numbers in DESIGN.md P9/P10 predate the fix.
 - New forecast features (F8) kept in: neutral so far, physically sensible, and cheap.
 - Agent packs are refused for the test years until the model freeze.
+
+## Defaults taken (Oct 28, evening)
+- Agent number checker ignores the sign of a figure ("2.6 below normal" matches -2.6) and exempts
+  time spans ("28 days"); agent tools now return percentages. Found in the first live Muse run.
+- Lead over the Drought Monitor counts each date from when it is public (Monitor +2 days, ERA5-Land
+  +5 days) and uses development years only (`eval/lead.py`).

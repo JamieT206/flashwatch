@@ -345,13 +345,184 @@ Bonus prizes that fit us: Best Agentic Use-Case, Best Build on Open-Weight Model
 
 Order: G1 first (core of the demo), G2 from Oct 30, G3 only if time allows.
 
+**G1 live test (Oct 28, Muse Spark `muse-spark-1.1`, 2012-05-11 pack, Champaign County IL).** Tool
+calling works. First run: the checker flagged 5 figures, but they were real values written as "2.6
+below normal" (sign dropped) and "28 days", so the checker now ignores sign and exempts time spans;
+the tools now return percentages, and the prompt asks for whole-number percentages and plain words for
+standard deviations. Second run: passed on the first draft, in plain language for farmers (28% this
+week vs 4% normally, about 7 times normal; drivers: forecast rain well below normal, very dry air, 83%
+of forecast scenarios hot and dry). About 7,600 tokens per briefing. Map check: Muse named Sioux
+Falls, Chicago, St. Louis; the hotspot tool's top 3 were Des Moines, Chicago, Detroit (1 of 3 agree).
+Not yet looked into: the map may need clearer contrast or a bigger k.
+
+## O. From forecast to action: the decision dashboard (proposed Oct 28, James; under discussion)
+
+James: an abstract predictor isn't compelling; a tool that tells a farmer *what to do this week, at
+their place* is. The forecasting spec doesn't change; this is a layer on top of it. Nothing here is
+built yet except the evidence in O0.
+
+### O0. Evidence so far (spring forecast dates, 6 development years, fast loop; `eval/lead.py`)
+
+*Watch list.* Flag the riskiest 10% of land cells each issue date and count real onsets:
+
+| | Week 1: onsets caught, hit rate | Week 2 |
+| --- | --- | --- |
+| Seasonal normal (B0) | 12%, 6% | 10%, 5% |
+| Land only (M1) | 22%, 11% | 15%, 8% |
+| With ECMWF forecasts (M2) | **42%, 21%** | 19%, 11% |
+
+*Lead over the Drought Monitor* (2006-2021, 64,765 onsets at 0-40 cm; each date counted from when it is
+public: Monitor maps 2 days after their valid date, ERA5-Land 5 days after). Monitor response = the
+first map showing the cell worse than before the soil began drying (20 days before onset), and the
+first showing D1 (moderate drought) or worse. Median days FlashWatch is earlier, among onsets the
+Monitor does respond to within 12 weeks:
+
+| FlashWatch signal | vs first Monitor worsening | vs first D1+ |
+| --- | --- | --- |
+| Soil crosses the drought line (seen 5 days later) | **8 days** (FlashWatch first 70%) | **22 days** (86%) |
+| Onset confirmed (10 days below the line, seen 15 days later) | -2 days (46%) | 12 days (68%) |
+| M2 week-1 watch list (spring dates) | 23 days (96%) | 45 days (99%) |
+| M2 week-2 watch list (spring dates) | 28 days (99%) | 49 days (100%) |
+
+The watch-list rows count from the forecast's issue date, so they include the forecast lead itself.
+**Caveat:** the Monitor worsens in the following 12 weeks after 55% of our onsets, against 32% for
+the same cells and dates in other years (D1+: 36% vs 15%). So it confirms our onsets well above
+chance but stays silent on about half. Either those onsets recover before mattering, or the Monitor
+misses them; crop yields (O4) can tell which.
+
+*Economic value* (Richardson-style cost/loss test). A user takes a protective action costing C that
+avoids loss L if an onset happens; the value is the share of a perfect forecast's saving over the
+best fixed policy (always or never act). 0 = useless, 1 = perfect:
+
+| Cost/loss ratio C/L | 0.02 | 0.05 | 0.10 | 0.15 | 0.20 | 0.30 |
+| --- | --- | --- | --- | --- | --- | --- |
+| M2 week 1 | 0.48 | **0.60** | 0.40 | 0.27 | 0.17 | 0.07 |
+| M1 week 1 | 0.16 | 0.21 | 0.00 | 0.00 | 0.00 | 0.00 |
+| M2 week 2 | 0.20 | 0.29 | -0.02 | -0.03 | -0.01 | 0.00 |
+| M2 any 28 days | 0.01 | 0.00 | 0.16 | 0.27 | 0.24 | 0.05 |
+
+**Meaning:** FlashWatch pays for *cheap, high-leverage* actions, where acting costs up to about a fifth
+of the loss it avoids. Week-2 warnings only pay for very cheap actions. Expensive actions (C/L above
+0.3) are better decided on the seasonal normal. That shapes which actions the dashboard should offer.
+All spring-only so far; re-run on the full season.
+
+### O1. Decision engine (cost/loss, by days of notice)
+
+Each action is a row in a user-editable config (defaults are placeholders, labelled as such):
+
+| Field | Meaning |
+| --- | --- |
+| `cost(lead)` | $/acre (or $/head) of acting with `lead` days of notice before onset |
+| `avoided(lead)` | $/acre of loss avoided by acting, *if* an onset happens; usually falls as notice shrinks |
+| `salvage` | share of the cost recovered if no drought comes (e.g. stored hay keeps) |
+| `window` | the months/crop stages where the action applies; minimum and maximum notice |
+| `event` | which forecast it keys on: onset in week 1, week 2 or any 28 days |
+
+Given FlashWatch's chance p of the event: expected value of acting now = p x avoided - (1 - p) x
+cost x (1 - salvage) - p x cost. Act when that is positive (p above the break-even ratio). The range
+comes from the forecast scenarios (O2), not just the mean.
+
+### O2. "Not yet, but if ..." (the value of waiting)
+
+Waiting gives a fresher forecast but less notice (cost may rise, avoided loss falls). Act now if
+EV(now) beats the expected EV of deciding at the next forecast update. The update's outcomes come
+from the **ECMWF ensemble members** (we store all 11 per start date): group members by the coming
+week's weather (e.g. rain below/above a threshold, heat), re-run M2 with each group's forecast
+features, and get the risk *given* that weather. That gives triggers a farmer can check against
+their own local forecast or rain gauge: "Not yet. If less than about half an inch of rain falls this
+week, risk rises to 41% and acting is worth about $X/acre; otherwise risk drops to 9% and holding is
+right." Triggers are on weekly totals (our forecast data is weekly); daily triggers ("if tomorrow is
+above 84 F") would need daily forecast data and stay a later idea. A "what-if" selector on the
+dashboard shows the same: pick a rain/heat scenario, see risk and value change.
+
+### O3. Actions catalogue (first pass; defaults from literature or left for the user)
+
+| Action | Who | Typical notice | Why notice matters |
+| --- | --- | --- | --- |
+| Start irrigation early / top up the profile | irrigated growers (e.g. Nebraska, Kansas) | 3-10 days | Once the root zone empties in a heat wave, pivots can't put water back fast enough |
+| Cut or delay in-season nitrogen | corn, at side-dress (June) | 7-14 days | Saves input cost where drought caps yield; false alarm costs some yield |
+| Buy hay/feed or secure grazing | livestock | 14-28 days | Prices rise once drought is official; stored feed keeps (high salvage) |
+| Early weaning, moving or selling stock | cow-calf | 14-28 days | Cheaper before pasture fails and sale barns fill |
+| Hold off soil-drying field work | all | 3-7 days | Almost free |
+| Fire crews, burn bans; water-use messaging | agencies, utilities | 7-14 days | Non-farm users of the same signal |
+
+**Left out on purpose:** grain hedging or marketing recommendations. That is trading advice, and
+markets already price weather forecasts. Futures prices are used only to *value* a yield change (O4).
+
+### O4. From soil to dollars (James)
+
+- **Loss given onset**, by crop and stage. Two sources:
+  - the FAO yield-response approach (FAO Irrigation and Drainage Paper 33/66: relative yield loss =
+    Ky x relative water shortfall, with Ky by crop and growth stage; maize is most sensitive around
+    flowering);
+  - our own evidence: link onsets to NASS county yields 2005-2021 (we have a NASS key; L5). For
+    example, "county-years with a June-July onset over most of the cropland: corn yield X% below
+    trend". That gives a data-backed default and also answers the O0 caveat (do onsets the Monitor
+    ignores cost yield?).
+- **Price:** the user enters their expected price; optionally fill in the current December corn or
+  November soybean futures quote. Dollars per acre = yield loss x expected yield x price.
+- All defaults are shown with their source and can be overwritten. FlashWatch's numbers (risk,
+  scenarios) are the forecast; the economics are the user's.
+
+### O5. Dashboard ("FlashWatch for your farm")
+
+A single page per location, open on the desktop through the season:
+- choose a place (click the map, county search or lat/lon) and a farm profile (crop, irrigated or
+  not, planting date, acres, expected yield and price);
+- action cards: **Act now / Not yet / Watch trigger**, with expected value now in $/acre and for the
+  farm, its range across forecast scenarios, the trigger sentence and the days of notice left;
+- risk timeline: the past weeks' forecasts against what happened, with the Drought Monitor
+  category underneath (the lead shows directly);
+- the what-if selector (O2) and an editable costs table (kept in the browser);
+- **replay mode** for the demo (2012 and other development years; test years only after the freeze).
+  A live mode needs current ERA5-Land (5-day latency) and current ECMWF ensembles. ECMWF's free open
+  data has the ensemble out to 15 days (to check: licence and fields), which covers weeks 1-2, but M2
+  was trained on the 11-member reforecasts. Live mode is later, not for the hackathon.
+
+Technically, a static page: the Python side precomputes per location and issue date the risk, the
+scenario risks and the drivers (JSON); the economics are computed in the browser from the user's
+config, so editing a cost updates instantly with no server. Muse needs a server (the key can't be in
+the page), so the hackathon site shows precomputed agent output, and a small local server runs live
+questions in the demo.
+
+### O6. The agent's job here (Muse Spark; extends G1)
+
+- New tools: `action_values(place, profile)` (expected value per action, scenario range, trigger) and
+  `scenarios(place)` (risk given each weather group). The number checker applies as before.
+- **Alerts:** when an action flips from "not yet" to "act now", or a trigger is met, the agent drafts
+  a short text message (SMS length) and a longer email with the reason and the numbers. In the demo
+  they go to an alert log on the page; really sending them needs a messaging account (e.g. Twilio) and
+  James's go-ahead.
+- **Questions:** "should I start watering the north pivot?" → the agent calls the tools with that
+  farm's profile and answers with the trigger.
+- Later: push alerts into farm-management software (John Deere Operations Center and Climate
+  FieldView, for example, have developer APIs); export as webhook or CSV. Not for the hackathon.
+
+### O7. Honest evaluation in decision terms
+
+- Value curves (O0) by lead, on development years now and on the test years once, after the freeze.
+- Replay track record: for 2012 and a quiet year, what a user following the rule would have spent and
+  saved against never/always acting, with the (placeholder) costs stated.
+- The O0 caveat reported, and the yield link (O4) if built.
+
+### O8. Build order (proposed; see QUESTIONS Q8)
+
+1. Decision engine (O1) in Python with tests; value curves into the report. About half a day.
+2. Scenario re-scoring from ensemble members (O2). Half a day to a day.
+3. Dashboard page (O5) in replay mode, replacing the plain replay page in D. About a day.
+4. Agent tools and alert drafting (O6). Half a day.
+5. NASS yield link (O4). Half a day; if short of time, literature defaults only.
+
+To fit by Nov 4, something else gives. Recommended cut order: G3 (voice), L1 (M3), then a smaller
+G2 (Glimmer). Never cut: the burst and freeze, the test-year scoring, the agent number checks.
+
 ## D. Deliverables (submission: Nov 4, 9 PM ET)
 
 Required: public repo, a 3-minute demo video (judges score it), every contributor named, a working
 product (judges assess "video, code and live product").
 
 - **Live product**: a static site (GitHub Pages or similar) with the replay, skill-by-horizon charts and
-  this week's agent briefings. Static means it can't break live. Q2 decides whether M2's forecast-derived
+  this week's agent briefings. If O is agreed, the replay becomes the decision dashboard (O5). Static means it can't break live. Q2 decides whether M2's forecast-derived
   maps can be on it.
 - **3-minute video** (draft storyboard):
   - 0:00-0:10: one line that everything shown was built during the hackathon (the FAQ asks videos to

@@ -1,8 +1,9 @@
 """Number checker for agent drafts: every figure in the text must come from a tool output.
 
 A number in the draft passes if some number in the tool results rounds to it, either as written
-(0.123 -> "0.12") or as a percentage (0.123 -> "12%" or "12.3%"). Small counting words and calendar
-numbers (years, days of the month, "week 2") are exempt. Failures go back to the model to fix
+(0.123 -> "0.12") or as a percentage (0.123 -> "12%" or "12.3%"), ignoring sign ("-2.6" may be
+written "2.6 below normal"). Small counting words and calendar numbers (years, days of the month,
+"week 2", "28 days") are exempt. Failures go back to the model to fix
 (at most 2 redrafts), then the sentences still carrying them are dropped (HANDOVER 6.5).
 """
 
@@ -13,6 +14,7 @@ from typing import Iterable
 
 NUM = re.compile(r"(?<![\w.])(-?\d+(?:,\d{3})*(?:\.\d+)?)(\s*%)?")
 EXEMPT_CONTEXT = re.compile(r"(week|weeks|day|days|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\.?\s*$", re.I)
+SPAN_AFTER = re.compile(r"^[\s-]*(day|week|month)", re.I)      # "28 days", "14-day"
 
 
 def numbers_in(obj) -> list[float]:
@@ -40,7 +42,8 @@ def supported(text_num: str, pct: bool, sources: Iterable[float]) -> bool:
     v = float(text_num.replace(",", ""))
     d = _decimals(text_num)
     tol = 0.5 * 10 ** -d + 1e-9
-    for s in sources:
+    v = abs(v)
+    for s in map(abs, sources):
         if abs(s - v) <= tol:
             return True
         if pct and abs(100 * s - v) <= tol:                 # 0.123 written as 12% / 12.3%
@@ -56,7 +59,8 @@ def unsupported(text: str, tool_results: list) -> list[str]:
         num, pct = m.group(1), bool(m.group(2))
         v = float(num.replace(",", ""))
         before = text[max(0, m.start() - 12):m.start()]
-        if not pct and "." not in num and (0 <= v <= 10 or 1900 <= v <= 2100 or EXEMPT_CONTEXT.search(before)):
+        span = SPAN_AFTER.search(text[m.end():m.end() + 10])
+        if not pct and "." not in num and (0 <= v <= 10 or 1900 <= v <= 2100 or EXEMPT_CONTEXT.search(before) or span):
             continue                                         # counts, years, dates, "week 2"
         if not supported(num, pct, sources):
             bad.append(m.group(0).strip())

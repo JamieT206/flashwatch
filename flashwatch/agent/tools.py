@@ -1,8 +1,8 @@
 """Tools the analyst agent calls (DESIGN.md G1). Each reads one weekly pack (agent/pack.py) and
 returns small JSON-ready dicts of rounded numbers, which the number checker later traces.
 
-Probabilities are returned as fractions (0.12 = 12%); "times_normal" is the forecast divided by the
-normal chance for that place and date.
+Probabilities and shares are returned in percent (keys ending _pct); "times_normal" is the forecast
+divided by the normal chance for that place and date.
 """
 
 from __future__ import annotations
@@ -78,12 +78,16 @@ def _r(x, d=3):
     return None if x is None or not np.isfinite(x) else round(float(x), d)
 
 
+def _pct(x, d=1):
+    return _r(100 * x, d)
+
+
 def _risk(cells: pd.DataFrame) -> dict:
     ok = cells[~cells.in_drought]
     out = {}
     for lead in LEADS:
         p, n = ok[f"p_{lead}"].mean(), ok[f"normal_{lead}"].mean()
-        out[lead] = {"chance": _r(p), "normal": _r(n), "times_normal": _r(p / n if n else np.nan, 1)}
+        out[lead] = {"chance_pct": _pct(p), "normal_pct": _pct(n), "times_normal": _r(p / n if n else np.nan, 1)}
     return out
 
 
@@ -100,7 +104,7 @@ def _drivers(cells: pd.DataFrame, k: int = 3) -> list[dict]:
     g = d.groupby("f").agg(push=("push", "sum"), value=("value", "median"), cells=("push", "size"))
     g = g.sort_values("push", ascending=False).head(k)
     return [{"feature": f, "meaning": describe(f), "typical_value": _r(v.value, 2),
-             "share_of_cells": _r(v.cells / len(ok), 2)} for f, v in g.iterrows()]
+             "share_of_area_where_top_driver_pct": _pct(v.cells / len(ok), 0)} for f, v in g.iterrows()]
 
 
 def _outlook(cells: pd.DataFrame) -> dict:
@@ -124,8 +128,8 @@ class Tools:
             return {"error": "no land cells within that radius of the point (outside the study region?)"}
         cat = int(c.usdm_cat.mode().iloc[0])
         return {"lat": lat, "lon": lon, "radius_km": radius_km, "land_cells": len(c),
-                "share_already_in_drought": _r(c.in_drought.mean(), 2),
-                "soil_moisture_percentile_median": _r(c.rz_pct.median(), 0),
+                "share_already_in_drought_pct": _pct(c.in_drought.mean(), 0),
+                "root_zone_soil_moisture_percentile_0_40cm_median": _r(c.rz_pct.median(), 0),
                 "drought_monitor_most_common": USDM.get(cat, str(cat)),
                 "onset_risk": _risk(c), "top_drivers": _drivers(c), "weather_outlook": _outlook(c)}
 
@@ -135,13 +139,13 @@ class Tools:
         g = ok.groupby(["by", "bx"]).agg(lat=("lat", "mean"), lon=("lon", "mean"), cells=("lat", "size"),
                                          p=(f"p_{lead}", "mean"), normal=(f"normal_{lead}", "mean"))
         g = g[g.cells >= 10].assign(ratio=lambda d: d.p / d.normal).sort_values("ratio", ascending=False)
-        return [{"lat": _r(v.lat, 2), "lon": _r(v.lon, 2), "chance": _r(v.p), "normal": _r(v.normal),
+        return [{"lat": _r(v.lat, 2), "lon": _r(v.lon, 2), "chance_pct": _pct(v.p), "normal_pct": _pct(v.normal),
                  "times_normal": _r(v.ratio, 1)} for _, v in g.head(n).iterrows()]
 
     def overview(self) -> dict:
         """Whole study region (36-49N, 104-80W): risk vs normal, share in drought."""
-        return {"land_cells": len(self.p), "share_already_in_drought": _r(self.p.in_drought.mean(), 2),
-                "share_drought_monitor_D1_or_worse": _r((self.p.usdm_cat >= 1).mean(), 2),
+        return {"land_cells": len(self.p), "share_already_in_drought_pct": _pct(self.p.in_drought.mean(), 0),
+                "share_drought_monitor_D1_or_worse_pct": _pct((self.p.usdm_cat >= 1).mean(), 0),
                 "onset_risk": _risk(self.p)}
 
     def specs(self) -> dict:
