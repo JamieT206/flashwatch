@@ -51,6 +51,11 @@ def main():
         wk = max(e["weeks"], key=lambda w: w["states"])
         out["glimmer"] = {"model": e["model"], "mean": e["mean"], "week": {k: wk[k] for k in ("date", "draft", "real", "untraced", "states")},
                           "stats": _load(DATA / "glimmer" / "stats.json")}
+    al = _load(SITE / "data" / "alerts" / "2012.json")
+    if al:
+        out["alerts"] = {"year": al["year"], "farms": [{k: f[k] for k in ("name", "crop", "watering", "dates_checked")} |
+                                                        {"alerts": [{k: x[k] for k in ("date", "level", "text", "by")} for x in f["alerts"]]}
+                                                        for f in al["farms"]]}
     (SITE / "data" / "agents.json").write_text(json.dumps(out))
     print("agents.json:", ", ".join(out))
 

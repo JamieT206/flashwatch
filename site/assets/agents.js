@@ -64,6 +64,13 @@ function glimmer(g) {
       Status: training data ready; fine-tune scheduled.</p>`;
 }
 
+function watch(w) {
+  if (!w) { $("aWatch").hidden = true; return; }
+  $("watch").innerHTML = w.farms.map(f => `<div><div class="tt">${esc(f.name)}: ${f.watering} ${f.crop}</div>
+    <div class="note">${f.alerts.length} texts from ${f.dates_checked} forecasts, June to August ${w.year}</div>
+    <ul class="texts">${f.alerts.map(a => `<li class="${a.level}"><span class="when">${new Date(a.date + "T12:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>${esc(a.text)}${a.by !== "template" ? ` <span class="by">${esc(a.by)}</span>` : ""}</li>`).join("")}</ul></div>`).join("");
+}
+
 fetch("data/agents.json").then(r => r.json()).then(d => {
-  pivots(d.pivots); operator(d.operator); voice(d.voice); brief(d.brief); glimmer(d.glimmer);
+  pivots(d.pivots); operator(d.operator); watch(d.alerts); voice(d.voice); brief(d.brief); glimmer(d.glimmer);
 }).catch(() => { document.querySelector(".intro").insertAdjacentHTML("afterend", "<p class='note'>Agent runs not built yet (python -m flashwatch.site.agents).</p>"); });
