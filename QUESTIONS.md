@@ -117,7 +117,7 @@ currently waiting in ECMWF's queue (up to ~1.5 h of work). Restart command:
 says "done _pack_..."). **Default until you answer:** leave it running as is; I won't stop it.
 **RESOLVED Oct 28 night: keep running in the current order (James).**
 
-### Q13. Restart the S2S downloader after all? (asked Oct 29, 4 am Sydney)
+### Q13. Restart the S2S downloader after all? (asked Oct 29, 4 am Sydney) **RESOLVED Oct 29: restarted at 04:22 with packing and June-August first (James).**
 At 23:29 on Oct 28 ECMWF dropped two of our queued jobs ("job not found"). The downloader then switched
 itself to one date per request for the rest of the run, about 3 times slower: 4 files in the next
 4.6 hours, against about 2 an hour before. 151 of 202 files are left. At this pace June-August arrive

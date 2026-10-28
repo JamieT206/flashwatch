@@ -239,6 +239,9 @@ training while the design moves; heavy burst ~Nov 2 Sydney (DESIGN.md B).
    S2S at 16 complete dates (Oct 29): fcst.zarr rebuilt, M2 re-run (`m2fc16`: week 1 16.8%, week 2
    3.8%; members `m2mem16` slightly worse, DESIGN P11), evidence.json rebuilt. Next rebuild when
    June-August start dates land (watcher: `data/logs/wait_s2s.sh` waits for the first June-August date).
+   Downloader restarted Oct 29 04:22 (Q13): `FW_S2S_PACK=16 FW_S2S_WORKERS=3 FW_S2S_FIRST=6,7,8`,
+   started detached with Start-Process (stdout/stderr in data/logs/s2s.*.txt). Expect June-August in
+   about a day, the rest about a day later.
 
 **Priorities (James, Oct 28): (1) anything that meaningfully improves prediction, (2) the farmer tool,
 (3) modelling nice-to-haves. Nothing is cut; what misses Nov 4 continues after.**
