@@ -32,3 +32,36 @@ def test_tool_loop_runs_tools_then_returns_the_answer():
     assert log == [("risk", {"place": "Ames"}, {"place": "Ames", "risk": 0.12})]
     assert sent[1]["messages"][-1]["role"] == "tool" and sent[0]["tools"][0]["function"]["name"] == "risk"
     assert unsupported(text, [r for _, _, r in log]) == []
+
+
+def fake_pack(n=400, seed=0):
+    import numpy as np
+    import pandas as pd
+    rng = np.random.default_rng(seed)
+    iy, ix = np.divmod(np.arange(n), 20)
+    d = pd.DataFrame({"iy": iy, "ix": ix, "lat": 42 - iy * 0.25, "lon": -95 + ix * 0.25,
+                      "rz_pct": rng.uniform(20, 90, n), "usdm_cat": rng.integers(-1, 3, n),
+                      "in_drought": rng.random(n) < 0.2, "f_tp_w12_z": rng.normal(size=n)})
+    for lead in ("week1", "week2", "week3", "week4", "any28"):
+        d[f"normal_{lead}"] = 0.04
+        d[f"p_{lead}"] = np.where(d.in_drought, np.nan, rng.uniform(0, 0.2, n))
+    for r in (1, 2, 3):
+        d[f"driver{r}"] = rng.choice(["rz_pct", "f_tp_w12_z", "hot_days14"], n)
+        d[f"driver{r}_push"] = rng.uniform(0, 1, n) / r
+        d[f"driver{r}_value"] = rng.normal(size=n)
+    return d
+
+
+def test_tools_return_traceable_numbers():
+    import json
+    from flashwatch.agent.tools import Tools
+    t = Tools(fake_pack())
+    a = t.area_summary(41.0, -92.5, 60)
+    assert a["land_cells"] > 0 and 0 <= a["onset_risk"]["any28"]["chance"] <= 0.2
+    assert a["top_drivers"][0]["meaning"]
+    hs = t.hotspots(3)
+    assert len(hs) >= 1 and hs[0]["times_normal"] >= hs[-1]["times_normal"]
+    assert t.area_summary(30.0, -120.0)["error"]
+    json.dumps([a, hs, t.overview()])                  # all JSON-ready
+    for name, (spec, fn) in t.specs().items():
+        assert spec["description"] and callable(fn)

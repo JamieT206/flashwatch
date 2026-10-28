@@ -135,6 +135,13 @@ class GBM:
         X = df[self.cols].to_numpy(np.float32)
         return np.mean([b.predict(X) for b in self.boosters], axis=0)
 
+    def contributions(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Per-row feature contributions to the raw log-odds (LightGBM's SHAP values), averaged
+        over the boosters; the 'bias' column is the shared baseline."""
+        X = df[self.cols].to_numpy(np.float32)
+        c = np.mean([b.predict(X, pred_contrib=True) for b in self.boosters], axis=0)
+        return pd.DataFrame(c, columns=self.cols + ["bias"], index=df.index)
+
     def predict(self, df: pd.DataFrame) -> np.ndarray:
         X = df[self.cols].to_numpy(np.float32)
         if self.calibration == "none":
