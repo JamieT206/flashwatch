@@ -35,9 +35,14 @@ against waiting two days for a fresher forecast.
   `flashwatch/decide/irrigation.py`.
 - **Ahead of the Drought Monitor:** the soil crosses the drought line a median 22 days before the
   Monitor first shows moderate drought (D1) at that place.
-- **Roll-up:** about **$100 million a year** for US irrigated corn and soybeans, or about 6.6 million
-  people's yearly calories in grain. This is an estimate until the full-season forecasts finish
-  downloading. It is honest arithmetic, not a billion-dollar claim; see DESIGN.md O9.
+- **Flash droughts cost crops, and irrigation saves most of it.** In USDA county yields (2005-2021),
+  rain-fed corn yields about 20% below trend where most of the county had a summer flash drought;
+  irrigated corn in the same counties loses about 2%. Flash droughts that the Drought Monitor never
+  flags cost no yield on average. See DESIGN.md O4 and `flashwatch/eval/yields.py`.
+- **Roll-up:** with dry spells matched to those county losses, about **$23 million a year** for US
+  irrigated corn and soybeans (ceiling with perfect weather: $33M). The textbook worst-case spell gives
+  about $100M, so we lead with the lower, data-backed number. This is an estimate until the
+  full-season forecasts finish downloading; see DESIGN.md O9 and QUESTIONS Q11.
 
 The full working record is in `DESIGN.md` (decisions, tests, results), `QUESTIONS.md` and
 `HANDOVER.md`.

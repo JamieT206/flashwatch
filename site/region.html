@@ -26,6 +26,7 @@
     <h3>If every irrigated corn and soybean farm in the US used FlashWatch</h3>
     <div class="controls" style="padding:0 0 14px">
       <label>Compared with<select id="base"><option value="careful">starting 2 days after stress shows</option><option value="calendar">starting on July 1</option></select></label>
+      <label>Yield loss per flash drought<select id="spell"><option value="cal">as measured in county yields (21-day dry spells)</option><option value="text">textbook worst case (35-day dry spells)</option></select></label>
     </div>
     <div class="kpis" id="kpis"></div>
     <div id="rollTable" style="margin-top:20px;overflow-x:auto"></div>
@@ -58,6 +59,12 @@
       <div id="value"></div>
       <p class="note">Share of a perfect forecast's savings captured, by how much acting costs compared with the loss it avoids.
         Starting a pivot early is around 0.1 to 0.2, where the week-1 forecast pays.</p>
+    </section>
+
+    <section class="card full" id="yieldCard" hidden>
+      <h3>Do flash droughts cost crops? County yields, 2005-2021</h3>
+      <div class="tally" id="yields" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))"></div>
+      <p class="note" id="yieldNote"></p>
     </section>
 
     <section class="card">

@@ -534,6 +534,39 @@ markets already price weather forecasts. Futures prices are used only to *value*
     example, "county-years with a June-July onset over most of the cropland: corn yield X% below
     trend". That gives a data-backed default and also answers the O0 caveat (do onsets the Monitor
     ignores cost yield?).
+- **Built: the yield link (Oct 28 night, `eval/yields.py`; NASS county survey yields 2005-2021,
+  `python -m flashwatch.ingest.nass yields`).** Each county-year (development years only) gets:
+  - an exposure: the share of its land within 40 km where a 0-40 cm onset began June-August;
+  - whether the Drought Monitor reached D1 over half of that land in June-September;
+  - the yield against the county's own trend, fitted on its other years.
+
+  Results (90% year-bootstrap ranges, 300 resamples). "Most" means half or more of the county
+  exposed, "none" means no exposure:
+
+  | Crop | County-years | Most exposed | None | Slope per full exposure | Same, after removing each year's average |
+  | --- | --- | --- | --- | --- | --- |
+  | Corn, rain-fed (non-irrigated split) | 906 | **-20%** (-33 to -4) | +13% | -39 points (-52 to -22) | -8 points (-15 to -3) |
+  | Corn, irrigated (same counties) | 906 | -2% (-3 to 0) | +1% | -3.6 (-6.4 to -0.2) | -1.5 (-2.9 to 0) |
+  | Corn, all | 16,273 | -2% | +2% | -5.3 (-8.0 to -1.8) | -2.7 (-5.8 to +1.2) |
+  | Soybeans, rain-fed | 445 | -16% | +10% | -31 (-46 to -14) | -6 (-13 to -2) |
+  | Soybeans, irrigated | 445 | -1% | +1% | -3.2 (-5.5 to -0.7) | -0.8 (-2.4 to +0.5) |
+
+  - **Onsets cost rain-fed crops a lot, and irrigation saves most of it.** Irrigated corn still loses
+    about 1.5-3.6% of yield per fully exposed year. That is the most earlier pumping could win back.
+  - **The O0 caveat is answered.** In heavily exposed county-years where the Monitor never showed
+    D1, corn yield was +2.9% (0.8 to 5.2), so there was no loss. Where it did show D1, yield was -6.0%.
+    So the onsets the Monitor ignores are ones that broke in time; the damaging ones are the ones it
+    eventually confirms. This also means FlashWatch's labels include harmless onsets. The value per
+    *damaging* onset is higher than the average suggests, but many warnings are about spells that
+    won't matter.
+  - **The irrigation model was too harsh.** With a 35-day rainless spell (the default), a careful
+    irrigator at 5 gpm/acre loses 8.6% of revenue per onset: about 3 times what irrigated counties
+    show. A 21-day spell gives 2.7%, in the middle of the observed range (18 days: 1.6%; 25: 4.2%).
+    Re-run of the roll-up with `--set spell_days=21` (tags `*_cal`): **US irrigated corn and soy
+    about $23M a year** (ECMWF-quality estimate; ceiling with perfect weather $33M; land-only
+    about zero), against $99M / $131M before. The region page now leads with the calibrated number,
+    with a selector for the textbook one (Q11). The farm page still defaults to 35 days until James
+    decides.
 - **Price:** the user enters their expected price; optionally fill in the current December corn or
   November soybean futures quote. Dollars per acre = yield loss x expected yield x price.
 - All defaults are shown with their source and can be overwritten. FlashWatch's numbers (risk,

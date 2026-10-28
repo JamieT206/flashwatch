@@ -3,6 +3,7 @@ harvested acres of corn for grain and soybeans, irrigated and all, plus county c
 Gazetteer) to place counties on our grid.
 
     python -m flashwatch.ingest nass          # needs NASS_API_KEY in flashwatch.env
+    python -m flashwatch.ingest.nass yields   # county yields 2005-2021 (survey), for eval/yields.py
 
 Writes data/raw/nass/acres_<year>.csv (fips, state, county, crop, practice, acres) and the Gazetteer
 file. NASS data are public domain; withheld county values ("(D)") are left out, so county sums fall
@@ -30,11 +31,23 @@ SERIES = {("corn", "irrigated"): "CORN, GRAIN, IRRIGATED - ACRES HARVESTED",
 log = get_logger("nass")
 
 
-def query(short_desc: str, level: str, year: int) -> pd.DataFrame:
+YIELDS = {("corn", "all"): "CORN, GRAIN - YIELD, MEASURED IN BU / ACRE",
+          ("corn", "irrigated"): "CORN, GRAIN, IRRIGATED - YIELD, MEASURED IN BU / ACRE",
+          ("corn", "non-irrigated"): "CORN, GRAIN, NON-IRRIGATED - YIELD, MEASURED IN BU / ACRE",
+          ("soybeans", "all"): "SOYBEANS - YIELD, MEASURED IN BU / ACRE",
+          ("soybeans", "irrigated"): "SOYBEANS, IRRIGATED - YIELD, MEASURED IN BU / ACRE",
+          ("soybeans", "non-irrigated"): "SOYBEANS, NON-IRRIGATED - YIELD, MEASURED IN BU / ACRE"}
+
+
+def query(short_desc: str, level: str, year: int, source: str = "CENSUS") -> pd.DataFrame:
     import requests
-    params = {"key": os.environ["NASS_API_KEY"], "source_desc": "CENSUS", "year": year,
+    params = {"key": os.environ["NASS_API_KEY"], "source_desc": source, "year": year,
               "agg_level_desc": level, "short_desc": short_desc, "domain_desc": "TOTAL", "format": "JSON"}
+    if source == "SURVEY":
+        params["reference_period_desc"] = "YEAR"
     r = requests.get(API, params=params, timeout=120)
+    if r.status_code == 400 and source == "SURVEY":     # NASS answers 400 when nothing matches
+        return pd.DataFrame()
     if r.status_code != 200:
         # Never log the URL: it carries the key.
         raise RuntimeError(f"NASS {short_desc} {level}: HTTP {r.status_code}")
@@ -58,6 +71,23 @@ def fetch(year: int = 2022) -> pd.DataFrame:
     return pd.concat(rows, ignore_index=True)
 
 
+def fetch_yields(years=range(2005, 2022)) -> pd.DataFrame:
+    """County survey yields (bu/acre); combined "other counties" rows (county code 998) dropped."""
+    rows = []
+    for (crop, practice), desc in YIELDS.items():
+        for y in years:
+            d = retry(lambda: query(desc, "COUNTY", y, "SURVEY"), log, f"{desc} {y}", tries=3, wait=20)
+            if d is None or not len(d):
+                continue
+            d = d[d.county_code != "998"]
+            v = pd.to_numeric(d["Value"].str.replace(",", ""), errors="coerce")
+            rows.append(pd.DataFrame({"year": y, "fips": d.state_fips_code + d.county_code, "state": d.state_alpha,
+                                      "crop": crop, "practice": practice, "yield_bu": v}).dropna())
+        log.info("%s %s yields: %d rows", crop, practice, sum(len(r) for r in rows if r.crop.iloc[0] == crop
+                                                               and r.practice.iloc[0] == practice))
+    return pd.concat(rows, ignore_index=True)
+
+
 def centroids() -> pd.DataFrame:
     """County FIPS -> internal point lat/lon (Census Gazetteer)."""
     z = OUT / "2022_Gaz_counties_national.zip"
@@ -74,8 +104,14 @@ def load(year: int = 2022) -> pd.DataFrame:
 
 
 def main():
+    import sys
     load_env()
     OUT.mkdir(parents=True, exist_ok=True)
+    if sys.argv[1:] == ["yields"]:
+        d = fetch_yields()
+        d.to_csv(OUT / "yields_2005_2021.csv", index=False)
+        log.info("done: %d yield rows", len(d))
+        return
     http_download(GAZ, OUT / "2022_Gaz_counties_national.zip", log)
     d = fetch(2022)
     d.to_csv(OUT / "acres_2022.csv", index=False)

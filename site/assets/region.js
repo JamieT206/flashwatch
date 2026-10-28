@@ -9,13 +9,14 @@ const money = v => {
   const a = Math.abs(v), s = v < 0 ? "-$" : "$";
   return a >= 1e9 ? `${s}${(a / 1e9).toFixed(2)} billion` : a >= 1e6 ? `${s}${(a / 1e6).toFixed(0)} million` : a >= 1e3 ? `${s}${(a / 1e3).toFixed(0)}k` : `${s}0`;
 };
+const dollars2 = v => (v < -0.005 ? "-$" : "$") + Math.abs(v).toFixed(2);
 const people = v => v >= 1e6 ? `${(v / 1e6).toFixed(1)} million` : `${(v / 1e3).toFixed(0)}k`;
 const VARIANTS = [["m1", "Soil and past weather only (measured)"],
                   ["blur07", "With ECMWF-quality weather forecasts (estimate)"],
                   ["perfect", "With perfect weather forecasts (upper limit)"]];
 
 function headline(tag, base) {
-  const r = R.roll[tag];
+  const r = R.roll[tag + ($("spell").value === "cal" ? "_cal" : "")];
   return r ? r.headline.find(h => h.baseline === base) : null;
 }
 
@@ -30,13 +31,16 @@ function renderRoll() {
   const rows = VARIANTS.filter(([t]) => headline(t, base)).map(([t, label]) => {
     const h = headline(t, base);
     return `<tr><td>${label}</td><td>${money(h.region_irrigated_dollars)}</td><td>${money(h.us_irrigated_dollars)}</td>
-      <td>$${h.per_acre_corn.toFixed(2)} / $${h.per_acre_soy.toFixed(2)}</td><td>${people(h.us_people_fed)}</td><td>${money(h.rainfed_nitrogen_dollars)}</td></tr>`;
+      <td>${dollars2(h.per_acre_corn)} / ${dollars2(h.per_acre_soy)}</td><td>${people(h.us_people_fed)}</td><td>${money(h.rainfed_nitrogen_dollars)}</td></tr>`;
   }).join("");
   $("rollTable").innerHTML = `<table>
     <thead><tr><th>Forecasts</th><th>Study region, irrigated</th><th>All US irrigated corn and soy</th>
     <th>Per acre a year (corn / soy)</th><th>People fed</th><th>Rain-fed corn, nitrogen (rough costs)</th></tr></thead><tbody>${rows}</tbody></table>`;
   $("rollNote").innerHTML = `The headline is the middle row, an estimate until the summer ECMWF forecasts finish downloading: it uses observed weather
-    blurred to ECMWF's measured accuracy. Most of the value is in corn; soybeans suffer less in a dry spell. Drought years carry most of it.`;
+    blurred to ECMWF's measured accuracy. Most of the value is in corn; soybeans suffer less in a dry spell. Drought years carry most of it.
+    ${$("spell").value === "cal"
+      ? "Dry spells are set to 21 days, so the yield loss per flash drought matches what irrigated counties actually lost (USDA county yields, 2005-2021: 1.5 to 3.6% of yield)."
+      : "Dry spells are the textbook worst case, 35 days without rain: about 3 times the yield loss irrigated counties actually show."}`;
 }
 
 function tileKeys() {
@@ -130,7 +134,7 @@ function renderMonitor() {
   $("monitor").innerHTML =
     card("Soil drops into drought, compared with the Monitor's first D1", `${mo.crossing_vs_d1.median_days_ahead.toFixed(0)} days earlier`, `typical; FlashWatch first ${(100 * mo.crossing_vs_d1.share_flashwatch_first).toFixed(0)}% of the time`) +
     card("Compared with the Monitor's first change of any kind", `${mo.crossing_vs_worsening.median_days_ahead.toFixed(0)} days earlier`, `typical; FlashWatch first ${(100 * mo.crossing_vs_worsening.share_flashwatch_first).toFixed(0)}% of the time`);
-  $("monitorNote").textContent = `Across ${mo.onsets.toLocaleString()} flash droughts, 2006-2021, counted from the day the data are public. The week-1 forecast adds about a week. The Monitor never reacts to about half of them; whether those hurt crops is still open.`;
+  $("monitorNote").textContent = `Across ${mo.onsets.toLocaleString()} flash droughts, 2006-2021, counted from the day the data are public. The week-1 forecast adds about a week. The Monitor never reacts to about half of them, and those cost no yield on average (see county yields).`;
 }
 
 function renderWatch() {
@@ -139,10 +143,27 @@ function renderWatch() {
   $("watch").innerHTML = card("Soil and past weather, next 7 days", "forecast dates|M1") + card("With ECMWF forecasts, next 7 days", "forecast dates|M2");
 }
 
+function renderYields(y) {
+  const r = k => y.results[k]?.raw, pc = v => (v > 0 ? "+" : "") + v.toFixed(0) + "%";
+  const card = (t, k, sub) => r(k) ? `<div class="row"><div class="note">${t}</div>
+    <div class="v ${r(k)["mean_most (half or more)"] < 0 ? "neg" : "pos"}">${pc(r(k)["mean_most (half or more)"])}</div>
+    <div class="note">vs ${pc(r(k).mean_none)} with none nearby. ${sub}</div></div>` : "";
+  $("yields").innerHTML =
+    card("Rain-fed corn, where most of the county had a summer flash drought", "corn|non-irrigated", "Flash droughts hit unwatered corn hard.") +
+    card("Irrigated corn, same counties and years", "corn|irrigated", "Irrigation saves most of the crop; the small loss left is what earlier pumping can win back.") +
+    `<div class="row"><div class="note">All corn, where most of the county had a flash drought the Drought Monitor never marked D1</div>
+      <div class="v pos">${pc(r("corn|all").most_exposed_monitor_not_flagged_mean)}</div>
+      <div class="note">No loss on average: these dry spells broke in time. When the Monitor did mark D1: ${pc(r("corn|all").most_exposed_monitor_flagged_mean)}.</div></div>`;
+  $("yieldNote").textContent = `Yield against each county's own trend (USDA NASS county yields). "Most of the county": half or more of its land within 40 km had a flash drought begin June to August.
+    ${y.results["corn|irrigated"].county_years} irrigated and ${y.results["corn|all"].county_years.toLocaleString()} all-corn county-years. This is why the dollar figures above use 21-day dry spells: irrigated losses of 1.5 to 3.6% per flash drought.`;
+  $("yieldCard").hidden = false;
+}
+
 async function init() {
   R.meta = await fetch("data/meta.json").then(r => r.json());
   R.ev = await fetch("data/evidence.json").then(r => r.json()).catch(() => null);
-  for (const [t] of VARIANTS) R.roll[t] = await fetch(`data/rollup_${t}.json`).then(r => r.ok ? r.json() : null).catch(() => null);
+  for (const [t] of VARIANTS) for (const sfx of ["", "_cal"])
+    R.roll[t + sfx] = await fetch(`data/rollup_${t}${sfx}.json`).then(r => r.ok ? r.json() : null).catch(() => null);
   try {
     const us = await fetch("https://cdn.jsdelivr.net/npm/us-atlas@3.0.1/states-10m.json").then(r => r.json());
     R.states = topojson.feature(us, us.objects.states);
@@ -152,6 +173,7 @@ async function init() {
   R.i = R.meta.dates.indexOf("07-03");
   $("date").value = R.i;
   $("base").onchange = renderRoll;
+  $("spell").onchange = renderRoll;
   $("year").onchange = async () => { R.year = +$("year").value; await loadYear(R.year); renderMap(); };
   const setI = i => { R.i = Math.max(0, Math.min(R.meta.dates.length - 1, i)); $("date").value = R.i; renderMap(); };
   $("date").oninput = () => setI(+$("date").value);
@@ -161,6 +183,8 @@ async function init() {
   await loadYear(R.year);
   renderMap();
   if (R.ev) { renderSkill(); renderValue(); renderMonitor(); renderWatch(); }
+  const y = await fetch("data/yields.json").then(r => r.ok ? r.json() : null).catch(() => null);
+  if (y) renderYields(y);
 }
 
 init();

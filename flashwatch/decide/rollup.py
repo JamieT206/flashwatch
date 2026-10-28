@@ -68,16 +68,16 @@ def yearly(bt: pd.DataFrame, acres: pd.DataFrame, cc: pd.DataFrame, price: float
     return pd.DataFrame(rows)
 
 
-def run(oof: pd.DataFrame, model: str) -> dict:
+def run(oof: pd.DataFrame, model: str, overrides: dict | None = None) -> dict:
     from flashwatch.ingest.nass import load as nass
     acres = nass(2022)
-    cfg = load()
+    cfg = load(overrides=overrides)
     ons = backtest.onset_days()
     cells = oof[["iy", "ix"]].drop_duplicates()
     cc = county_cells(cells)
     county = acres[acres.level == "county"]
     nat = acres[acres.level == "national"].set_index(["crop", "practice"]).acres
-    out = {"model": model, "years": sorted(int(y) for y in oof.year.unique()), "scopes": {}}
+    out = {"model": model, "overrides": overrides or {}, "years": sorted(int(y) for y in oof.year.unique()), "scopes": {}}
     for base in ("careful", "calendar"):
         res = {}
         for crop, key in (("corn", "irrigation"), ("soybeans", "irrigation_soybeans")):
@@ -133,8 +133,11 @@ def main():
     ap.add_argument("--oof", required=True)
     ap.add_argument("--model", default="M1")
     ap.add_argument("--tag", default="")
+    ap.add_argument("--set", nargs="+", default=[], metavar="NAME=VALUE",
+                    help="override action settings, e.g. spell_days=21 (calibrated to county yields, eval/yields.py)")
     args = ap.parse_args()
-    r = run(pd.read_parquet(args.oof), args.model)
+    over = {k: json.loads(v) for k, v in (s.split("=", 1) for s in args.set)}
+    r = run(pd.read_parquet(args.oof), args.model, over)
     r["headline"] = [headline(r, b) for b in ("careful", "calendar")]
     r["tag"] = args.tag
     print(pd.DataFrame(r["headline"]).T.to_string())

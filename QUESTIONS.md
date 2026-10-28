@@ -132,6 +132,26 @@ out" as a farmer setting later. (b) Demo with the simulated pivots and the signe
 Leaf, Deere and FieldView as the path in the write-up and video. **Default until you answer:**
 exactly that. No sign-ups and no messages sent.
 
+### Q11. County yields say our irrigation dollars are about 3 times too high. Calibrate?
+New check (DESIGN.md O4, `eval/yields.py`). Irrigated corn in counties hit hard by summer flash
+droughts yields only about 1.5-3.6% below trend. Our water-balance model, with its 35-day rainless
+spell, has a careful irrigator losing 8.6%. A 21-day spell matches the counties (2.7%). Calibrated,
+the US roll-up drops from about $99M to about **$23M a year** (ceiling $33M).
+
+Also found: onsets the Drought Monitor never marks D1 cost no yield. Rain-fed crops lose about 20%
+when most of the county has an onset.
+
+**Recommendation:**
+- Use 21-day spells everywhere: the headline, and the farm page's default (shown as an editable
+  setting, "dry spell length").
+- Pitch the story as "flash droughts cost rain-fed corn 20%; irrigators can win back the last 2-3%,
+  about $20-30M a year", not $100M. Honest, and backed by USDA data.
+- Separately, rain-fed farmers are the bigger prize. Their actions (nitrogen, marketing, crop
+  insurance timing) are worth a look after the hackathon.
+
+**Default until you answer:** the region page leads with the calibrated $23M, with a selector for the
+textbook $99M. The farm page and the demo keep 35 days, so the July 3 demo reads as before.
+
 ### Q6. B0 (the BSS reference) is miscalibrated: strengthen its smoothing? **RESOLVED Oct 28: (a)**
 Done before any M1 score was read. `python -m flashwatch.models.tune_b0` grid-searches B0's time
 half-width tw, spatial radius sr and shrinkage k per lead (4 year-groups of 2005-2021, pooled
