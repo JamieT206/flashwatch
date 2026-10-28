@@ -49,6 +49,10 @@ So the question an irrigator faces every summer morning is simple: *start the pi
     logs irrigation it's told about.
   - *Voice field reports (Muse Voice Transcribe + Spark).* "Corn on the sandy pivot is curling by
     noon" becomes a stress report on pivot N1.
+  - *Watcher (Muse Spark).* Follows each subscribed farm through the season and texts only when
+    something changes: the advice turns to start, a rain-fed decision's moment comes, the pivot can't
+    keep up. It keeps score of itself: every forecast text is checked against what happened in the
+    next two weeks (SCORECARD).
   - *Weekly briefing (Muse Spark)* for a county or extension office.
   - *Drought Monitor-style narrative (Muse Glimmer 30B, open weights)*: a LoRA fine-tune on 15 years of
     the Monitor's weekly text, paired with that week's numbers (TODO: results).
@@ -62,7 +66,8 @@ So the question an irrigator faces every summer morning is simple: *start the pi
 ```
 ERA5-Land soil, rain, heat (as of each forecast date)     ECMWF extended-range ensemble (11 members)
                        \                                   /
-        LightGBM onset model (calibrated): chance of a flash drought in days 1-7 and 8-14
+   LightGBM onset model per grid cell  +  U-Net on the whole map (PyTorch), averaged:
+                   chance of a flash drought in days 1-7 and 8-14
                                          |
         decision engine: FAO-56 water balance of the field x days of warning x
         start today vs decide in 2 days (ensemble members as the next forecast's outcomes)
@@ -90,6 +95,10 @@ ERA5-Land soil, rain, heat (as of each forecast date)     ECMWF extended-range e
   - a farmer's rule of thumb ("hot and dry lately", fitted the same way) manages 1.7 times;
   - week-1 skill is about 17% better than the seasonal normal (Brier skill score);
   - beyond two weeks, the forecasts can't see the dry spells (week 2: about 4%).
+- **Seeing the map helps.** Without the weather forecasts, a small convolutional network that sees
+  the whole map at once (where a drying patch is, and what surrounds it) adds to the per-cell model:
+  week-1 skill 6.1% against 4.3% when the two are averaged (paired gain 1.8 points, 90% range 1.3-2.4).
+  The farm page runs on this pair until the summer ECMWF forecasts finish downloading.
 - **Ahead of the Drought Monitor.** The soil crosses the drought line a median 22 days before the
   Monitor first shows moderate drought (D1) at that place. FlashWatch is first in 86% of cases.
 - **Flash droughts cost crops** (county yields, above). Onsets the Monitor never flags cost no yield
@@ -130,7 +139,7 @@ ERA5-Land soil, rain, heat (as of each forecast date)     ECMWF extended-range e
 
 ## Built with
 
-Python (LightGBM, xarray, pandas), d3, Leaflet, Meta Model API (SAM 3.1, Muse Spark, Muse Voice
+Python (LightGBM, PyTorch, xarray, pandas), d3, Leaflet, Meta Model API (SAM 3.1, Muse Spark, Muse Voice
 Transcribe), Muse Glimmer (TODO). Data: ERA5-Land (Copernicus Climate Change Service), ECMWF S2S
 reforecasts, US Drought Monitor (NDMC, USDA, NOAA), USDA NASS, USDA NAIP imagery (USGS), US Census
 Gazetteer, OpenStreetMap. Everything in this repository was

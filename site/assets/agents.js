@@ -66,7 +66,7 @@ function glimmer(g) {
 
 function then(o, warn) {
   if (!o) return "";
-  const txt = o.flash_drought_within_14_days ? `A flash drought began within 2 weeks${warn ? "" : " anyway"}.` : "No flash drought in the next 2 weeks.";
+  const txt = o.flash_drought_within_14_days ? `a flash drought began within 2 weeks${warn ? "" : " anyway"}.` : "no flash drought in the next 2 weeks.";
   return `<span class="then ${o.right ? "right" : "wrong"}">${o.right ? "Right" : "Wrong"}: ${txt}</span>`;
 }
 
