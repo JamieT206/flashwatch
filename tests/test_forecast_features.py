@@ -36,6 +36,9 @@ def test_forecast_features_shapes_and_isolation():
     assert np.isnan(f0["f_tp_w1_z"][-1]).all()
     plow = f0["f_tp_w2_plow"][:-1]
     assert np.nanmin(plow) >= 0 and np.nanmax(plow) <= 1 and 0.15 < np.nanmean(plow) < 0.5
+    hd = f0["f_hotdry_w12_p"][:-1]                         # independent noise: ~1/3 x 1/3 of members
+    assert np.nanmin(hd) >= 0 and np.nanmax(hd) <= 1 and 0.03 < np.nanmean(hd) < 0.25
+    assert "f_sm100chg_w3_z" in f0 and "f_sm100chg_w1_z" not in f0 and "f_dryhot_w2_z" in f0
     # Perturbing the held-out year's forecasts must not change training-year features.
     ds2 = ds.copy(deep=True)
     for v in ("tp", "t2m", "d2m", "sm100"):

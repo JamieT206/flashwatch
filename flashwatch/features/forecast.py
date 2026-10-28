@@ -7,6 +7,13 @@ precipitation the fraction of members in the climatological lower tercile. Clima
 use the fold's reference years minus the issue's own year, matching the observed features.
 Computed on the native 1.5 degree grid, then bilinearly interpolated to the 0.25 degree
 grid (which adds no information; see the spec).
+
+Derived features (F8, Oct 28; the early M2 run used the week-2 forecasts poorly):
+- weeks 1+2 together ("w12"): the same statistics on the two-week mean, which is less noisy;
+- f_hotdry_w<k>_p: share of members that are both dry (precipitation in the lower tercile) and
+  hot-and-dry-air (VPD in the upper tercile), i.e. the ensemble's chance of a flash-drought week;
+- f_dryhot_w<k>_z: VPD anomaly minus precipitation anomaly (ensemble mean);
+- f_sm100chg_w<k>_z: forecast change in 0-100 cm soil moisture from week 1 to week k (k = 2-4, 12).
 """
 
 from __future__ import annotations
@@ -52,32 +59,49 @@ class ForecastFeatures:
 
     def build(self, ref_years) -> dict[str, np.ndarray]:
         ref = np.isin(self.hyears, list(ref_years))
-        have = self.idx[:, 0] >= 0
-        n = len(self.issues)
-        out = {}
-        for v, a in self.fields.items():
-            ens = a.mean(2)                                         # (I, J, W, la, lo)
-            spread = a.std(2)
-            res = {f"f_{v}_w{w}_{s}": np.full((n, len(self.lats), len(self.lons)), np.nan, np.float32)
-                   for w in range(1, a.shape[3] + 1) for s in ("z", "spread") + (("plow",) if v == "tp" else ())}
-            for k in np.where(have)[0]:
-                i, j = self.idx[k]
-                pool = ref.copy()
-                pool[j] = False                                     # never the issue's own year
-                clim = ens[i, pool]                                 # (years, W, la, lo)
-                mu, sd = clim.mean(0), clim.std(0)
+        have = np.where(self.idx[:, 0] >= 0)[0]
+        n, grid = len(self.issues), (len(self.lats), len(self.lons))
+        # Weeks 1-4 plus the weeks 1+2 mean; sm100chg = soil moisture minus its week-1 value.
+        f = {v: np.concatenate([a, a[:, :, :, :2].mean(3, keepdims=True)], 3) for v, a in self.fields.items()}
+        if "sm100" in f:
+            f["sm100chg"] = f["sm100"] - f["sm100"][:, :, :, :1]
+        names = [f"w{w}" for w in range(1, 5)] + ["w12"]
+        res = {}
+
+        def put(key, k, val):
+            res.setdefault(key, np.full((n,) + grid, np.nan, np.float32))[k] = val
+
+        for k in have:
+            i, j = self.idx[k]
+            pool = ref.copy()
+            pool[j] = False                                         # never the issue's own year
+            z = {}
+            for v, a in f.items():
+                ens = a[i].mean(1)                                  # (years, W, la, lo)
+                mu, sd = ens[pool].mean(0), ens[pool].std(0)
                 with np.errstate(invalid="ignore", divide="ignore"):
-                    z = (ens[i, j] - mu) / sd
-                    sr = spread[i, j] / sd
-                for w in range(a.shape[3]):
-                    res[f"f_{v}_w{w + 1}_z"][k] = z[w]
-                    res[f"f_{v}_w{w + 1}_spread"][k] = sr[w]
-                if v == "tp":
-                    members = a[i, pool]                            # (years, M, W, la, lo)
-                    lo_t = np.quantile(members.reshape((-1,) + members.shape[2:]), 1 / 3, axis=0)
-                    frac = (a[i, j] < lo_t[None]).mean(0)           # (W, la, lo)
-                    for w in range(a.shape[3]):
-                        res[f"f_tp_w{w + 1}_plow"][k] = frac[w]
-            for name, r in res.items():
-                out[name] = bilinear(r, self.lats, self.lons)
-        return out
+                    z[v] = (ens[j] - mu) / sd
+                    sr = a[i, j].std(0) / sd
+                for w, nm in enumerate(names):
+                    if v == "sm100chg" and nm == "w1":
+                        continue                                    # zero by construction
+                    put(f"f_{v}_{nm}_z", k, z[v][w])
+                    if v != "sm100chg":
+                        put(f"f_{v}_{nm}_spread", k, sr[w])
+            # Member-level terciles from the pooled reference members.
+            dry, hot = self._tercile(f["tp"][i], pool, j, 1 / 3, below=True), None
+            if "vpd" in f:
+                hot = self._tercile(f["vpd"][i], pool, j, 2 / 3, below=False)
+            for w, nm in enumerate(names):
+                put(f"f_tp_{nm}_plow", k, dry[:, w].mean(0))
+                if hot is not None:
+                    put(f"f_hotdry_{nm}_p", k, (dry[:, w] & hot[:, w]).mean(0))
+                    put(f"f_dryhot_{nm}_z", k, z["vpd"][w] - z["tp"][w])
+        return {name: bilinear(r, self.lats, self.lons) for name, r in res.items()}
+
+    @staticmethod
+    def _tercile(a, pool, j, q, below):
+        """Members of year j beyond the q-quantile of all pooled members: (members, W, la, lo) bool."""
+        members = a[pool]                                           # (years, M, W, la, lo)
+        t = np.quantile(members.reshape((-1,) + members.shape[2:]), q, axis=0)
+        return a[j] < t[None] if below else a[j] > t[None]

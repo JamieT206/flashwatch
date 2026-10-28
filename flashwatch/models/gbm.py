@@ -31,9 +31,10 @@ MONOTONE = {"rz_pct": -1, "rz_pct_chg5": -1, "rz_pct_chg10": -1, "rz_pct_chg20":
             "vpd14_x_dryness": 1, "deep_pct": -1}
 # usdm_cat is left unconstrained: a cell already in D1+ is usually also below the 20th percentile
 # (not eligible), so its relation to onset risk among eligible cells isn't obviously one-way.
-for _w in range(1, 5):
+for _w in ("1", "2", "3", "4", "12"):
     MONOTONE.update({f"f_tp_w{_w}_z": -1, f"f_tp_w{_w}_plow": 1, f"f_t2m_w{_w}_z": 1,
-                     f"f_vpd_w{_w}_z": 1, f"f_sm100_w{_w}_z": -1})
+                     f"f_vpd_w{_w}_z": 1, f"f_sm100_w{_w}_z": -1, f"f_hotdry_w{_w}_p": 1,
+                     f"f_dryhot_w{_w}_z": 1, f"f_sm100chg_w{_w}_z": -1})
 
 PARAMS = {"objective": "binary", "learning_rate": 0.05, "num_leaves": 63, "min_data_in_leaf": 500,
           "feature_fraction": 0.8, "bagging_fraction": 0.5, "bagging_freq": 1, "lambda_l2": 1.0,
