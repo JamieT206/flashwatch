@@ -5,59 +5,59 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FlashWatch: the big picture</title>
 <meta name="description" content="What a week's warning of flash drought is worth to American irrigators, and how good the forecasts are.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='%23c4561f'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='2' y='2' width='12' height='12' fill='%23d83933'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap">
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 <header class="top"><div class="wrap">
   <div class="brand"><span class="dot"></span>FlashWatch</div>
   <nav><a href="index.html">Your farm</a><a class="on" href="region.html">The big picture</a></nav>
-  <div class="replay-note">Development years only; test years scored once, after the freeze</div>
+  <div class="replay-note">Development years only. Test years are scored once, after the freeze.</div>
 </div></header>
 
 <main class="wrap">
-  <section style="padding:28px 0 8px">
-    <div class="place" style="font-size:32px;max-width:860px">Flash droughts turn a green field brown in two or three weeks.
-      FlashWatch gives irrigators a week's warning and tells them when starting the pivot early pays.</div>
+  <section style="padding:32px 0 24px">
+    <p class="lede">A flash drought can dry out a field in two or three weeks.
+      FlashWatch gives irrigators a week's warning, and tells them when starting the pivot early pays.</p>
   </section>
 
-  <section class="card full" style="margin:12px 0 16px">
+  <section class="card full">
     <h3>If every irrigated corn and soybean farm in the US used FlashWatch</h3>
-    <div class="controls" style="padding:0 0 10px">
-      <label>Compare against<select id="base"><option value="careful">a careful irrigator (starts 2 days after stress)</option><option value="calendar">a calendar irrigator (starts July 1)</option></select></label>
+    <div class="controls" style="padding:0 0 14px">
+      <label>Compared with<select id="base"><option value="careful">starting 2 days after stress shows</option><option value="calendar">starting on July 1</option></select></label>
     </div>
     <div class="kpis" id="kpis"></div>
-    <div id="rollTable" style="margin-top:14px;overflow-x:auto"></div>
+    <div id="rollTable" style="margin-top:20px;overflow-x:auto"></div>
     <p class="note" id="rollNote"></p>
   </section>
 
   <div class="grid">
     <section class="card full chart">
-      <h3>Flash-drought risk in the coming week, vs normal</h3>
+      <h3>Risk of a flash drought in the next 7 days, compared with normal</h3>
       <div class="controls" style="padding:0 0 8px">
         <label>Season<select id="year"></select></label>
         <div class="dateline" style="flex:1;padding:0">
-          <button id="prev">&larr;</button><input id="date" type="range" min="0" value="0"><button id="next">&rarr;</button>
+          <button id="prev" aria-label="Previous forecast">&larr;</button><input id="date" type="range" min="0" value="0" aria-label="Forecast date"><button id="next" aria-label="Next forecast">&rarr;</button>
           <span class="d" id="dateLabel"></span>
         </div>
       </div>
       <div id="map"></div>
       <div class="legend" id="mapLegend"></div>
-      <p class="note">Click a square to open that farm's page. Land-only model on this map; ECMWF-driven forecasts replace it as the full season finishes downloading.</p>
+      <p class="note">Click a square to open its farm page. This map uses the land-only model until the summer weather forecasts finish downloading.</p>
     </section>
 
     <section class="card chart">
-      <h3>How good are the forecasts? (skill vs the seasonal normal)</h3>
+      <h3>How good are the forecasts?</h3>
       <div id="skill"></div>
       <p class="note" id="skillNote"></p>
     </section>
 
     <section class="card chart">
-      <h3>Is a warning worth acting on?</h3>
+      <h3>When is a warning worth acting on?</h3>
       <div id="value"></div>
-      <p class="note">Share of a perfect forecast's saving captured, by how much acting costs relative to the loss it avoids.
-        Starting a pivot early sits around 0.1-0.2: the week-1 forecast is worth acting on there.</p>
+      <p class="note">Share of a perfect forecast's savings captured, by how much acting costs compared with the loss it avoids.
+        Starting a pivot early is around 0.1 to 0.2, where the week-1 forecast pays.</p>
     </section>
 
     <section class="card">
@@ -69,15 +69,15 @@
     <section class="card">
       <h3>A weekly watch list</h3>
       <div class="tally" id="watch"></div>
-      <p class="note">Flag the riskiest tenth of the region each forecast date and count the flash droughts that actually begin.</p>
+      <p class="note">Flag the riskiest tenth of the region on each forecast date, then count the flash droughts that actually begin.</p>
     </section>
   </div>
 
   <footer>
-    Method and caveats: forecasts are out-of-fold (each year predicted by models that never saw it). The dollar figures replay the
-    farm page's decision rule day by day over six development years, with a textbook water-balance model of a typical Nebraska pivot,
-    and scale by the 2022 Census of Agriculture's irrigated acres. They assume a flash drought in the (rain-fed) soil record marks a dry spell
-    that would stress an irrigated crop. Calories: USDA FoodData Central (corn 365, soybeans 446 kcal per 100 g); a person-year is 2,000 kcal a day.
+    How these numbers are made: every forecast comes from a model that never saw that year. The dollar figures replay the farm page's
+    advice day by day over six past seasons, for a typical Nebraska pivot, then scale up by irrigated acres in the 2022 Census of Agriculture.
+    They assume a flash drought in the soil record means a dry spell that would stress an irrigated crop.
+    Calories: USDA FoodData Central (corn 365, soybeans 446 kcal per 100 g; 2,000 kcal a person a day).
     Retail food loss: USDA ERS, 43 billion lb in 2010. Data: ERA5-Land (Copernicus Climate Change Service), ECMWF S2S reforecasts,
     US Drought Monitor, USDA NASS.
   </footer>

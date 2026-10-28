@@ -8,7 +8,7 @@ const S = {
 };
 const $ = id => document.getElementById(id);
 const pct = (p, d = 0) => p === null || p === undefined || !isFinite(p) ? "-" : (100 * p).toFixed(d) + "%";
-const usd = (v, d = 0) => (v < 0 ? "-$" : "+$") + Math.abs(v).toFixed(d);
+const usd = (v, d = 0) => (v < 0 ? "-$" : "+$") + Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
 const USDM = { "-1": "None", 0: "D0 abnormally dry", 1: "D1 moderate drought", 2: "D2 severe drought",
                3: "D3 extreme drought", 4: "D4 exceptional drought" };
 const SEASON = ["06-01", "08-31"];
@@ -21,7 +21,7 @@ const FARM_FIELDS = [
   ["yield_bu", "Expected yield (bu/acre)", "number", 1],
   ["price", "Expected price ($/bu)", "number", 0.05],
   ["pump_cost_per_in", "Pumping cost ($ per acre-inch)", "number", 0.5],
-  ["reaction_days", "Usually start the pivot (days after stress shows)", "number", 1],
+  ["reaction_days", "Usual start (days after stress shows)", "number", 1],
   ["baseline", "Compare against", "select", ["careful", "calendar"]],
   ["calendar", "Calendar start date (MM-DD)", "text"],
 ];
@@ -122,8 +122,8 @@ function renderVerdict(c) {
   const per = S.farm.acres;
   const set = (cls, big, why) => { card.className = "card verdict " + cls; $("vBig").textContent = big; $("vWhy").innerHTML = why; };
   if (p1 === null || p2 === null) {
-    set("calm", "Irrigate as you normally would",
-      r.rz[i] === null ? "Your soil is already below the drought line (or frozen), so there is no flash drought left to warn about." : "No forecast for this date.");
+    set("calm", "Irrigate as usual",
+      r.rz[i] === null ? "Your soil is already in drought (or frozen), so there is nothing left to warn about." : "No forecast for this date.");
     $("evNow").textContent = "-"; $("evWait").textContent = "-"; $("trigger").textContent = "";
     return;
   }
@@ -131,13 +131,13 @@ function renderVerdict(c) {
   // trigger is named in weather; otherwise a placeholder spread and a risk threshold.
   const mem = r.mp1 && r.mp1[i] ? FW.trigger(c, r.mp1[i], r.mp2[i], { rain_in: r.mr[i], temp_f: r.mt[i] }) : null;
   const d = mem || FW.decide(c, FW.daily(p1, p2), FW.twoWay(0.5), 2);
-  $("evNow").textContent = `${usd(d.evNow, 1)} /acre`;
-  $("evWait").textContent = `${usd(d.evWait, 1)} /acre`;
+  $("evNow").innerHTML = `${usd(d.evNow, 1)} <small>an acre</small>`;
+  $("evWait").innerHTML = `${usd(d.evWait, 1)} <small>an acre</small>`;
   const inSeason = md >= SEASON[0] && md <= SEASON[1];
-  const total = v => `${usd(v * per)} for ${per} acres`;
+  const total = v => `${usd(v * per)} on ${per} acres`;
   if (!inSeason) {
     set("calm", "Outside the irrigation season",
-      `FlashWatch's irrigation advice runs June to August, when the crop's water use peaks. The risk numbers still apply.`);
+      `Irrigation advice runs June to August. The risk numbers still apply.`);
     $("trigger").textContent = "";
     return;
   }
@@ -146,40 +146,40 @@ function renderVerdict(c) {
     const k = 4;
     const perDay = FW.netAt(c, k) - FW.netAt(c, k - 1);
     set("act", "Start the pivot today",
-      `A flash drought is <strong>${(p1 / (r.n1[i] || 1e-9)).toFixed(1)}x</strong> as likely as normal this week. Starting now banks water while the soil still has room: ${total(d.evNow)} on average.`);
-    $("trigger").innerHTML = `<strong>Why not wait?</strong> Each day of warning is worth about $${perDay.toFixed(0)}/acre on your field right now, more than the next forecast is likely to tell you.`;
+      `A flash drought is <strong>${(p1 / (r.n1[i] || 1e-9)).toFixed(1)} times</strong> as likely as normal this week. Starting now stores water while the soil has room: ${total(d.evNow)} on average.`);
+    $("trigger").innerHTML = `<strong>Why not wait?</strong> Each day of warning is worth about $${perDay.toFixed(0)} an acre on your field now. That beats waiting for the next forecast.`;
   } else if (d.evWait > 0) {
-    set("wait", "Not yet: watch the next forecast",
+    set("wait", "Not yet. Check the next forecast",
       d.evNow > 0
-        ? `Starting today is worth a little (${usd(d.evNow, 1)}/acre), but waiting two days for a fresher forecast is worth more: you lose a little warning, but you avoid pumping for a dry spell that may not come.`
-        : `Starting today would cost more than it is likely to save (${usd(d.evNow, 1)}/acre), but the risk is high enough that the next forecast could tip it.`);
+        ? `Starting today pays a little (${usd(d.evNow, 1)} an acre). Waiting two days for a fresher forecast pays more: you lose a little warning but may avoid pumping for nothing.`
+        : `Starting today would cost more than it saves (${usd(d.evNow, 1)} an acre), but the next forecast could change that.`);
     $("trigger").innerHTML = mem && mem.trigger
-      ? `<strong>What we're waiting for:</strong> if the next forecast (in 2 days) shows <strong>${mem.trigger.text}</strong> at your farm, start the pivot then.
-         ${mem.membersTipping} of ${mem.members} of today's forecast scenarios look like that.`
-      : mem ? `<strong>What we're waiting for:</strong> ${mem.membersTipping} of ${mem.members} of today's forecast scenarios would make starting pay at the next forecast; no single rain or heat threshold separates them.`
+      ? `<strong>What to watch for:</strong> if the next forecast shows <strong>${mem.trigger.text}</strong>, start the pivot then.
+         ${mem.membersTipping} of today's ${mem.members} forecast runs look like that.`
+      : mem ? `<strong>What to watch for:</strong> ${mem.membersTipping} of today's ${mem.members} forecast runs would make starting pay, but no single rain or heat level separates them.`
       : isFinite(nextRisk) && nextRisk < 1
-      ? `<strong>What would change it:</strong> if the next forecast (in 2 days) shows at least a <strong>${pct(Math.min(nextRisk, 1))}</strong> chance of a flash drought in the coming week (today: ${pct(p1)}), start the pivot then.`
+      ? `<strong>What would change it:</strong> if the next forecast puts the 7-day chance at <strong>${pct(Math.min(nextRisk, 1))}</strong> or more (today ${pct(p1)}), start the pivot then.`
       : "";
   } else {
     set("calm", "No need to start early",
-      `The chance of a flash drought this week is ${pct(p1)} (normal: ${pct(r.n1[i])}). Starting early wouldn't pay for its pumping.`);
+      `The chance of a flash drought this week is ${pct(p1)} (normal ${pct(r.n1[i])}). Starting early would cost more in pumping than it saves.`);
     $("trigger").innerHTML = isFinite(nextRisk) && nextRisk < 1
-      ? `<strong>What would change it:</strong> a forecast showing at least a <strong>${pct(nextRisk)}</strong> chance this week (today: ${pct(p1)}).`
+      ? `<strong>What would change it:</strong> a 7-day chance of <strong>${pct(nextRisk)}</strong> or more (today ${pct(p1)}).`
       : "";
   }
 }
 
 function renderTiles() {
   const r = S.rec, i = S.i;
-  const ratio = (p, n) => p === null || !n ? "" : `${(p / n).toFixed(1)}x normal (${pct(n, 1)})`;
+  const ratio = (p, n) => p === null || !n ? "" : `${(p / n).toFixed(1)} times normal (${pct(n, 1)})`;
   $("t1").textContent = pct(r.p1[i], 1);
   $("t1x").textContent = ratio(r.p1[i], r.n1[i]);
   $("t1x").className = "x" + (r.p1[i] !== null && r.p1[i] < 1.5 * r.n1[i] ? " low" : "");
   $("t2").textContent = pct(r.p2[i], 1);
   $("t2x").textContent = ratio(r.p2[i], r.n2[i]);
   $("t2x").className = "x" + (r.p2[i] !== null && r.p2[i] < 1.5 * r.n2[i] ? " low" : "");
-  $("t3").textContent = r.rz[i] === null ? "below 20th" : `${r.rz[i].toFixed(0)}th`;
-  $("t3x").textContent = r.rz[i] === null ? "percentile: already in drought" : "percentile for the date (20th = drought line)";
+  $("t3").textContent = r.rz[i] === null ? "below 20" : `${r.rz[i].toFixed(0)}`;
+  $("t3x").textContent = r.rz[i] === null ? "percentile: in drought" : "percentile for the date (below 20 is drought)";
   $("t4").textContent = USDM[r.usdm[i]] ?? "None";
 }
 
@@ -238,14 +238,14 @@ function renderSeason(c) {
   const cal = FW.season(FW.curve({ ...params(), reaction_days: 7 }, 21), S.meta.dates, r.p1, r.p2, r.onsets,
                         { year: S.year, baseline: "calendar", calendar: S.farm.calendar });
   const acres = S.farm.acres;
-  const row = (title, s) => `<div class="row"><div class="note">${title}</div><div class="v ${s.value >= 0 ? "pos" : "neg"}">${usd(s.value)}/acre</div>
-    <div class="note">${usd(s.value * acres)} on ${acres} acres; ${s.hits} of ${s.onsets} dry spells caught early, ${s.falseAlarms} false alarm${s.falseAlarms === 1 ? "" : "s"}</div></div>`;
-  $("tally").innerHTML = row("vs a careful irrigator (starts 2 days after stress)", ss) +
-                         row(`vs a calendar irrigator (starts ${S.farm.calendar})`, cal);
+  const row = (title, s) => `<div class="row"><div class="note">${title}</div><div class="v ${s.value >= 0 ? "pos" : "neg"}">${usd(s.value)} an acre</div>
+    <div class="note">${usd(s.value * acres)} on ${acres} acres. Caught ${s.hits} of ${s.onsets} dry spells early; ${s.falseAlarms} false alarm${s.falseAlarms === 1 ? "" : "s"}.</div></div>`;
+  $("tally").innerHTML = row("Compared with starting 2 days after stress shows", ss) +
+                         row(`Compared with starting on ${S.farm.calendar}`, cal);
   $("events").innerHTML = ss.events.length ? ss.events.map(e => e.kind === "hit"
-    ? `<li>${fmtDate(e.date)}: start the pivot; a flash drought began ${e.notice} days later (${usd(e.value)}/acre)</li>`
-    : `<li>${fmtDate(e.date)}: start the pivot; no dry spell came (${usd(e.value)}/acre of pumping)</li>`).join("")
-    : `<li>FlashWatch never said "start early" this summer${ss.onsets ? `; ${ss.onsets} dry spell${ss.onsets > 1 ? "s" : ""} went unforecast` : ""}.</li>`;
+    ? `<li>${fmtDate(e.date)}: start the pivot. A flash drought began ${e.notice} day${e.notice === 1 ? "" : "s"} later (${usd(e.value)} an acre).</li>`
+    : `<li>${fmtDate(e.date)}: start the pivot. No dry spell came (${usd(e.value)} an acre of pumping).</li>`).join("")
+    : `<li>No early start this summer.${ss.onsets ? ` ${ss.onsets} dry spell${ss.onsets > 1 ? "s" : ""} came without a warning.` : ""}</li>`;
 }
 
 function renderNotice(c) {
@@ -257,7 +257,7 @@ function renderNotice(c) {
   const svg = d3.select("#noticeChart").html("").append("svg").attr("viewBox", `0 0 ${W} ${H}`);
   svg.append("g").attr("class", "axis").attr("transform", `translate(0,${H - m.b})`).call(d3.axisBottom(x).ticks(7));
   svg.append("g").attr("class", "axis").attr("transform", `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(5).tickFormat(v => "$" + v));
-  svg.append("text").attr("x", W - m.r).attr("y", H - 2).attr("text-anchor", "end").attr("fill", css("--muted")).attr("font-size", 11).text("days of warning before the soil runs dry");
+  svg.append("text").attr("x", W - m.r).attr("y", H - 2).attr("text-anchor", "end").attr("fill", css("--muted")).attr("font-size", 11).text("days of warning ($ an acre)");
   const ln = key => d3.line().x(r => x(r.notice)).y(r => y(r[key]));
   svg.append("path").attr("d", ln("avoided")(rows)).attr("fill", "none").attr("stroke", css("--calm")).attr("stroke-width", 2.5);
   svg.append("path").attr("d", ln("extraCost")(rows)).attr("fill", "none").attr("stroke", css("--act")).attr("stroke-width", 2).attr("stroke-dasharray", "5 3");
@@ -265,8 +265,8 @@ function renderNotice(c) {
   svg.append("text").attr("x", x(14)).attr("y", y(last.avoided) - 6).attr("text-anchor", "end").attr("fill", css("--calm")).attr("font-size", 12).text("crop loss avoided");
   svg.append("text").attr("x", x(14)).attr("y", y(last.extraCost) - 6).attr("text-anchor", "end").attr("fill", css("--act")).attr("font-size", 12).text("extra pumping");
   const sat = rows.findIndex(r => r.avoided >= last.avoided - 0.5);
-  $("noticeNote").innerHTML = `Your pivot puts down ${c.capacity.toFixed(2)} in/day; the crop uses ${S.farm.et_peak.toFixed(2)} in/day in a heat wave.
-    Without rain the crop is stressed ${c.stressDay} days into a dry spell. Warning ${sat > 0 ? `helps up to about <strong>${sat} days</strong>` : "barely matters"}: ${sat > 0 ? "after that the soil is already full when the pivot starts." : "your pivot can keep up with the crop if started on time."}`;
+  $("noticeNote").innerHTML = `Your pivot puts down ${c.capacity.toFixed(2)} in a day; the crop uses ${S.farm.et_peak.toFixed(2)} in a day in a heat wave.
+    With no rain, stress starts ${c.stressDay} days into a dry spell. ${sat > 0 ? `Warning helps up to about <strong>${sat} days</strong>. After that, the soil is already full when the pivot starts.` : "Warning barely matters: your pivot keeps up with the crop if started on time."}`;
 }
 
 function renderPicker() {
@@ -293,14 +293,14 @@ async function setLocation(lat, lon) {
   const cell = nearestCell(lat, lon);
   if (!cell) {
     $("place").textContent = "Outside FlashWatch's area";
-    $("placeSub").textContent = "FlashWatch covers 36-49 N, 104-80 W (the Corn Belt and northern Plains).";
+    $("placeSub").textContent = "FlashWatch covers the Corn Belt and northern Plains (36-49 N, 104-80 W).";
     return;
   }
   S.cell = cell;
   const cty = nearestCounty(lat, lon);
   $("place").textContent = cty ? `${cty[1]}, ${cty[2]}` : `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
   const [clat, clon] = cellLatLon(cell);
-  $("placeSub").textContent = `Your farm at ${lat.toFixed(2)}, ${lon.toFixed(2)}; forecast for the ${(S.meta.res * S.meta.thin * 111).toFixed(0)} km grid square centred ${clat.toFixed(2)}, ${clon.toFixed(2)}`;
+  $("placeSub").textContent = `${lat.toFixed(2)}, ${lon.toFixed(2)}. Forecast for the ${(S.meta.res * S.meta.thin * 111).toFixed(0)} km square around ${clat.toFixed(2)}, ${clon.toFixed(2)}.`;
   S.rec = await loadTile(S.year, cell);
   renderAll();
 }
