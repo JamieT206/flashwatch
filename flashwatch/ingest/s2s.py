@@ -237,7 +237,9 @@ def main_packed():
         for m in sorted({d.month for d in left}):
             ms = [d for d in left if d.month == m]
             tasks += [(ms[i:i + PACK], g) for i in range(0, len(ms), PACK)]
-    tasks.sort(key=lambda t: (t[0][0], t[1]))
+    # FW_S2S_FIRST="6,7,8": these months first (the irrigation season, DESIGN.md O), then the rest.
+    first = [int(m) for m in os.getenv("FW_S2S_FIRST", "").split(",") if m.strip()]
+    tasks.sort(key=lambda t: (first.index(t[0][0].month) if t[0][0].month in first else len(first), t[0][0], t[1]))
     log.info("%d packed requests (up to %d dates each), %d at a time", len(tasks), PACK, WORKERS)
 
     def run(task):

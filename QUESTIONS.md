@@ -106,6 +106,16 @@ and little for expensive ones. Three choices:
 dollar figure scales with it. **Default until you answer:** none of O is built until we've discussed
 it, except the cost/loss engine and value curves (O8 step 1, useful either way); I keep improving M2 and the agent.
 
+### Q9. Download the irrigation months (June-August) first?
+The S2S downloader works through the months in order, so June-August, the irrigation season the farm
+tool is about, arrive last (around Oct 30-31). Until then M2, the weather triggers and the dollar
+figures for summer rest on the land-only model or an estimate. `FW_S2S_FIRST=6,7,8` now puts those
+months first. Switching needs a restart of the running downloader, which can lose the request
+currently waiting in ECMWF's queue (up to ~1.5 h of work). Restart command:
+`$env:FW_S2S_FIRST="6,7,8"; python -m flashwatch.ingest s2s`, after stopping the running one.
+**Recommendation:** restart with summer first, right after the current request finishes (the log
+says "done _pack_..."). **Default until you answer:** leave it running as is; I won't stop it.
+
 ### Q6. B0 (the BSS reference) is miscalibrated: strengthen its smoothing? **RESOLVED Oct 28: (a)**
 Done before any M1 score was read. `python -m flashwatch.models.tune_b0` grid-searches B0's time
 half-width tw, spatial radius sr and shrinkage k per lead (4 year-groups of 2005-2021, pooled
