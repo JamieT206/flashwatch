@@ -102,7 +102,12 @@ def _gbm(name, **kw):
     return {"M1": gbm.GBM, "M2": gbm.GBMForecast}[name](**kw)
 
 
-MODELS = {"B0": Climatology, "B1": StateLogistic, "H1": WeatherRule, "M1": lambda **kw: _gbm("M1", **kw),
+def _cnn(**kw):
+    from flashwatch.models.cnn import CNN
+    return CNN(**kw)
+
+
+MODELS = {"B0": Climatology, "B1": StateLogistic, "H1": WeatherRule, "M3": _cnn, "M1": lambda **kw: _gbm("M1", **kw),
           "M2": lambda **kw: _gbm("M2", **kw)}
 # Light GBM training for fast design iteration (eval.cv --fast); heavy training comes later.
 LIGHT = {"params": {"learning_rate": 0.1}, "n_rounds": 150}

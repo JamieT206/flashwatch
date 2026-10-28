@@ -239,7 +239,11 @@ cross-validation per horizon; keep the simpler option unless the improvement is 
 
 ## L. Later, if time allows
 
-- L1. M3: deep-learning model on the map (U-Net/ConvLSTM).
+- L1. M3: deep-learning model on the map (U-Net/ConvLSTM). **Started Oct 29** (`models/cnn.py`, model `M3` in eval.cv): the M1
+  feature set laid out as one image per forecast date (a channel per feature plus a row-present channel),
+  a small U-Net (two scales, a dilated middle block), masked cross-entropy on cells with a row, the latest
+  training year held back for early stopping and a Platt map. Trained inside each CV fold on its training
+  years only, so the leakage discipline is the fold's. First comparison: `--models B0 M1 M3 --fast`.
 - L2. Interactive map: click a location and watch two charts animate, the FlashWatch forecast
   [x] weeks out and the actual soil moisture catching up behind it.
 - L3. A full website (beyond the static replay page).
