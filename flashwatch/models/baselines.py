@@ -112,6 +112,8 @@ MODELS = {"B0": Climatology, "B1": StateLogistic, "H1": WeatherRule, "M3": _cnn,
           "M3c": lambda **kw: _cnn(**{**kw, "seed": 2}),
           "M3d": lambda **kw: _cnn(**{**kw, "seed": 3, "width": 96, "epochs": 30}),
           "M1": lambda **kw: _gbm("M1", **kw),
-          "M2": lambda **kw: _gbm("M2", **kw)}
+          "M2": lambda **kw: _gbm("M2", **kw),
+          "M2s1": lambda **kw: _gbm("M2", **{**kw, "seed": 1}),          # other seeds, for averaging (B4)
+          "M2s2": lambda **kw: _gbm("M2", **{**kw, "seed": 2})}
 # Light GBM training for fast design iteration (eval.cv --fast); heavy training comes later.
 LIGHT = {"params": {"learning_rate": 0.1}, "n_rounds": 150}
