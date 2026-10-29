@@ -285,15 +285,15 @@ training while the design moves; heavy burst ~Nov 2 Sydney (DESIGN.md B).
      week 2 3.3%, top tenth 5.9x (DESIGN, M2 section). evidence.json rebuilt from it; README, write-up and
      video numbers updated. The farm page stays on E1 (M2 still has no late-July/August dates).
    - WhatsApp live (Q21): keys in flashwatch.env; WHATSAPP_TOKEN is a permanent system-user token
-     (never expires; set up Oct 29). Restart serve after changing flashwatch.env (existing env vars win). Webhook and WABA subscription set through the Graph API (app subscriptions +
-     subscribed_apps). Tunnel: `cloudflared tunnel --url http://127.0.0.1:8813` (address changes on
+     (never expires; set up Oct 29). Restart serve after changing flashwatch.env (existing env vars win).
+     Webhook and WABA subscription set through the Graph API (app subscriptions + subscribed_apps). Tunnel: `cloudflared tunnel --url http://127.0.0.1:8813` (address changes on
      restart; re-point with the same API call). Server now logs each webhook call (run with `python -u`).
+     Tested on James's phone: plan delivered (the test number takes ~1 min), YES button and typed "yes" both
+     approve the plan and get the "Done" reply. The very first send was lost before the webhook was set.
    - Later that evening: map model with summer forecasts still no gain (`m3fcsum`); M2 recalibration no gain;
      expectations 1 and 4 hold on the dev years (DESIGN). `eval.final` built for the burst: `freeze`
      records models/options and the code's git tree hash; `score` refuses if the code changed or the test
      years were already scored, trains on 2005-2021 only and writes data/final/test_scores.json.
-     Tested on James's phone: plan delivered (the test number takes ~1 min), YES button and typed "yes" both
-     approve the plan and get the "Done" reply. The very first send was lost before the webhook was set.
 
 **Priorities (James, Oct 28): (1) anything that meaningfully improves prediction, (2) the farmer tool,
 (3) modelling nice-to-haves. Nothing is cut; what misses Nov 4 continues after.**
