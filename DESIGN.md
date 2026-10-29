@@ -193,8 +193,8 @@ survives); M1 skill week 1 **4.3%**, week 2 **1.2%**, any-28 **4.6%** (before: 4
     4.3% against 1.0% Brier skill, paired +3.3 points (2.3 to 4.5); week 2 1.2% against 0.6%, +0.6 (0.4 to
     1.0). Holds. (4) West of 98 W against east of 90 W (the middle band left out): M1, all dates, week 1
     6.3% against 3.3%, west minus east +3.0 points (90% year-bootstrap range +1.3 to +4.9); week 2 +1.1
-    (+0.2 to +2.4). M2 (`m2fcsum`) points the same way, 19.9% against 14.0% at week 1 (+6.0, -0.5 to +11.8),
-    not yet clear of zero on 31 forecast dates. Holds for M1; likely for M2. Base rates are alike (3.4% and
+    (+0.2 to +2.4). M2 (`m2fc41`, 41 forecast dates) 19.4% against 13.0% at week 1 (+6.4, +1.4 to +11.1; on 31
+    dates it was +6.0, -0.5 to +11.8). Holds for M1 and M2. Base rates are alike (3.4% and
     3.5% at week 1), so the gap is skill, not frequency.
 - *Blurred forecasts* (`--oracle-skill r`): the same test with the perfect weather mixed with large-scale noise so it matches the truth with correlation r, to map how flash-drought skill depends on forecast quality (all fast-loop dates):
 
@@ -229,7 +229,11 @@ survives); M1 skill week 1 **4.3%**, week 2 **1.2%**, any-28 **4.6%** (before: 4
   28 days **9.5%**; M1 on the same dates 2.7 / 0.5 / 2.0; H1 (hot and dry) 0.7 / -0.4 / -1.0. Top tenth
   of farm-days (pooled): M2 week 1 5.9x (27.0% against 4.6%, 59% of onsets), week 2 2.7x; H1 1.7x and
   0.7x. Adding summer leaves week 1 where it was with a narrower range: skill holds into the main
-  flash-drought season. Still no late-July or August dates.
+  flash-drought season.
+  **Re-run with 41 start dates (Oct 30, `m2fc41`; adds Jun 17-29 and Jul 9-13).** M2 week 1 **16.5%**
+  (13.4-18.5), week 2 **3.7%** (1.7-5.2), any 28 days **10.3%** (5.7-13.8); M1 3.2 / 0.7 / 2.8; H1 0.6 / -0.5 /
+  -1.0. Top tenth: M2 week 1 6.2x (25.0% against 4.0%, 62% of onsets), week 2 3.1x; H1 1.7x and 0.7x. Week 1
+  holds, week 2 a little firmer. evidence.json rebuilt from it. Still no late-July or August dates.
 - *Meaning.* The target is sound and the onset waves are not noise; they are what weather forecasts exist to see. The ceiling is about 15x M1's skill at week 2. The open question is how much of it the real ECMWF forecasts keep (good at week 1, weaker at week 2, weak beyond), so M2 on real forecasts is the decisive run. The `native` (0.25 degree) variant is the absolute upper bound.
 
 ---

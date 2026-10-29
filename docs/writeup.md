@@ -107,11 +107,11 @@ ERA5-Land soil, rain, heat (as of each forecast date)     ECMWF extended-range e
 
 - **A week ahead is where the forecasts pay.** With ECMWF weather forecasts:
   - on the tenth of farm-days FlashWatch rates riskiest, a flash drought begins in the next 7 days
-    **5.9 times** as often as normal (27% against 4.6%), and those flags hold 59% of all onsets;
+    **6.2 times** as often as normal (25% against 4.0%), and those flags hold 62% of all onsets;
   - a farmer's rule of thumb ("hot and dry lately", fitted the same way) manages 1.7 times;
   - week-1 skill is about 17% better than the seasonal normal (Brier skill score);
-  - beyond the first week the edge fades (week 2: about 3%, 2.7 times normal on the top tenth);
-  - scored on the 31 ECMWF forecast dates downloaded so far, April to early July.
+  - beyond the first week the edge fades (week 2: about 4%, 3.1 times normal on the top tenth);
+  - scored on the 41 ECMWF forecast dates downloaded so far, April to mid-July.
 - **Seeing the map helps.** Without the weather forecasts, a small convolutional network that sees
   the whole map at once (where a drying patch is, and what surrounds it) adds to the per-cell model:
   week-1 skill 6.1% against 4.3% when the two are averaged (paired gain 1.8 points, 90% range 1.3-2.4).
@@ -137,8 +137,8 @@ ERA5-Land soil, rain, heat (as of each forecast date)     ECMWF extended-range e
      is largest at week 1.
   3. Raw ECMWF badly calibrated: not tested (B2 not built).
   4. More skill in the western Plains than the humid east: **holds** on the development years (week 1
-     6.3% west of 98 W against 3.3% east of 90 W; with the forecasts 20% against 14%, a gap not yet clear
-     of chance); test years TODO.
+     6.3% west of 98 W against 3.3% east of 90 W; with the forecasts 19% against 13%, gap
+     +6.4 points, 90% range +1.4 to +11.1); test years TODO.
 - **Null results we kept:**
   - Drought Monitor features: no gain.
   - Directional neighbourhood features: no gain.
