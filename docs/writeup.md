@@ -153,8 +153,8 @@ ERA5-Land soil, rain, heat (as of each forecast date)     ECMWF extended-range e
 - The water account uses daily means (ERA5-Land has no daily max and min here) and the FAO default wind;
   a farm's own rain gauge and weather station would sharpen it.
 - The pivot finder estimates a part circle's acres from its box (masks not decoded yet).
-- WhatsApp is built and tested without an account (messages go to a local outbox); it has not yet
-  sent to a real phone.
+- WhatsApp runs on Meta's test number: tested end to end on a real phone (plan sent, YES typed back,
+  commands passed to the simulated pivots). Real farmers need a business number and Meta's review.
 
 ## Built with
 
