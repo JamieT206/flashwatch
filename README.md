@@ -76,6 +76,8 @@ python -m flashwatch.forecast build              # data/fcst.zarr from the S2S f
 python -m flashwatch.eval.cv --models B0 H1 M1 M2 --leads week1 week2 any28 --fast --fc-dates
 python -m flashwatch.eval.cv --models B0 M1 M3 M3b --leads week1 week2 --fast --tag m3seeds   # M3 map model (GPU; requirements-dl.txt)
 python -m flashwatch.eval.blend <m3seeds oof> <m3seeds2 oof> --blend M1 M3+M3b+M3c+M3d --write E1   # M1 + mean of four M3s
+python -m flashwatch.eval.final freeze --models ... --blend E1=M1,M3+M3b+M3c+M3d   # after the burst (clean tree)
+python -m flashwatch.eval.final score            # once: train 2005-2021, score 2022-2024
 python -m flashwatch.ingest nass                 # county crop acres (NASS_API_KEY)
 python -m flashwatch.ingest.nass local           # state prices and farm counts
 python -m flashwatch.site.build --oof data\oof\<file>.parquet --model M2   # or the E1 file, --model E1 (current site)

@@ -288,6 +288,10 @@ training while the design moves; heavy burst ~Nov 2 Sydney (DESIGN.md B).
      (never expires; set up Oct 29). Restart serve after changing flashwatch.env (existing env vars win). Webhook and WABA subscription set through the Graph API (app subscriptions +
      subscribed_apps). Tunnel: `cloudflared tunnel --url http://127.0.0.1:8813` (address changes on
      restart; re-point with the same API call). Server now logs each webhook call (run with `python -u`).
+   - Later that evening: map model with summer forecasts still no gain (`m3fcsum`); M2 recalibration no gain;
+     expectations 1 and 4 hold on the dev years (DESIGN). `eval.final` built for the burst: `freeze`
+     records models/options and the code's git tree hash; `score` refuses if the code changed or the test
+     years were already scored, trains on 2005-2021 only and writes data/final/test_scores.json.
      Tested on James's phone: plan delivered (the test number takes ~1 min), YES button and typed "yes" both
      approve the plan and get the "Done" reply. The very first send was lost before the webhook was set.
 

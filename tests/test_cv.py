@@ -51,3 +51,47 @@ def test_bss_bootstrap_matches_row_bootstrap():
     fast = year_bootstrap_bss(df.year, df.y, df.p, df.r, n=300, seed=3)
     slow = year_bootstrap(df, lambda d: bss(d.y, d.p, d.r), n=300, seed=3)
     assert np.allclose(fast, slow)
+
+
+def test_final_guard_scores_test_years_once_and_only_frozen_code(tmp_path):
+    import json
+
+    import pytest
+
+    from flashwatch.eval import final
+    with pytest.raises(SystemExit, match="not frozen"):
+        final.check(tmp_path, code="abc")
+    final.freeze({"models": ["B0", "M1"]}, tmp_path, code="abc")
+    with pytest.raises(SystemExit, match="already frozen"):
+        final.freeze({"models": ["B0"]}, tmp_path, code="abc")
+    with pytest.raises(SystemExit, match="code changed"):
+        final.check(tmp_path, code="def")
+    assert final.check(tmp_path, code="abc")["models"] == ["B0", "M1"]
+    (tmp_path / "test_scores.json").write_text(json.dumps({}))
+    with pytest.raises(SystemExit, match="already scored"):
+        final.check(tmp_path, code="abc")
+
+
+def test_final_trains_on_development_years_only(monkeypatch):
+    from flashwatch.eval import cv, final
+    from flashwatch.models import baselines
+    years = list(range(2005, 2025))
+    df = pd.DataFrame({"year": np.repeat(years, 3), "issue": pd.Timestamp("2010-06-01"), "iy": 0, "ix": 0,
+                       "woy": 21, "rz_pct": 50.0, **{k: np.int8(0) for k in LABELS}})
+    seen = {}
+
+    class Spy:
+        def __init__(self, **kw): pass
+
+        def fit(self, train, label):
+            seen["train"] = set(train.year)
+            return self
+
+        def predict(self, test):
+            seen["test"] = set(test.year)
+            return np.zeros(len(test))
+    monkeypatch.setattr(cv, "fold_table", lambda cube, fb, ref, target, ff=None: (seen.setdefault("ref", ref), df)[1])
+    monkeypatch.setitem(baselines.MODELS, "M1", Spy)
+    out = final.run_test(None, ["M1"], None, None, ["week1"], log=lambda *a: None)
+    assert seen["ref"] == list(range(2005, 2022)) and seen["train"] == set(range(2005, 2022))
+    assert seen["test"] == {2022, 2023, 2024} and set(out.year) == {2022, 2023, 2024}
