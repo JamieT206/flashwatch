@@ -24,7 +24,7 @@ state you can reach from a URL or a click, so it can be recorded in one sitting.
 | 1:45-2:10 | Farm page, toggle Rain-fed; fungicide card; drag a slider | Most corn and soybeans aren't irrigated: 130 million acres in our region. For those farms the decisions are different: skip the fungicide pass when a dry spell means no disease, trim side-dress nitrogen, buy hay before prices rise. Each shows the chance today against the chance at which acting pays. |
 | 2:10-2:35 | Big picture: the 6x chart, the farm table, the Drought Monitor numbers | How good is it? On the farms FlashWatch flags, a flash drought follows six times as often as normal; a hot-and-dry rule of thumb manages under two. It sees drought three weeks before the Drought Monitor. Across the region, that's worth about $190 million a year, most of it on rain-fed farms. |
 | 2:35-2:52 | README architecture diagram, then the Glimmer section | Under the hood: ERA5-Land soil data and ECMWF weather forecasts feed a machine-learning model; a water balance turns it into dollars; Meta's models carry it to the farm. The test years are scored once, after the model is frozen. |
-| 2:52-3:00 | End card: repo link, site link | FlashWatch. Open source. |
+| 2:52-3:00 | End card: "FlashWatch, by Jamie Twiss", repo link, site link | FlashWatch. The code is on GitHub. |
 
 ## Shot list (URLs)
 
@@ -46,4 +46,4 @@ state you can reach from a URL or a click, so it can be recorded in one sitting.
   model without forecasts: re-check July 3's numbers if it switches to M2 once August lands, and the
   "$190 million".
 - Test-year results (after the freeze) may change the "how good is it" line: use whatever they say.
-- Name every contributor on the end card (rules).
+- End card names the only contributor, Jamie Twiss (rules).
