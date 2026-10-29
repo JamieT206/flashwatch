@@ -59,8 +59,13 @@ So the question an irrigator faces every summer morning is simple: *start the pi
     texts still 1.9 times (eased means lower, not gone). A third of onsets had a warning text in the
     two weeks before.
   - *Weekly briefing (Muse Spark)* for a county or extension office.
-  - *Drought Monitor-style narrative (Muse Glimmer 30B, open weights)*: a LoRA fine-tune on 15 years of
-    the Monitor's weekly text, paired with that week's numbers (TODO: results).
+  - *Drought Monitor-style narrative (Muse Glimmer 30B, open weights)*: writes the Monitor's weekly
+    High Plains and Midwest summary from that week's numbers. It runs locally (4-bit, one 12 GB graphics
+    card, llama.cpp). On 7 held-out weeks from 2020-21, on its own it writes like Muse Spark does: correct
+    states, no made-up figures, but a list of numbers (9% of wording shared with the real text). Shown two
+    real past weeks first, it picks up the Monitor's style (15%) but borrows details it wasn't given, which
+    the number checker flags (7% of figures). Next: a LoRA fine-tune on 749 weeks of the real narratives
+    (TODO: results).
   Every figure an agent writes is traced to a tool result; untraced ones go back for a redraft and
   are cut if they can't be fixed.
 - **The big picture.** Value to a typical irrigated and rain-fed farm, how good the forecasts are,
@@ -147,7 +152,7 @@ ERA5-Land soil, rain, heat (as of each forecast date)     ECMWF extended-range e
 ## Built with
 
 Python (LightGBM, PyTorch, xarray, pandas), d3, Leaflet, Meta Model API (SAM 3.1, Muse Spark, Muse Voice
-Transcribe), WhatsApp Cloud API, Muse Glimmer (TODO). Data: ERA5-Land (Copernicus Climate Change Service), ECMWF S2S
+Transcribe), WhatsApp Cloud API, Muse Glimmer 30B (llama.cpp). Data: ERA5-Land (Copernicus Climate Change Service), ECMWF S2S
 reforecasts, US Drought Monitor (NDMC, USDA, NOAA), USDA NASS, USDA NAIP imagery (USGS), US Census
 Gazetteer, OpenStreetMap. Everything in this repository was
 built during the hackathon.

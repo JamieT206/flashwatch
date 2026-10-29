@@ -57,16 +57,23 @@ function brief(b) {
 
 function glimmer(g) {
   if (!g) { $("aGlimmer").hidden = true; return; }
-  const s = g.stats || {};
+  const s = g.stats || {}, ex = g.example;
+  const name = r => `${r.local ? "Muse Glimmer 30B, run locally" : "Muse Spark, API"}${r.shots ? `, shown ${r.shots} past weeks` : ""}`;
+  const rows = g.rows.map(r => `<tr><td>${name(r)}</td><td>${Math.round(100 * r.rouge_l)}%</td><td>${Math.round(100 * r.states)}%</td>
+    <td>${Math.round(100 * r.untraced)}%</td><td>${r.words}</td></tr>`).join("");
   $("glimmer").innerHTML = `<div class="kpis three">
       <div><div class="bignum">${s.train ?? "-"}</div><div class="note">weeks of real Drought Monitor narrative to learn from (2005-2019)</div></div>
       <div><div class="bignum">${s.val ?? "-"}</div><div class="note">held-out weeks to score against (2020-2021)</div></div>
-      <div><div class="bignum">${Math.round(100 * g.mean.untraced)}%</div><div class="note">of figures made up, in the starting point (Muse Spark, no fine-tune)</div></div></div>
-    <div class="agrid" style="margin-top:16px"><div><div class="tt">The Drought Monitor, week of ${g.week.date}</div><blockquote>${esc(g.week.real)}</blockquote></div>
-      <div><div class="tt">Starting point: ${esc(g.model)}, from the same week's numbers</div><blockquote>${esc(g.week.draft)}</blockquote></div></div>
-    <p class="note">Without fine-tuning, the model gets the facts and the states right but writes a list of numbers, not the Monitor's prose
-      (word overlap with the real text: ${Math.round(100 * g.mean.rouge_l)}%). The fine-tune is to teach the style while keeping every figure traceable.
-      Status: training data ready; fine-tune scheduled.</p>`;
+      <div><div class="bignum">17 GB</div><div class="note">Glimmer, 4-bit, running on one desktop graphics card (12 GB) with no API</div></div></div>
+    <div style="overflow-x:auto;margin-top:16px"><table><thead><tr><th>Writer, from the week's numbers</th><th>Wording shared with the real text</th>
+      <th>States named right</th><th>Figures not in the input</th><th>Words</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <p class="note">Scored on the ${g.weeks} held-out weeks every writer finished. "Shown 2 past weeks": two real narratives from earlier years
+      come first in the prompt as examples; no training.</p>
+    <div class="agrid" style="margin-top:16px"><div><div class="tt">The Drought Monitor, week of ${ex.date}</div><blockquote>${esc(ex.real)}</blockquote></div>
+      <div><div class="tt">${name({local: ex.model.includes("glimmer"), shots: ex.shots})}, same week</div><blockquote>${esc(ex.draft)}</blockquote></div></div>
+    <p class="note">On their own, both models write a list of numbers. Shown two past weeks, Glimmer picks up the Monitor's way of writing
+      but starts borrowing details it wasn't given, such as a temperature range; the number checker catches these. The fine-tune is to
+      learn the style from all ${s.train ?? 749} weeks while keeping every figure to the input. Status: running locally; fine-tune not yet run.</p>`;
 }
 
 function then(o, warn) {

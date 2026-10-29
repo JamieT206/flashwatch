@@ -18,6 +18,25 @@ def _load(path):
     return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
 
 
+def glimmer_table(evals: dict) -> dict:
+    """Each narrative writer scored on the held-out weeks every one of them finished (some API calls time
+    out), plus one week from the best-styled run next to the real text."""
+    weeks = {k: {w["date"]: w for w in e["weeks"]} for k, e in evals.items()}
+    common = sorted(set.intersection(*[set(w) for w in weeks.values()]))
+    rows = []
+    for k, e in evals.items():
+        ws = [weeks[k][d] for d in common]
+        rows.append({"model": e["model"], "local": "glimmer" in e["model"], "shots": e.get("shots", 0),
+                     **{m: round(sum(w[m] for w in ws) / len(ws), 3) for m in ("untraced", "states", "rouge_l")},
+                     "words": round(sum(len(w["draft"].split()) for w in ws) / len(ws))})
+    best = max(rows, key=lambda r: r["rouge_l"])
+    key = next(k for k, e in evals.items() if e["model"] == best["model"] and e.get("shots", 0) == best["shots"])
+    clean = [w for w in weeks[key].values() if not w["untraced_figures"]] or list(weeks[key].values())
+    wk = max(clean, key=lambda w: w["rouge_l"])
+    return {"weeks": len(common), "rows": rows, "example": {"model": best["model"], "shots": best["shots"],
+            **{k: wk[k] for k in ("date", "draft", "real")}}}
+
+
 def main():
     out = {}
     piv = sorted((SITE / "data" / "pivots").glob("*.json"))
@@ -45,12 +64,10 @@ def main():
         out["brief"] = {k: b.get(k) for k in ("issue", "place", "model", "briefing", "cut_untraced", "tool_calls")}
         out["brief"]["drafts"] = len(b.get("drafts") or [])
         out["brief"]["tool_calls"] = [{"tool": c["tool"], "args": c.get("args", {})} for c in b.get("tool_calls") or []]
-    g = sorted((DATA / "glimmer").glob("eval_*.json"))
+    g = {f.stem[5:]: _load(f) for f in sorted((DATA / "glimmer").glob("eval_*.json"))}
     if g:
-        e = _load(g[0])
-        wk = max(e["weeks"], key=lambda w: w["states"])
-        out["glimmer"] = {"model": e["model"], "mean": e["mean"], "week": {k: wk[k] for k in ("date", "draft", "real", "untraced", "states")},
-                          "stats": _load(DATA / "glimmer" / "stats.json")}
+        out["glimmer"] = glimmer_table(g)
+        out["glimmer"]["stats"] = _load(DATA / "glimmer" / "stats.json")
     al = _load(SITE / "data" / "alerts" / "2012.json")
     if al:
         from flashwatch.agent.scorecard import score_alerts
