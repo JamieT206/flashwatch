@@ -25,7 +25,6 @@ image = (modal.Image.debian_slim(python_version="3.11")
                       "accelerate==1.1.1", "datasets==3.1.0", "trl==0.12.1", "hf_transfer==0.1.8")
          .env({"HF_HUB_ENABLE_HF_TRANSFER": "1"}))
 app = modal.App("flashwatch-glimmer", image=image)
-DATA = Path(__file__).resolve().parents[2] / "data" / "glimmer"
 
 
 @app.function(gpu="A100-80GB", timeout=4 * 3600, volumes={"/vol": VOL}, secrets=[modal.Secret.from_name("huggingface")])
@@ -69,9 +68,10 @@ def serve():
 
 @app.local_entrypoint()
 def main(epochs: int = 2):
+    data = Path(__file__).resolve().parents[2] / "data" / "glimmer"   # on this PC, not in the container
     with VOL.batch_upload(force=True) as up:
         for name in ("train.jsonl", "val.jsonl"):
-            up.put_file(str(DATA / name), f"/{name}")
+            up.put_file(str(data / name), f"/{name}")
     hist = train.remote(epochs=epochs)
     for h in hist:
         if "eval_loss" in h or "loss" in h:
