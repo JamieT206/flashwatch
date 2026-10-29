@@ -295,6 +295,7 @@ def main():
     ap.add_argument("--approve", default="", help="who approves (simulates the farmer's YES); empty = don't send")
     ap.add_argument("--no-llm", action="store_true", help="rule-based plan and message, no API calls")
     ap.add_argument("--llm-dates", nargs="*", help="use Muse only on these MM-DD dates (rules on the rest)")
+    ap.add_argument("--tag", default="", help="suffix for the output file, e.g. glimmer (keeps the Spark run)")
     args = ap.parse_args()
     farm, data = load_farm(args.farm), FarmData(args.year)
     conn = connector_for(farm, f"{args.year}-{args.dates[0]}")
@@ -322,7 +323,7 @@ def main():
                "sms": msg["sms"], "note": msg.get("note", ""), "approved_by": args.approve if sent else "",
                "sent": sent, "model": msg.get("model", "rules"),
                **{k: msg[k] for k in ("tool_calls", "drafts", "cut_untraced") if k in msg}}
-        (outdir / f"{args.year}_{md}.json").write_text(json.dumps(rec, indent=1, default=float))
+        (outdir / f"{args.year}_{md}{'_' + args.tag if args.tag else ''}.json").write_text(json.dumps(rec, indent=1, default=float))
         print(f"--- {m.date}\nSMS: {rec['sms']}\n{rec['note']}")
         for c in rec["refused"]:
             print(f"  refused {c['pivot']}: {c['why']}")

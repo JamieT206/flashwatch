@@ -2,7 +2,8 @@
 
 Meta Model API by default; point META_API_BASE at a local server (e.g. llama.cpp or vLLM running
 Muse Glimmer) to use the open-weight model through the same code. Settings, from the environment or
-flashwatch.env: META_API_KEY, META_API_BASE (default https://api.meta.ai/v1), META_MODEL.
+flashwatch.env: META_API_KEY, META_API_BASE (default https://api.meta.ai/v1), META_MODEL, and META_TIMEOUT
+(seconds per call, for a slow local model).
 """
 
 from __future__ import annotations
@@ -25,7 +26,7 @@ class Chat:
         self.model = model or os.getenv("META_MODEL", DEFAULT_MODEL)
         self.base = (base or os.getenv("META_API_BASE", DEFAULT_BASE)).rstrip("/")
         self.key = key if key is not None else os.getenv("META_API_KEY", "")
-        self.temperature, self.timeout = temperature, timeout
+        self.temperature, self.timeout = temperature, int(os.getenv("META_TIMEOUT", timeout))
         self.post = post or self._post                    # injectable for tests
         self.usage = {"prompt_tokens": 0, "completion_tokens": 0, "calls": 0}
 
