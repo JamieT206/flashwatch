@@ -131,11 +131,14 @@ ERA5-Land soil, rain, heat (as of each forecast date)     ECMWF extended-range e
     to 3.6% of yield per flash drought). Higher crop prices raise the value: $1.29 an acre a year on
     irrigated corn at $3.50, $4.80 at $7.50.
 - **Pre-registered expectations**, written before any model run:
-  1. M1 beats B1 at weeks 1-2: TODO.
+  1. M1 beats a simple soil-moisture baseline at weeks 1-2: **holds** on the development years (week 1
+     +3.3 points of skill, week 2 +0.6); test years TODO.
   2. "M2 beats M1 at weeks 3-4 but not at week 1": **wrong, in the opposite direction.** The gain
      is largest at week 1.
   3. Raw ECMWF badly calibrated: not tested (B2 not built).
-  4. More skill in the western Plains than the humid east: TODO.
+  4. More skill in the western Plains than the humid east: **holds** on the development years (week 1
+     6.3% west of 98 W against 3.3% east of 90 W; with the forecasts 20% against 14%, a gap not yet clear
+     of chance); test years TODO.
 - **Null results we kept:**
   - Drought Monitor features: no gain.
   - Directional neighbourhood features: no gain.

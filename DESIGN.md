@@ -188,6 +188,14 @@ survives); M1 skill week 1 **4.3%**, week 2 **1.2%**, any-28 **4.6%** (before: 4
   - **Conclusion so far:** the week-2 limit is in the real forecasts themselves. Their *average* week-2 match is fair (0.4-0.65), but flash-drought onsets hinge on the strong hot, dry spells, and an ensemble mean two weeks out blurs exactly those (the blur test added uniform noise, which is kinder). Spring-only dates may also understate it. Re-check with the full season once downloaded.
   - Spring 2012 example (week 1): on May 11 M2 forecast 14.8% against 37.8% actual (land only 4.6%; perfect weather 29.5%). From two weeks out (May 3, week 2): M2 4.0%, actual 27.6%.
   - **Pre-registered expectation 2 (HANDOVER 6.6: "M2 beats M1 at weeks 3-4 but not at week 1") is so far wrong in the opposite direction**: the gain is largest at week 1. To be reported as such.
+  - **Expectations 1 and 4 on the development years (Oct 29, out-of-fold; the test years confirm once after
+    the freeze).** (1) M1 beats B1 (logistic on today's soil percentile and its 10/20-day change): week 1
+    4.3% against 1.0% Brier skill, paired +3.3 points (2.3 to 4.5); week 2 1.2% against 0.6%, +0.6 (0.4 to
+    1.0). Holds. (4) West of 98 W against east of 90 W (the middle band left out): M1, all dates, week 1
+    6.3% against 3.3%, west minus east +3.0 points (90% year-bootstrap range +1.3 to +4.9); week 2 +1.1
+    (+0.2 to +2.4). M2 (`m2fcsum`) points the same way, 19.9% against 14.0% at week 1 (+6.0, -0.5 to +11.8),
+    not yet clear of zero on 31 forecast dates. Holds for M1; likely for M2. Base rates are alike (3.4% and
+    3.5% at week 1), so the gap is skill, not frequency.
 - *Blurred forecasts* (`--oracle-skill r`): the same test with the perfect weather mixed with large-scale noise so it matches the truth with correlation r, to map how flash-drought skill depends on forecast quality (all fast-loop dates):
 
 | Forecast quality (correlation with what happened) | 1.0 (perfect) | 0.7 | 0.5 | 0.3 | none (M1) |
