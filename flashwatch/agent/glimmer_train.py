@@ -3,7 +3,7 @@
     pip install modal && modal setup                      # once, with your Modal account
     modal run flashwatch/agent/glimmer_train.py --smoke   # 2 steps on 16 weeks: checks the pipeline (~15 min)
     modal run flashwatch/agent/glimmer_train.py           # uploads data/glimmer/*.jsonl, trains, saves the adapter
-    modal serve flashwatch/agent/glimmer_train.py         # vLLM with the adapter, OpenAI-compatible, for eval.glimmer_eval
+    modal serve flashwatch/agent/glimmer_train.py         # vLLM with the adapter, OpenAI-compatible (set FW_VLLM_KEY first)
 
 Needs a Modal secret named `huggingface` holding HF_TOKEN. The model (transformers 5.15+; a text and vision
 model, of which only the language part is adapted) is cached on the Modal volume, so reruns skip the download.
@@ -16,6 +16,7 @@ Then score with: META_API_BASE=<served url>/v1 META_MODEL=glimmer-lora python -m
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import modal
@@ -68,14 +69,18 @@ def train(epochs: int = 2, rank: int = 16, lr: float = 2e-4, max_len: int = 4608
     return tr.state.log_history
 
 
-@app.function(gpu="A100-80GB", timeout=3600, volumes={"/vol": VOL}, secrets=[modal.Secret.from_name("huggingface")],
-              image=serve_image)
+@app.function(gpu="A100-80GB", timeout=3600, volumes={"/vol": VOL}, image=serve_image, scaledown_window=300,
+              secrets=[modal.Secret.from_name("huggingface"), modal.Secret.from_dict({"FW_VLLM_KEY": os.getenv("FW_VLLM_KEY", "")})])
 @modal.web_server(8000, startup_timeout=1800)
 def serve():
+    """Needs FW_VLLM_KEY set locally (any long random string): callers send it as the API key
+    (META_API_KEY=$FW_VLLM_KEY), so the public address can't be used to run up GPU time."""
     import subprocess
+    if len(os.environ.get("FW_VLLM_KEY", "")) < 16:
+        raise SystemExit("set FW_VLLM_KEY (16+ characters) locally before `modal serve`")
     subprocess.Popen(["vllm", "serve", BASE, "--enable-lora", "--max-lora-rank", "16",
                       "--lora-modules", "glimmer-lora=/vol/glimmer-lora", "--max-model-len", "6144",
-                      "--gpu-memory-utilization", "0.92", "--port", "8000"])
+                      "--gpu-memory-utilization", "0.92", "--port", "8000", "--api-key", os.environ["FW_VLLM_KEY"]])
 
 
 @app.local_entrypoint()
