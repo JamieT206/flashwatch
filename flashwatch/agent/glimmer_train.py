@@ -3,7 +3,7 @@
     pip install modal && modal setup                      # once, with your Modal account
     modal run flashwatch/agent/glimmer_train.py --smoke   # 2 steps on 16 weeks: checks the pipeline (~15 min)
     modal run flashwatch/agent/glimmer_train.py           # uploads data/glimmer/*.jsonl, trains, saves the adapter
-    modal serve flashwatch/agent/glimmer_train.py         # vLLM with the adapter, OpenAI-compatible (set FW_VLLM_KEY first)
+    modal run flashwatch/agent/glimmer_train.py::score    # the adapter's drafts for the 12 validation weeks, scored
 
 Needs a Modal secret named `huggingface` holding HF_TOKEN. The model (transformers 5.15+; a text and vision
 model, of which only the language part is adapted) is cached on the Modal volume, so reruns skip the download.
@@ -11,12 +11,13 @@ Training pairs: data/glimmer/train.jsonl (749 weeks, 2005-2019) and val.jsonl (1
 chat format (system, user = the week's numbers as JSON, assistant = the real narrative); ~2,200 tokens
 median, 4,400 max. QLoRA: 4-bit base, LoRA rank 16 on the language model's attention and MLP projections,
 2 epochs, loss on the narrative only (prompt-completion format). On one 80 GB GPU about an hour.
-Then score with: META_API_BASE=<served url>/v1 META_MODEL=glimmer-lora python -m flashwatch.eval.glimmer_eval --n 40
+Every function runs on at most one GPU (max_containers=1) with a hard timeout. A vLLM web server was tried and
+dropped (Oct 30): its engine needs a CUDA compiler the slim image lacks, and each request to the crashed server
+started another GPU.
 """
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 import modal
@@ -28,12 +29,12 @@ image = (modal.Image.debian_slim(python_version="3.12")
          .pip_install("torch==2.15.0", "transformers==5.22.0", "peft==0.21.2", "bitsandbytes==0.50.2",
                       "accelerate==1.15.0", "datasets==5.1.0", "trl==1.17.0")
          .env(CACHE))
-serve_image = modal.Image.debian_slim(python_version="3.12").pip_install("vllm==0.32.0").env(CACHE)
 app = modal.App("flashwatch-glimmer", image=image)
 TARGETS = r".*language_model.*\.(q_proj|k_proj|v_proj|o_proj|gate_proj|up_proj|down_proj)"   # not the vision tower
 
 
-@app.function(gpu="A100-80GB", timeout=4 * 3600, volumes={"/vol": VOL}, secrets=[modal.Secret.from_name("huggingface")])
+@app.function(gpu="A100-80GB", timeout=4 * 3600, max_containers=1, volumes={"/vol": VOL},
+              secrets=[modal.Secret.from_name("huggingface")])
 def train(epochs: int = 2, rank: int = 16, lr: float = 2e-4, max_len: int = 4608, smoke: bool = False):
     import torch
     from datasets import load_dataset
@@ -69,18 +70,28 @@ def train(epochs: int = 2, rank: int = 16, lr: float = 2e-4, max_len: int = 4608
     return tr.state.log_history
 
 
-@app.function(gpu="A100-80GB", timeout=3600, volumes={"/vol": VOL}, image=serve_image, scaledown_window=300,
-              secrets=[modal.Secret.from_name("huggingface"), modal.Secret.from_dict({"FW_VLLM_KEY": os.getenv("FW_VLLM_KEY", "")})])
-@modal.web_server(8000, startup_timeout=1800)
-def serve():
-    """Needs FW_VLLM_KEY set locally (any long random string): callers send it as the API key
-    (META_API_KEY=$FW_VLLM_KEY), so the public address can't be used to run up GPU time."""
-    import subprocess
-    if len(os.environ.get("FW_VLLM_KEY", "")) < 16:
-        raise SystemExit("set FW_VLLM_KEY (16+ characters) locally before `modal serve`")
-    subprocess.Popen(["vllm", "serve", BASE, "--enable-lora", "--max-lora-rank", "16",
-                      "--lora-modules", "glimmer-lora=/vol/glimmer-lora", "--max-model-len", "6144",
-                      "--gpu-memory-utilization", "0.92", "--port", "8000", "--api-key", os.environ["FW_VLLM_KEY"]])
+@app.function(gpu="A100-80GB", timeout=1800, max_containers=1, volumes={"/vol": VOL},
+              secrets=[modal.Secret.from_name("huggingface")])
+def generate(chats: list, max_new_tokens: int = 1200, temperature: float = 0.2, batch: int = 6) -> list[str]:
+    """Drafts from the base model in bf16 plus the saved adapter, for a list of chats (system + user)."""
+    import torch
+    from peft import PeftModel
+    from transformers import AutoTokenizer, MuseGlimmerForConditionalGeneration
+
+    tok = AutoTokenizer.from_pretrained(BASE)
+    tok.padding_side = "left"
+    tok.pad_token = tok.pad_token or "<|finetune_right_pad|>"
+    model = MuseGlimmerForConditionalGeneration.from_pretrained(BASE, device_map="auto", dtype=torch.bfloat16)
+    model = PeftModel.from_pretrained(model, "/vol/glimmer-lora").eval()
+    out = []
+    for i in range(0, len(chats), batch):
+        enc = tok.apply_chat_template(chats[i:i + batch], add_generation_prompt=True, return_tensors="pt",
+                                      padding=True, return_dict=True).to(model.device)
+        with torch.no_grad():
+            g = model.generate(**enc, max_new_tokens=max_new_tokens, do_sample=temperature > 0,
+                               temperature=temperature, pad_token_id=tok.pad_token_id)
+        out += tok.batch_decode(g[:, enc["input_ids"].shape[1]:], skip_special_tokens=True)
+    return out
 
 
 @app.local_entrypoint()
@@ -93,3 +104,21 @@ def main(epochs: int = 2, smoke: bool = False):
     for h in hist:
         if "eval_loss" in h or "loss" in h:
             print({k: round(v, 4) if isinstance(v, float) else v for k, v in h.items()})
+
+
+@app.local_entrypoint()
+def score(n: int = 12):
+    """Scores the adapter like eval.glimmer_eval (same weeks and measures); writes eval_glimmer-lora.json."""
+    import json
+    from flashwatch.eval.glimmer_eval import pick, report
+    from flashwatch.eval.glimmer_eval import score as score_draft
+    rows = pick(n)
+    drafts = generate.remote([r["messages"][:2] for r in rows])
+    out = []
+    for r, d in zip(rows, drafts):
+        _, user, real = r["messages"]
+        s = score_draft(d, real["content"], json.loads(user["content"]))
+        out.append({"date": r["date"], **s, "draft": d, "real": real["content"]})
+        print(f"{r['date']}: untraced {s['untraced']:.2f} states {s['states']:.2f} direction {s['direction']:.0f} "
+              f"rouge-L {s['rouge_l']:.2f}")
+    report("glimmer-lora", 0, out)

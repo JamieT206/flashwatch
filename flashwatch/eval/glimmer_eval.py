@@ -91,6 +91,21 @@ def examples(train: list[dict], date: str, k: int) -> list[dict]:
     return [m for r in reversed(picked) for m in r["messages"][1:]]
 
 
+def pick(n: int, season_only: bool = False) -> list[dict]:
+    """n validation weeks spread through the set (the same weeks for every writer)."""
+    rows = [json.loads(l) for l in open(DATA / "glimmer" / "val.jsonl", encoding="utf-8")]
+    if season_only:
+        rows = [r for r in rows if "04" <= r["date"][5:7] <= "09"]
+    return rows[:: max(1, len(rows) // n)][:n]
+
+
+def report(model: str, shots: int, out: list[dict], usage=None):
+    mean = {k: round(sum(o[k] for o in out) / len(out), 3) for k in ("untraced", "states", "direction", "rouge_l")}
+    print("mean", mean, "tokens", usage)
+    f = DATA / "glimmer" / f"eval_{model}{f'_{shots}shot' if shots else ''}.json"
+    f.write_text(json.dumps({"model": model, "shots": shots, "mean": mean, "weeks": out, "usage": usage}, indent=1))
+
+
 def main():
     from flashwatch.agent.llm import Chat
     ap = argparse.ArgumentParser()
@@ -99,11 +114,8 @@ def main():
     ap.add_argument("--shots", type=int, default=0, help="real training-year weeks shown first as examples")
     ap.add_argument("--timeout", type=int, default=300, help="seconds per week (a local model can be slow)")
     args = ap.parse_args()
-    rows = [json.loads(l) for l in open(DATA / "glimmer" / "val.jsonl", encoding="utf-8")]
+    rows = pick(args.n, args.season_only)
     train = [json.loads(l) for l in open(DATA / "glimmer" / "train.jsonl", encoding="utf-8")] if args.shots else []
-    if args.season_only:
-        rows = [r for r in rows if "04" <= r["date"][5:7] <= "09"]
-    rows = rows[:: max(1, len(rows) // args.n)][: args.n]
     chat = Chat(timeout=args.timeout)
     out = []
     for r in rows:
@@ -117,10 +129,7 @@ def main():
         out.append({"date": r["date"], **s, "draft": draft, "real": real["content"]})
         print(f"{r['date']}: untraced {s['untraced']:.2f} states {s['states']:.2f} direction {s['direction']:.0f} "
               f"rouge-L {s['rouge_l']:.2f}")
-    mean = {k: round(sum(o[k] for o in out) / len(out), 3) for k in ("untraced", "states", "direction", "rouge_l")}
-    print("mean", mean, "tokens", chat.usage)
-    f = DATA / "glimmer" / f"eval_{chat.model}{f'_{args.shots}shot' if args.shots else ''}.json"
-    f.write_text(json.dumps({"model": chat.model, "shots": args.shots, "mean": mean, "weeks": out, "usage": chat.usage}, indent=1))
+    report(chat.model, args.shots, out, chat.usage)
 
 
 if __name__ == "__main__":
