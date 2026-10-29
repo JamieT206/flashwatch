@@ -189,7 +189,7 @@ model's licence accepted on Hugging Face if it's gated. Not run yet, so versions
 **Recommendation:** run it in or after the Oct 30 training session. **Default:** the Agents page shows the
 Glimmer section as "training data ready; fine-tune scheduled".
 
-### Q21. WhatsApp: send to a real phone for the video? (Oct 29)
+### Q21. WhatsApp: send to a real phone for the video? (Oct 29) **RESOLVED Oct 29: live on Meta's test number with a permanent token; tested on James's phone (plan, YES, Done).**
 The WhatsApp loop is built (`agent/whatsapp.py`): the operator's plan arrives with YES and NO buttons,
 YES starts the pivots through the connector, and the same thread takes questions (answered by Muse
 Spark) and voice notes. It runs dry for now: messages go to `data/whatsapp/outbox.jsonl`. To send for

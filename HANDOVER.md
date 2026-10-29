@@ -168,7 +168,7 @@ static soil water capacity and cropland features, the test-year scoring script.
 | Q1 | Glimmer narrative LoRA off the cut list; cut SMAP first | **Resolved: yes** | done |
 | Q2 | ECMWF CC BY-NC vs the submission licence | Publish code, results, attributed figures; no ECMWF-derived data files | before submission |
 | Q3 | Tune once on dev years vs fully nested | **Resolved: tune once per lead on dev years** (`flashwatch.models.tune`) | done |
-| Q21 | WhatsApp: real sends for the video (Meta developer app, test number) | Dry run; Agents page says so | before the video |
+| Q21 | WhatsApp: real sends for the video (Meta developer app, test number) | **Resolved: live, tested on James's phone** | done |
 | Q4 | Compute budget; XGBoost on GPU? | **Resolved: stay on LightGBM; light training + fast cycles (`eval.cv --fast`) while iterating design, heavy training last** | done |
 
 ### 4.5 Things learned the hard way (cloud session, Oct 26)
