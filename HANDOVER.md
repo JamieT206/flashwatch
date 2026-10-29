@@ -284,8 +284,8 @@ training while the design moves; heavy burst ~Nov 2 Sydney (DESIGN.md B).
    - S2S summer dates in (31 start dates in fcst.zarr, Apr 1 - Jul 7). M2 re-run `m2fcsum`: week 1 17.4%,
      week 2 3.3%, top tenth 5.9x (DESIGN, M2 section). evidence.json rebuilt from it; README, write-up and
      video numbers updated. The farm page stays on E1 (M2 still has no late-July/August dates).
-   - WhatsApp live (Q21): keys in flashwatch.env (temporary token, ~24 h; a permanent system-user token
-     is still to do). Webhook and WABA subscription set through the Graph API (app subscriptions +
+   - WhatsApp live (Q21): keys in flashwatch.env; WHATSAPP_TOKEN is a permanent system-user token
+     (never expires; set up Oct 29). Restart serve after changing flashwatch.env (existing env vars win). Webhook and WABA subscription set through the Graph API (app subscriptions +
      subscribed_apps). Tunnel: `cloudflared tunnel --url http://127.0.0.1:8813` (address changes on
      restart; re-point with the same API call). Server now logs each webhook call (run with `python -u`).
      Tested on James's phone: plan delivered (the test number takes ~1 min), YES button and typed "yes" both
