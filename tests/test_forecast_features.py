@@ -67,3 +67,23 @@ def test_member_features_match_names_and_isolation():
     train = np.array([d.year != 2007 for d in issues])
     for k in m0:
         np.testing.assert_array_equal(m0[k][train], p0[k][train], err_msg=k)
+
+
+def test_raw_onset_is_a_share_of_members_and_isolated():
+    years = list(range(2005, 2011))
+    ds = fake_fcst(years)
+    issues = pd.DatetimeIndex([f"{y}-06-13" for y in years] + ["2007-06-14"])     # last has no forecast
+    ref = [2005, 2006, 2008, 2009, 2010]
+    r0 = ForecastFeatures(ds, issues).raw_onset(ref)
+    assert set(r0) == {"B2_raw_week1", "B2_raw_week2", "B2_raw_any28"}
+    w1 = r0["B2_raw_week1"][:-1]
+    assert np.nanmin(w1) >= 0 and np.nanmax(w1) <= 1 and 0.1 < np.nanmean(w1) < 0.3    # ~20% of noise members
+    assert np.nanmean(r0["B2_raw_any28"][:-1]) > np.nanmean(w1) and np.isnan(r0["B2_raw_week1"][-1]).all()
+    # A drier 2007 raises 2007's chance, and never touches the other years' (2007 is not in their climatology).
+    ds2 = ds.copy(deep=True)
+    ds2["sm100"].loc[dict(hyear=2007)] = ds2["sm100"].sel(hyear=2007) - 5
+    r1 = ForecastFeatures(ds2, issues).raw_onset(ref)
+    train = np.array([d.year != 2007 for d in issues])
+    for k in r0:
+        np.testing.assert_array_equal(r0[k][train], r1[k][train], err_msg=k)
+    assert np.nanmean(r1["B2_raw_week1"][2]) == 1.0

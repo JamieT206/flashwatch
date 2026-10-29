@@ -135,7 +135,10 @@ ERA5-Land soil, rain, heat (as of each forecast date)     ECMWF extended-range e
      +3.3 points of skill, week 2 +0.6); test years TODO.
   2. "M2 beats M1 at weeks 3-4 but not at week 1": **wrong, in the opposite direction.** The gain
      is largest at week 1.
-  3. Raw ECMWF badly calibrated: not tested (B2 not built).
+  3. Raw ECMWF badly calibrated before recalibration: **holds, strongly.** Reading a flash drought straight
+     off the forecast's own soil moisture (the share of the 11 runs that go dry) is far too confident: worse
+     than the seasonal normal (Brier skill -166% at week 1). Recalibrated, it's 2% better than normal at week 1,
+     against FlashWatch's 17%: the skill comes from combining today's observed soil with the forecast weather.
   4. More skill in the western Plains than the humid east: **holds** on the development years (week 1
      6.3% west of 98 W against 3.3% east of 90 W; with the forecasts 19% against 13%, gap
      +6.4 points, 90% range +1.4 to +11.1); test years TODO.

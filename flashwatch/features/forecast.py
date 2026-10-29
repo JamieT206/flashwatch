@@ -151,6 +151,27 @@ class ForecastFeatures:
                     put(f"f_dryhot_{nm}_z", k, z["vpd"][w] - z["tp"][w])
         return {name: bilinear(r, self.lats, self.lons) for name, r in res.items()}
 
+    def raw_onset(self, ref_years, low: float = 0.2) -> dict[str, np.ndarray]:
+        """B2's input, the raw ECMWF onset chance: the share of members whose weekly 0-100 cm soil
+        moisture falls below the `low` quantile of the reference members for that start date and week
+        (the pooled reference years minus the issue's own year, as in build). Week 1: dry in week 1;
+        week 2: dry in week 2 but not week 1; any28: dry in any of weeks 1-4. Named B2_raw_<lead> so
+        the GBMs and the map model never take them as features."""
+        ref = np.isin(self.hyears, list(ref_years))
+        have = np.where(self.idx[:, 0] >= 0)[0]
+        n, grid = len(self.issues), (len(self.lats), len(self.lons))
+        res = {f"B2_raw_{lead}": np.full((n,) + grid, np.nan, np.float32) for lead in ("week1", "week2", "any28")}
+        a = self.fields["sm100"]
+        for k in have:
+            i, j = self.idx[k]
+            pool = ref.copy()
+            pool[j] = False
+            dry = self._tercile(a[i], pool, j, low, below=True)    # (members, W, la, lo)
+            res["B2_raw_week1"][k] = dry[:, 0].mean(0)
+            res["B2_raw_week2"][k] = (dry[:, 1] & ~dry[:, 0]).mean(0)
+            res["B2_raw_any28"][k] = dry[:, :4].any(1).mean(0)
+        return {name: bilinear(r, self.lats, self.lons) for name, r in res.items()}
+
     @staticmethod
     def _tercile(a, pool, j, q, below):
         """Members of year j beyond the q-quantile of all pooled members: (members, W, la, lo) bool."""

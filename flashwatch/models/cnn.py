@@ -23,7 +23,7 @@ from flashwatch.models.gbm import ID_COLUMNS, LABEL_PREFIXES
 
 def _features(df: pd.DataFrame) -> list[str]:
     return [c for c in df.columns if c not in ID_COLUMNS and not c.startswith(LABEL_PREFIXES)
-            and pd.api.types.is_numeric_dtype(df[c])]
+            and not c.startswith("B2_") and pd.api.types.is_numeric_dtype(df[c])]
 
 
 class Grid:

@@ -1,5 +1,5 @@
-"""Reference forecasts B0 (climatology), B1 (logistic on current soil-moisture state) and H1
-(logistic on recent rain and heat: a farmer's rule of thumb).
+"""Reference forecasts B0 (climatology), B1 (logistic on current soil-moisture state), B2 (raw ECMWF
+forecast, recalibrated) and H1 (logistic on recent rain and heat: a farmer's rule of thumb).
 
 Each model: fit(train_df, label) then predict(df) -> probabilities. Frames carry the columns
 built by eval.cv.fold_table: iy, ix (cell indices, never features), woy, and the features.
@@ -97,6 +97,46 @@ class WeatherRule(StateLogistic):
     inputs = ("precip14_z", "t2m14_z")
 
 
+class RawECMWF:
+    """B2raw: the raw ECMWF onset chance (features.forecast.raw_onset), as is; rows without a forecast
+    get the training onset rate. Scored to test pre-registered expectation 3 (badly calibrated)."""
+
+    name = "B2raw"
+
+    def fit(self, df: pd.DataFrame, label: str):
+        self.col, self.default = f"B2_raw_{label}", float(df[label].mean())
+        return self
+
+    def predict(self, df: pd.DataFrame) -> np.ndarray:
+        return df[self.col].fillna(self.default).to_numpy(float) if self.col in df else np.full(len(df), self.default)
+
+
+class RawECMWFRecal(RawECMWF):
+    """B2: the raw ECMWF onset chance through a logistic recalibration (intercept and slope on its
+    log-odds, members' share clipped to [1/22, 21/22]), fitted on the training rows with a forecast."""
+
+    name = "B2"
+
+    def _x(self, p):
+        p = np.clip(p, 1 / 22, 21 / 22)
+        return np.log(p / (1 - p))[:, None]
+
+    def fit(self, df: pd.DataFrame, label: str):
+        from sklearn.linear_model import LogisticRegression
+        super().fit(df, label)
+        has = df[self.col].notna() if self.col in df else np.zeros(len(df), bool)
+        self.model = LogisticRegression(C=1e6, max_iter=1000).fit(
+            self._x(df.loc[has, self.col].to_numpy(float)), df.loc[has, label].astype(int)) if has.any() else None
+        return self
+
+    def predict(self, df: pd.DataFrame) -> np.ndarray:
+        out = np.full(len(df), self.default)
+        if self.model is not None and self.col in df:
+            has = df[self.col].notna().to_numpy()
+            out[has] = self.model.predict_proba(self._x(df[self.col].to_numpy(float)[has]))[:, 1]
+        return out
+
+
 def _gbm(name, **kw):
     from flashwatch.models import gbm
     return {"M1": gbm.GBM, "M2": gbm.GBMForecast}[name](**kw)
@@ -107,7 +147,7 @@ def _cnn(**kw):
     return CNN(**kw)
 
 
-MODELS = {"B0": Climatology, "B1": StateLogistic, "H1": WeatherRule, "M3": _cnn,
+MODELS = {"B0": Climatology, "B1": StateLogistic, "H1": WeatherRule, "B2raw": RawECMWF, "B2": RawECMWFRecal, "M3": _cnn,
           "M3b": lambda **kw: _cnn(**{**kw, "seed": 1, "width": 96, "epochs": 30}),   # a second M3, for averaging
           "M3c": lambda **kw: _cnn(**{**kw, "seed": 2}),
           "M3d": lambda **kw: _cnn(**{**kw, "seed": 3, "width": 96, "epochs": 30}),

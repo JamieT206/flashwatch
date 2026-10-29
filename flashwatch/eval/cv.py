@@ -45,6 +45,7 @@ def fold_table(cube, fb: FeatureBuilder, ref_years, target_years, high=40, low=L
     feats = fb.build(ref_years, P_rz=P)
     if ff is not None:
         feats.update(ff.build(ref_years))
+        feats.update(ff.raw_onset(ref_years))     # B2's inputs only (B2_ prefix: no model takes them as features)
     labels = lead_labels(onset, cube.time, fb.issues)
     keep_issue = np.isin(fb.issues.year, list(target_years))
     with np.errstate(invalid="ignore"):

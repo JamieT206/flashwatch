@@ -188,6 +188,16 @@ survives); M1 skill week 1 **4.3%**, week 2 **1.2%**, any-28 **4.6%** (before: 4
   - **Conclusion so far:** the week-2 limit is in the real forecasts themselves. Their *average* week-2 match is fair (0.4-0.65), but flash-drought onsets hinge on the strong hot, dry spells, and an ensemble mean two weeks out blurs exactly those (the blur test added uniform noise, which is kinder). Spring-only dates may also understate it. Re-check with the full season once downloaded.
   - Spring 2012 example (week 1): on May 11 M2 forecast 14.8% against 37.8% actual (land only 4.6%; perfect weather 29.5%). From two weeks out (May 3, week 2): M2 4.0%, actual 27.6%.
   - **Pre-registered expectation 2 (HANDOVER 6.6: "M2 beats M1 at weeks 3-4 but not at week 1") is so far wrong in the opposite direction**: the gain is largest at week 1. To be reported as such.
+  - **Expectation 3 (raw ECMWF badly calibrated before recalibration): holds, strongly (Oct 30, `b2`, 41
+    forecast dates).** B2raw = share of the 11 members whose weekly 0-100 cm soil moisture falls below the 20th
+    percentile of the reference members for that start date and week (`ForecastFeatures.raw_onset`; week 2 = dry
+    in week 2 but not week 1). Reliability slope 0.13 at week 1 (1 is right), Brier skill -166% (week 2 -10%,
+    any 28 days -50%): the members' share is far too confident, because a dry forecast soil column is not an
+    onset. B2 (logistic recalibration of its log-odds, fitted on the training years): slope 0.94, week 1 skill
+    **2.2%** (90% range -0.2 to 3.7), week 2 0.3% (-0.8 to 1.2), any 28 days 3.5%; PR-AUC 0.096 against B0's
+    0.061. M2 on the same rows: 16.5% / 3.7% / 10.3%. So the forecast's own soil moisture, even recalibrated,
+    barely beats the seasonal normal; M2's skill comes from combining today's observed soil with the forecast
+    weather.
   - **Expectations 1 and 4 on the development years (Oct 29, out-of-fold; the test years confirm once after
     the freeze).** (1) M1 beats B1 (logistic on today's soil percentile and its 10/20-day change): week 1
     4.3% against 1.0% Brier skill, paired +3.3 points (2.3 to 4.5); week 2 1.2% against 0.6%, +0.6 (0.4 to
@@ -246,7 +256,7 @@ survives); M1 skill week 1 **4.3%**, week 2 **1.2%**, any-28 **4.6%** (before: 4
 | B2 | Tuning settings | Random search per horizon on the dev years (Q3a) | `models.tune` |
 | B3 | Number of practice models for calibration | 2 vs 4 (depends on A7) | yes |
 | B4 | Ensembling | Several seeds averaged; blend M1 and M2; combine with B2 | No |
-| B5 | Which models make the headline | M1, M2, B2 (raw ECMWF, recalibrated) | M1/M2 yes, B2 no |
+| B5 | Which models make the headline | M1, M2, B2 (raw ECMWF, recalibrated) | yes (B2 built Oct 30) |
 | B6 | Use all grid cells or every other one | Does thinning cost skill? | `--thin` |
 
 Burst decision rule (to finalise before Nov 2): choose by Brier score over the full 17-year
