@@ -12,7 +12,8 @@ It covers the Corn Belt and northern Plains (36-49 N, 104-80 W): 143 million acr
 
 ## The site
 
-`python -m http.server 8812 --directory site`, then open http://localhost:8812.
+Build its data first (Get the data and keys, then Run it, below), then `python -m http.server 8812 --directory site`
+and open http://localhost:8812.
 
 | Page | What's on it |
 | --- | --- |
@@ -63,12 +64,38 @@ ERA5-Land soil, rain, heat (as known on the forecast date)      ECMWF extended-r
 Every number an agent writes is traced back to a tool result before it's sent; untraced figures go
 back for a redraft and are cut if they can't be fixed. Farm rules are code, not prompts.
 
+## Get the data and keys
+
+The repository has the code, not the data: the data is about 9 GB, comes from several providers under their
+own licences, and the ECMWF forecasts may not be redistributed. All of it is free to download with your own
+accounts. Copy `flashwatch.env.example` to `flashwatch.env` and fill in the keys below; `flashwatch.env` is
+never committed.
+
+| Account | What FlashWatch downloads or does with it | How to get it | Setting |
+| --- | --- | --- | --- |
+| Google Earth Engine | ERA5-Land soil moisture, rain, heat and evaporation, daily 2004-2024 (about 1.2 GB; a few hours) | A Google Cloud project registered for Earth Engine (free for non-commercial use, earthengine.google.com); then run `earthengine authenticate` once | `EE_PROJECT` |
+| ECMWF Data Store | ECMWF extended-range reforecasts (S2S), 11 runs each, 2005-2024 (about 1.2 GB after trimming; two to three days, as ECMWF serves one request at a time) | Register at ecds.ecmwf.int, accept the S2S dataset's licence (CC BY-NC 4.0, non-commercial) on its page, copy the API key from your profile | `CDSAPI_KEY` |
+| USDA NASS Quick Stats | County crop acres and yields, state prices | Free key at quickstats.nass.usda.gov/api | `NASS_API_KEY` |
+| Meta Model API | The agents: Muse Spark, SAM 3.1, Muse Voice Transcribe | Meta's developer platform | `META_API_KEY` |
+| WhatsApp Cloud API (optional) | Plans with YES/NO buttons, questions, voice notes on WhatsApp | developers.facebook.com: a Business app with the WhatsApp product (Meta's free test number works). Token from a system user (it doesn't expire); app secret from App settings, Basic; make up a verify token. Webhook: the public address of `python -m flashwatch.agent.serve` plus `/whatsapp` (for example through a `cloudflared` tunnel), subscribed to `messages` | `WHATSAPP_*` |
+| Hugging Face, Modal (optional) | Muse Glimmer 30B run locally (GGUF) and its LoRA fine-tune | Accept the model's licence on Hugging Face; for the fine-tune, a Modal account with a secret named `huggingface` holding `HF_TOKEN` | none |
+
+No account needed for the US Drought Monitor maps and weekly narratives, the SMVI flash-drought event
+archive (HydroShare, about 3 GB), Nino 3.4 and the climate indices (NOAA), USDA NAIP aerial photos (USGS),
+the US Census gazetteer and OpenStreetMap.
+
+Machine: about 15 GB of disk for the raw and built data, 16 GB of RAM (cross-validation peaks near 11 GB).
+A graphics card is optional: the map model (M3) and running Glimmer locally want an NVIDIA card with 12 GB.
+`python -m flashwatch.ingest status` shows what has downloaded; every download resumes where it stopped.
+
 ## Run it
 
-Windows PowerShell from the repo folder; Python venv in `.venv`; keys in `flashwatch.env` (never committed).
+Windows PowerShell from the repo folder; Python venv in `.venv`; keys in `flashwatch.env` (see above). The
+site's data files are built by the `flashwatch.site` steps.
 
 ```powershell
 py -m venv .venv; .venv\Scripts\activate; pip install -r requirements.txt
+copy flashwatch.env.example flashwatch.env       # then fill in your keys
 python -m flashwatch.ingest all                  # downloads (resumable; ECMWF S2S takes days)
 python -m flashwatch.obs                         # data/obs.zarr from ERA5-Land
 python -m flashwatch.labels --variants           # flash-drought onsets
@@ -119,11 +146,27 @@ META_API_BASE=http://127.0.0.1:8080/v1 META_MODEL=muse-glimmer-30B python -m fla
 | `site` | The static site |
 | `docs` | Write-up, agents, video plan |
 
-Working records: `DESIGN.md` (decisions, tests, results), `QUESTIONS.md`, `HANDOVER.md`.
+Design record: `DESIGN.md` (decisions, tests and results, including the ones that didn't work).
 
 ## Data and licences
 
 ERA5-Land (Copernicus Climate Change Service), ECMWF S2S reforecasts, US Drought Monitor (NDMC, USDA,
 NOAA), USDA NASS (yields, Census of Agriculture, prices), USDA NAIP aerial imagery (USGS National Map),
-US Census Gazetteer, OpenStreetMap. ECMWF-derived data files are not redistributed here. See
-HANDOVER.md section 9.
+US Census Gazetteer, OpenStreetMap. ECMWF-derived data files are not redistributed here.
+
+- This work is based on S2S data. S2S is a joint initiative of the World Weather Research Programme (WWRP)
+  and the World Climate Research Programme (WCRP). The original S2S database is hosted at ECMWF as an
+  extension of the TIGGE database (Vitart et al. 2017, BAMS 98(1), 163-176, doi:10.1175/BAMS-D-16-0017.1).
+  ECMWF data are licensed CC BY-NC 4.0 and come with no warranty; FlashWatch uses weekly averages of them
+  over its region.
+- Contains modified Copernicus Climate Change Service information (ERA5-Land), accessed through Google Earth Engine.
+- US Drought Monitor: National Drought Mitigation Center, USDA and NOAA.
+- SMVI flash-drought events: Osman et al. (2024), HydroShare, doi:10.4211/hs.b6d1d853b82247e1aeaf907ac254c99e.
+- Muse Glimmer 30B: Apache 2.0.
+
+## Licence
+
+Copyright 2026 Jamie Twiss. FlashWatch is free to read, run, change and share for non-commercial purposes
+(personal use, research, teaching, non-profits, government) under the
+[PolyForm Noncommercial License 1.0.0](LICENSE.md). For commercial use, contact the author through the
+site's About page.

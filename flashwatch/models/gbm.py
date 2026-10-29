@@ -40,7 +40,7 @@ PARAMS = {"objective": "binary", "learning_rate": 0.05, "num_leaves": 63, "min_d
           "feature_fraction": 0.8, "bagging_fraction": 0.5, "bagging_freq": 1, "lambda_l2": 1.0,
           "max_bin": 63, "verbose": -1, "num_threads": 0}
 N_ROUNDS = 400
-# Per model and lead, from python -m flashwatch.models.tune (QUESTIONS.md Q3a). Used when a GBM
+# Per model and lead, from python -m flashwatch.models.tune. Used when a GBM
 # is built without explicit params or rounds; PARAMS/N_ROUNDS otherwise.
 TUNED_FILE = Path(__file__).resolve().parents[1] / "config" / "gbm_params.json"
 

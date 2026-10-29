@@ -4,7 +4,7 @@ A number in the draft passes if some number in the tool results rounds to it, ei
 (0.123 -> "0.12") or as a percentage (0.123 -> "12%" or "12.3%"), ignoring sign ("-2.6" may be
 written "2.6 below normal"). Small counting words and calendar numbers (years, days of the month,
 "week 2", "28 days") are exempt. Failures go back to the model to fix
-(at most 2 redrafts), then the sentences still carrying them are dropped (HANDOVER 6.5).
+(at most 2 redrafts), then the sentences still carrying them are dropped.
 """
 
 from __future__ import annotations

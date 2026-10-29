@@ -1,13 +1,13 @@
 # FlashWatch: standing instructions for Claude Code
 
-Read `HANDOVER.md` (sections 0-5) at the start of every session, then `QUESTIONS.md`. They hold
+Read `workbench/HANDOVER.md` (sections 0-5) at the start of every session, then `workbench/QUESTIONS.md`. They hold
 the project state, decisions, open questions and the next steps in order.
 
 - **Public repo.** Never commit secrets, account names, `flashwatch.env`/`.env`, anything under
   `data/`, or ECMWF-derived data files. Never print credentials.
 - **Branch**: work on `claude/practical-planck-eyczp0`; commit and push regularly with clear messages.
   James reviews from GitHub during the day, so push before long runs and when something is done.
-- **Questions for James** go in `QUESTIONS.md` (with a recommendation and a default you'll use until
+- **Questions for James** go in `workbench/QUESTIONS.md` (with a recommendation and a default you'll use until
   he answers), as well as in chat.
 - **Don't redesign.** The spec is settled; raise any deviation with James first.
 - **Leakage discipline**: features read observed data only via `flashwatch.features.asof`; every new

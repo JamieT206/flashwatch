@@ -39,7 +39,7 @@ class Climatology:
     """B0: onset rate per cell and week of year, smoothed over +/-tw weeks (triangular weights)
     and the (2 sr + 1)^2 neighbourhood, then shrunk towards the regional rate for that week
     (k pseudo-rows). Built without arguments it uses the per-lead values chosen by
-    python -m flashwatch.models.tune_b0 (config/b0_params.json; QUESTIONS.md Q6a), else
+    python -m flashwatch.models.tune_b0 (config/b0_params.json), else
     tw=2, sr=1, k=20."""
 
     name = "B0"

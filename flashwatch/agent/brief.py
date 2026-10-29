@@ -1,4 +1,4 @@
-"""Write a checked weekly briefing for one place (DESIGN.md G1, HANDOVER 6.5).
+"""Write a checked weekly briefing for one place (DESIGN.md G1).
 
     python -m flashwatch.agent.brief --issue 2012-05-03 --place "Story County, Iowa" --lat 42.04 --lon -93.46
 

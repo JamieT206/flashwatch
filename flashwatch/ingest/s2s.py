@@ -6,7 +6,7 @@ One file per (issue date, variable group): all 20 hindcast years (2005-2024), co
   accum  - accumulations from t=0 at 24 h steps: total precipitation
 Valid dates/years/variables were checked against the ECDS constraints table on Oct 26.
 Requests use the dataset's own form keys; if the probe rejects them, MARS-style keys are
-used instead (the syntax that worked in check_access.py).
+used instead (the syntax that worked in testing).
 """
 
 from __future__ import annotations

@@ -1,4 +1,4 @@
-"""The field's water account (the irrigator's "checkbook"; James, Oct 29, QUESTIONS Q15/Q16).
+"""The field's water account (the irrigator's "checkbook").
 
 Each day the root zone loses what the crop uses (reference ET x a crop coefficient for the growth
 stage, FAO-56) and gains rain and irrigation. The deficit says how far the soil is from full, when

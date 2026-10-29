@@ -1,4 +1,4 @@
-"""Fixed study settings (locked in HANDOVER.md section 5) and local paths."""
+"""Fixed study settings (locked before any model run) and local paths."""
 
 from __future__ import annotations
 

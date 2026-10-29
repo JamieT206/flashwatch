@@ -1,4 +1,4 @@
-"""The one-time test-year score (HANDOVER 6.6, DESIGN.md B): freeze the model, then score 2022-2024 once.
+"""The one-time test-year score (DESIGN.md B; the pre-registered expectations are in docs/writeup.md): freeze the model, then score 2022-2024 once.
 
     python -m flashwatch.eval.final freeze --models B0 B1 H1 M1 M2 --leads week1 week2 any28 --fc-dates \
         --blend E1=M1,M3+M3b+M3c+M3d          # after the burst; needs a clean, committed tree

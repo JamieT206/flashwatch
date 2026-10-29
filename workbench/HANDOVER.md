@@ -286,6 +286,12 @@ training while the design moves; heavy burst ~Nov 2 Sydney (DESIGN.md B).
      video numbers updated. The farm page stays on E1 (M2 still has no late-July/August dates).
      Oct 30: 41 start dates (Apr 1 - Jul 13), re-run `m2fc41`: week 1 16.5%, week 2 3.7%, top tenth 6.2x;
      west-east gap now clear (expectation 4 holds for M2). evidence.json and docs updated from it.
+   - Oct 30 morning (Jamie): the public name is **Jamie Twiss**, sole contributor (site footers, end card); no email or
+     phone anywhere public. Commits from this repo use the GitHub noreply address of JamieT206. Licence: PolyForm
+     Noncommercial 1.0.0 (LICENSE.md). Working notes moved to workbench/ (Jamie deletes it before the final commit);
+     CLAUDE.md moved to .claude/. README now has "Get the data and keys" and flashwatch.env.example. Security audit of
+     all history: clean (only the Earthdata username in two Oct 27 commits; Jamie to rotate that password). Glimmer
+     LoRA launched on Modal (Jamie's account, secret `huggingface`). Outside-in review planned for Nov 3.
    - WhatsApp live (Q21): keys in flashwatch.env; WHATSAPP_TOKEN is a permanent system-user token
      (never expires; set up Oct 29). Restart serve after changing flashwatch.env (existing env vars win).
      Webhook and WABA subscription set through the Graph API (app subscriptions + subscribed_apps). Tunnel: `cloudflared tunnel --url http://127.0.0.1:8813` (address changes on

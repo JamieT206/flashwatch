@@ -1,4 +1,4 @@
-"""B0's smoothing and shrinkage, chosen per lead by year-grouped CV on the dev years (QUESTIONS.md Q6a).
+"""B0's smoothing and shrinkage, chosen per lead by year-grouped CV on the dev years.
 
     python -m flashwatch.models.tune_b0 --depth 0-40     # needs python -m flashwatch.labels --depth 0-40
 

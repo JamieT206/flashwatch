@@ -1,4 +1,4 @@
-"""Hyperparameters tuned once per lead on the development years (QUESTIONS.md Q3, option a).
+"""Hyperparameters tuned once per lead on the development years.
 
     python -m flashwatch.models.tune --leads week1 week2 any28          # M1
     python -m flashwatch.models.tune --forecast                          # M2, once fcst.zarr is complete
