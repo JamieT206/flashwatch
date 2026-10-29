@@ -5,7 +5,8 @@ the project state, decisions, open questions and the next steps in order.
 
 - **Public repo.** Never commit secrets, account names, `flashwatch.env`/`.env`, anything under
   `data/`, or ECMWF-derived data files. Never print credentials.
-- **Branch**: work on `claude/practical-planck-eyczp0`; commit and push regularly with clear messages.
+- **Branch**: work on `claude/practical-planck-eyczp0`; commit and push regularly with clear messages. Fast-forward
+  `main` to it (`git push origin HEAD:main`, tests passing) at each milestone: Jamie reads `main` (Oct 30).
   James reviews from GitHub during the day, so push before long runs and when something is done.
 - **Questions for James** go in `workbench/QUESTIONS.md` (with a recommendation and a default you'll use until
   he answers), as well as in chat.
