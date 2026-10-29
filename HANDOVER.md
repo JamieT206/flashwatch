@@ -288,6 +288,8 @@ training while the design moves; heavy burst ~Nov 2 Sydney (DESIGN.md B).
      is still to do). Webhook and WABA subscription set through the Graph API (app subscriptions +
      subscribed_apps). Tunnel: `cloudflared tunnel --url http://127.0.0.1:8813` (address changes on
      restart; re-point with the same API call). Server now logs each webhook call (run with `python -u`).
+     Tested on James's phone: plan delivered (the test number takes ~1 min), YES button and typed "yes" both
+     approve the plan and get the "Done" reply. The very first send was lost before the webhook was set.
 
 **Priorities (James, Oct 28): (1) anything that meaningfully improves prediction, (2) the farmer tool,
 (3) modelling nice-to-haves. Nothing is cut; what misses Nov 4 continues after.**
