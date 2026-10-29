@@ -202,3 +202,47 @@ def test_second_pass_adds_part_and_half_circles_but_not_repeats():
                        full, 42.0, -98.0)
     assert [p["shape"] for p in extra] == ["part circle", "half circle"]
     assert extra[0]["acres"] == round(0.75 * full[0]["acres"]) and abs(extra[1]["acres"] - full[0]["acres"] / 2) <= 1
+
+
+def test_whatsapp_webhook_check_signature_and_parsing():
+    import hashlib
+    import hmac
+    from flashwatch.agent import whatsapp as wa
+    assert wa.verify({"hub.mode": "subscribe", "hub.verify_token": "t", "hub.challenge": "42"}, "t") == "42"
+    assert wa.verify({"hub.mode": "subscribe", "hub.verify_token": "x", "hub.challenge": "42"}, "t") is None
+    assert wa.verify({"hub.mode": "subscribe", "hub.verify_token": "", "hub.challenge": "42"}, "") is None
+    body = json.dumps({"entry": [{"changes": [{"value": {"messages": [
+        {"from": "15550001", "type": "text", "text": {"body": "YES"}},
+        {"from": "15550001", "type": "interactive", "interactive": {"button_reply": {"id": "no:ab12", "title": "NO"}}},
+        {"from": "15550001", "type": "audio", "audio": {"id": "m1"}}]}}]}]}).encode()
+    good = "sha256=" + hmac.new(b"s", body, hashlib.sha256).hexdigest()
+    assert wa.signed(body, good, "s") and not wa.signed(body, good, "other") and not wa.signed(body, "", "s")
+    msgs = wa.incoming(json.loads(body))
+    assert [m["type"] for m in msgs] == ["text", "interactive", "audio"]
+    assert msgs[0]["text"] == "YES" and msgs[1]["button"] == "no:ab12" and msgs[2]["media"] == "m1"
+    assert wa.incoming({"entry": [{"changes": [{"value": {"statuses": [{"id": "x"}]}}]}]}) == []
+
+
+def test_whatsapp_yes_sends_the_waiting_plan_once(tmp_path, monkeypatch):
+    from flashwatch.agent import whatsapp as wa
+    monkeypatch.setattr(wa, "DIR", tmp_path)
+    farm = {**FARM, "connector": {"kind": "simulated"}}
+    (tmp_path / "farm.json").write_text(json.dumps(farm))
+    sent = []
+    w = wa.WhatsApp(token="", phone_id="", outbox=tmp_path / "out.jsonl")
+    w._send = lambda to, body: sent.append((to, body)) or {}
+
+    class M:
+        date, accepted = "2012-07-03", [cmd("A")]
+    wa.send_plan(w, "15550001", M, "Start A today. Reply YES to start A.", str(tmp_path / "farm.json"))
+    buttons = sent[-1][1]["interactive"]["action"]["buttons"]
+    assert [b["reply"]["title"] for b in buttons] == ["YES", "NO"]
+    wa.register("15550001", {"lat": 45.45, "lon": -99.3, "year": 2012, "date": "07-03"})
+    assert wa.handle({"from": "15550001", "type": "text", "text": "maybe later?"}, w) .startswith("Questions need")
+    assert "lapsed" in wa.decide("15550001", True, today="2012-07-05")
+    wa.send_plan(w, "15550001", M, "Start A today.", str(tmp_path / "farm.json"))
+    reply = wa.handle({"from": "15550001", "type": "interactive", "button": buttons[0]["reply"]["id"], "text": "YES"}, w)
+    assert reply.startswith("Done. A start 0.75 in: sent")
+    assert wa.handle({"from": "15550001", "type": "text", "text": "yes"}, w) == "There's no plan waiting for an answer."
+    log = json.loads((tmp_path / "approvals.json").read_text())
+    assert log["2012-07-03"][0]["phone"] == "...0001"          # numbers are masked in the record

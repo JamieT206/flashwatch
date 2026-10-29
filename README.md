@@ -56,7 +56,7 @@ ERA5-Land soil, rain, heat (as known on the forecast date)      ECMWF extended-r
      Voice Transcribe field voice notes
      Muse Glimmer     Drought Monitor-style narrative (open weights, LoRA; in progress)
                                            |
-   farm rules (well, allocation, season, advice) -> farmer's YES -> pivot connector
+   farm rules (well, allocation, season, advice) -> farmer's YES (on the page or WhatsApp) -> pivot connector
    (signed webhook, Lindsay FieldNET data through Leaf, or a to-do in the maker's app)
 ```
 
@@ -97,6 +97,8 @@ python -m flashwatch.agent.voice note.wav --year 2012 --date 07-03   # voice fie
 python -m flashwatch.agent.farm --lat 45.38 --lon -99.38 --year 2012 --dates 07-03  # morning text
 python -m flashwatch.agent.watch --year 2012 --llm 3                # the watcher's texts for a season
 python -m flashwatch.agent.scorecard             # how often its texts were right, six seasons (no API)
+python -m flashwatch.agent.whatsapp operator --to <phone> --year 2012 --date 07-03   # plan with YES/NO buttons
+python -m flashwatch.agent.whatsapp inbox --from <phone> --text YES                # the farmer's reply
 modal run flashwatch/agent/glimmer_train.py      # Glimmer LoRA (Modal account)
 ```
 

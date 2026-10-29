@@ -5,6 +5,8 @@
 GET /health -> {"ok": true, "model": ...}
 POST /ask {"lat", "lon", "year", "date", "crop", "question", "history": [...]} -> {"answer", "tools", "cut_untraced"}
 POST /pivots {"lat", "lon"} -> the pivots SAM 3.1 finds around the farm (agent/pivots.py)
+GET /whatsapp (Meta's subscription check) and POST /whatsapp (incoming messages, signature checked):
+the WhatsApp loop in agent/whatsapp.py. Meta reaches it through a tunnel (see there).
 Binds to 127.0.0.1 only: the API key stays on this machine, and the static site never sees it.
 """
 
@@ -37,12 +39,25 @@ class Handler(BaseHTTPRequestHandler):
         self._send(204, {})
 
     def do_GET(self):
-        if self.path == "/health":
+        if self.path.startswith("/whatsapp"):
+            from urllib.parse import parse_qsl, urlsplit
+            from flashwatch.agent.whatsapp import verify
+            challenge = verify(dict(parse_qsl(urlsplit(self.path).query)))
+            data = (challenge or "forbidden").encode()
+            self.send_response(200 if challenge else 403)
+            self.send_header("Content-Type", "text/plain")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+        elif self.path == "/health":
             self._send(200, {"ok": True, "model": Handler.chat.model})
         else:
             self._send(404, {"error": "not found"})
 
     def do_POST(self):
+        if self.path == "/whatsapp":
+            self._whatsapp()
+            return
         if self.path not in ("/ask", "/pivots"):
             self._send(404, {"error": "not found"})
             return
@@ -59,6 +74,20 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, ask(farm, str(q["question"])[:500], Handler.chat, hist))
         except Exception as e:                          # the page shows the message
             self._send(500, {"error": f"{type(e).__name__}: {e}"})
+
+    def _whatsapp(self):
+        from flashwatch.agent.whatsapp import WhatsApp, handle, incoming, signed
+        raw = self.rfile.read(int(self.headers.get("Content-Length", 0)))
+        if not signed(raw, self.headers.get("X-Hub-Signature-256", "")):
+            self._send(403, {"error": "bad signature"})
+            return
+        self._send(200, {"ok": True})                    # answer Meta at once; replies go out on their own
+        wa = WhatsApp()
+        for msg in incoming(json.loads(raw or b"{}")):
+            try:
+                handle(msg, wa, Handler.chat)
+            except Exception as e:                      # one bad message shouldn't stop the server
+                print("whatsapp:", type(e).__name__, e)
 
     def log_message(self, fmt, *args):
         pass

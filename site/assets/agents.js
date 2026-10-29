@@ -32,8 +32,12 @@ function operator(o) {
       ${o.refused.map(c => `<li class="no">Refused: ${c.action} ${c.pivot}: ${esc(c.why)}</li>`).join("")}</ul>`) +
     step(3, "The text to the farmer", `<div class="sms-ask">${esc(o.sms)}</div><p>${esc(o.note)}</p>
       <p class="note">${o.drafts} draft${o.drafts === 1 ? "" : "s"}; ${o.cut_untraced && o.cut_untraced.length ? `figures the checker couldn't trace, removed: ${o.cut_untraced.join(", ")}` : "every figure traced to a tool result"}. Model: ${esc(o.model)}.</p>`) +
-    step(4, "Farmer replies YES; the connector sends it", `<ul class="events">${o.sent.map(c => `<li class="ok">${c.pivot}: ${c.action} ${c.depth_in ? c.depth_in + " in" : ""} (${c.state})</li>`).join("")}</ul>
-      <p class="note">Approved by ${esc(o.approved_by)}. Two days later the as-applied water shows up in each pivot's root zone and the agent plans again.</p>`);
+    step(4, "On WhatsApp: the farmer taps YES, the connector sends it", `<div class="wa">
+        <div class="wa-in">${esc(o.sms)}<div class="wa-btns"><span>YES</span><span>NO</span></div></div>
+        <div class="wa-out">YES</div>
+        <div class="wa-in">Done. ${o.sent.map(c => `${c.pivot} ${c.action}${c.action === "start" ? ` ${c.depth_in} in` : ""}: ${c.state}`).join("; ")}.</div></div>
+      <p class="note">Two days later the as-applied water shows up in each pivot's root zone and the agent plans again. The same thread takes
+        questions and voice notes. WhatsApp Cloud API; so far tested without a live account.</p>`);
 }
 
 function voice(v) {

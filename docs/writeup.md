@@ -43,8 +43,9 @@ So the question an irrigator faces every summer morning is simple: *start the pi
   - *Operator (Muse Spark).* For a farm with several pivots it reads each pivot's advice, water account,
     well and allocation and any voice note, and proposes starts and stops. Fixed farm rules check every
     command (well capacity, allocation, season, the advice); refusals go back to the agent with the
-    reason. It asks by text and acts only on YES, through a signed webhook, Lindsay FieldNET data via
-    Leaf, or a to-do in the maker's app.
+    reason. It asks on WhatsApp, with YES and NO buttons, and acts only on YES, through a signed webhook,
+    Lindsay FieldNET data via Leaf, or a to-do in the maker's app. On the same WhatsApp thread the farmer
+    can ask a question or send a voice note, and the watcher's texts arrive there too.
   - *Ask FlashWatch (Muse Spark).* The farmer asks in plain words ("I put an inch on yesterday, do I
     still need to start?"); the agent answers through the advice, decision and water-account tools, and
     logs irrigation it's told about.
@@ -140,11 +141,13 @@ ERA5-Land soil, rain, heat (as of each forecast date)     ECMWF extended-range e
 - The water account uses daily means (ERA5-Land has no daily max and min here) and the FAO default wind;
   a farm's own rain gauge and weather station would sharpen it.
 - The pivot finder estimates a part circle's acres from its box (masks not decoded yet).
+- WhatsApp is built and tested without an account (messages go to a local outbox); it has not yet
+  sent to a real phone.
 
 ## Built with
 
 Python (LightGBM, PyTorch, xarray, pandas), d3, Leaflet, Meta Model API (SAM 3.1, Muse Spark, Muse Voice
-Transcribe), Muse Glimmer (TODO). Data: ERA5-Land (Copernicus Climate Change Service), ECMWF S2S
+Transcribe), WhatsApp Cloud API, Muse Glimmer (TODO). Data: ERA5-Land (Copernicus Climate Change Service), ECMWF S2S
 reforecasts, US Drought Monitor (NDMC, USDA, NOAA), USDA NASS, USDA NAIP imagery (USGS), US Census
 Gazetteer, OpenStreetMap. Everything in this repository was
 built during the hackathon.

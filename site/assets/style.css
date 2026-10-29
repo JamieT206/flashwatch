@@ -149,6 +149,12 @@ td { border-bottom: 1px solid var(--line); padding: 6px 10px 6px 0; font-variant
   .bignum { font-size: 36px; }
 }
 .sms-ask { background: var(--act); color: #fff; padding: 10px 12px; font-size: 15px; }
+.wa { display: flex; flex-direction: column; gap: 6px; max-width: 420px; }
+.wa > div { padding: 8px 12px; font-size: 15px; max-width: 85%; }
+.wa-in { background: var(--off-bg); align-self: flex-start; }
+.wa-out { background: var(--calm-bg); align-self: flex-end; }
+.wa-btns { display: flex; gap: 6px; margin-top: 8px; }
+.wa-btns span { flex: 1; text-align: center; border: 1px solid var(--line); padding: 4px 0; color: var(--accent); font-weight: 600; }
 
 /* Farm page (Oct 29 layout): place + mode, the date bar, two independent columns, the map. */
 .verdict { border-left: 8px solid var(--line); padding: 16px 20px; margin: 0 0 8px; }

@@ -168,6 +168,7 @@ static soil water capacity and cropland features, the test-year scoring script.
 | Q1 | Glimmer narrative LoRA off the cut list; cut SMAP first | **Resolved: yes** | done |
 | Q2 | ECMWF CC BY-NC vs the submission licence | Publish code, results, attributed figures; no ECMWF-derived data files | before submission |
 | Q3 | Tune once on dev years vs fully nested | **Resolved: tune once per lead on dev years** (`flashwatch.models.tune`) | done |
+| Q21 | WhatsApp: real sends for the video (Meta developer app, test number) | Dry run; Agents page says so | before the video |
 | Q4 | Compute budget; XGBoost on GPU? | **Resolved: stay on LightGBM; light training + fast cycles (`eval.cv --fast`) while iterating design, heavy training last** | done |
 
 ### 4.5 Things learned the hard way (cloud session, Oct 26)
@@ -265,6 +266,14 @@ training while the design moves; heavy burst ~Nov 2 Sydney (DESIGN.md B).
    - Watcher fixes: risk easing must hold two forecasts; drought text at most every 4 weeks.
    - Watcher scorecard (`agent/scorecard.py`): each forecast text checked against the next 14 days, on
      the Agents page with a six-season track record.
+
+6f. **Oct 29 late morning (James on Remote Control):**
+   - WhatsApp loop (`agent/whatsapp.py`, webhook in `agent/serve.py`): operator plan with YES/NO buttons,
+     YES sends through the connector, questions go to Ask FlashWatch, voice notes to agent/voice.py.
+     Dry run (outbox in data/whatsapp/) until James sets up a Meta developer app (Q21).
+   - Glimmer run locally (James approved Oct 29): llama.cpp b11972 CUDA in data/tools/llama, official
+     `meta-models/Muse-Glimmer-30B-GGUF` Q4_K_M (16.8 GB) in data/models/glimmer; `eval.glimmer_eval`
+     gains `--shots` (real training-year weeks as in-context examples) and `--timeout`.
 
 **Priorities (James, Oct 28): (1) anything that meaningfully improves prediction, (2) the farmer tool,
 (3) modelling nice-to-haves. Nothing is cut; what misses Nov 4 continues after.**

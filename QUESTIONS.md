@@ -189,6 +189,24 @@ model's licence accepted on Hugging Face if it's gated. Not run yet, so versions
 **Recommendation:** run it in or after the Oct 30 training session. **Default:** the Agents page shows the
 Glimmer section as "training data ready; fine-tune scheduled".
 
+### Q21. WhatsApp: send to a real phone for the video? (Oct 29)
+The WhatsApp loop is built (`agent/whatsapp.py`): the operator's plan arrives with YES and NO buttons,
+YES starts the pivots through the connector, and the same thread takes questions (answered by Muse
+Spark) and voice notes. It runs dry for now: messages go to `data/whatsapp/outbox.jsonl`. To send for
+real, about 20 minutes on your side:
+1. developers.facebook.com: create an app (type Business), add the WhatsApp product. Meta gives a
+   free test number and a temporary token (24 h; a system-user token lasts longer).
+2. Add your own phone as a test recipient (up to 5).
+3. Put `WHATSAPP_TOKEN` and `WHATSAPP_PHONE_ID` in `flashwatch.env` yourself (don't paste them to me).
+   For replies, also `WHATSAPP_APP_SECRET` (App settings, Basic) and a `WHATSAPP_VERIFY_TOKEN` you make up.
+4. I start the tunnel (`cloudflared tunnel --url http://127.0.0.1:8813`, already installed) and you
+   paste its address + `/whatsapp` as the webhook URL in the app, subscribed to `messages`.
+Texts FlashWatch starts need an approved template outside the 24 hours after your last message; the
+test number's `hello_world` won't carry our text, so message the test number first (opens 24 hours) or
+make a one-field template and set `WHATSAPP_TEMPLATE`.
+**Recommendation:** worth it for the video: a phone buzzing with "Start S2" and a tap on YES is the
+clearest demo moment we have. **Default until you answer:** dry run, and the Agents page says so.
+
 ### Q10. Pivot control: may the agent ever act without the farmer's YES? Which accounts to pursue?
 The operator agent (DESIGN.md O10) plans pivot starts and stops, and the guard checks them. Nothing
 is sent without an approval. Two decisions:
