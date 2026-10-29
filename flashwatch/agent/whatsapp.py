@@ -306,7 +306,7 @@ def main():
         else:
             m.propose([c.__dict__ for c in rule_plan(m.ov, farm, m.date)])
             msg = rule_note(m)
-        sms = (msg.get("sms") or "").strip() + approval_line(m)
+        sms = (msg.get("note") or msg.get("sms") or "").strip() + approval_line(m)   # WhatsApp has room for the full note
         send_plan(wa, a.to, m, sms, path)
         piv = next(iter(farm["pivots"].values()))
         register(a.to, {"lat": piv.get("lat", farm.get("lat")), "lon": piv.get("lon", farm.get("lon")), "year": a.year,
