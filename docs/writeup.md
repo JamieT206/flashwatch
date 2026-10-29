@@ -107,10 +107,11 @@ ERA5-Land soil, rain, heat (as of each forecast date)     ECMWF extended-range e
 
 - **A week ahead is where the forecasts pay.** With ECMWF weather forecasts:
   - on the tenth of farm-days FlashWatch rates riskiest, a flash drought begins in the next 7 days
-    **5.4 times** as often as normal (29% against 5.3%), and those flags hold 54% of all onsets;
+    **5.9 times** as often as normal (27% against 4.6%), and those flags hold 59% of all onsets;
   - a farmer's rule of thumb ("hot and dry lately", fitted the same way) manages 1.7 times;
   - week-1 skill is about 17% better than the seasonal normal (Brier skill score);
-  - beyond two weeks, the forecasts can't see the dry spells (week 2: about 4%).
+  - beyond the first week the edge fades (week 2: about 3%, 2.7 times normal on the top tenth);
+  - scored on the 31 ECMWF forecast dates downloaded so far, April to early July.
 - **Seeing the map helps.** Without the weather forecasts, a small convolutional network that sees
   the whole map at once (where a drying patch is, and what surrounds it) adds to the per-cell model:
   week-1 skill 6.1% against 4.3% when the two are averaged (paired gain 1.8 points, 90% range 1.3-2.4).

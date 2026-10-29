@@ -216,6 +216,12 @@ survives); M1 skill week 1 **4.3%**, week 2 **1.2%**, any-28 **4.6%** (before: 4
   -0.5; week 2 -0.4, CI -0.6 to 0.0), so the decision stands. Still spring dates only: the site keeps
   M1 for the summer, and the roll-up keeps the blurred-forecast stand-in for M2 until June-August
   start dates arrive.
+  **Re-run with 31 start dates (Oct 29 evening, `m2fcsum`; Apr 1 - May 19 as above plus Jun 1-15 and
+  Jul 1-7, every second day).** M2 week 1 **17.4%** (90% range 14.3-19.2), week 2 **3.3%** (0.9-4.9), any
+  28 days **9.5%**; M1 on the same dates 2.7 / 0.5 / 2.0; H1 (hot and dry) 0.7 / -0.4 / -1.0. Top tenth
+  of farm-days (pooled): M2 week 1 5.9x (27.0% against 4.6%, 59% of onsets), week 2 2.7x; H1 1.7x and
+  0.7x. Adding summer leaves week 1 where it was with a narrower range: skill holds into the main
+  flash-drought season. Still no late-July or August dates.
 - *Meaning.* The target is sound and the onset waves are not noise; they are what weather forecasts exist to see. The ceiling is about 15x M1's skill at week 2. The open question is how much of it the real ECMWF forecasts keep (good at week 1, weaker at week 2, weak beyond), so M2 on real forecasts is the decisive run. The `native` (0.25 degree) variant is the absolute upper bound.
 
 ---

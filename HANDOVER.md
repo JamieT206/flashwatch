@@ -280,6 +280,15 @@ training while the design moves; heavy burst ~Nov 2 Sydney (DESIGN.md B).
      Ask FlashWatch 3 questions (`data/logs/ask_compare.py`): right but slower/less thorough. On the
      Agents page. Server: `bash data/logs/glimmer_server.sh` (port 8080; stop it before GPU training).
 
+6g. **Oct 29 evening (James at the PC):**
+   - S2S summer dates in (31 start dates in fcst.zarr, Apr 1 - Jul 7). M2 re-run `m2fcsum`: week 1 17.4%,
+     week 2 3.3%, top tenth 5.9x (DESIGN, M2 section). evidence.json rebuilt from it; README, write-up and
+     video numbers updated. The farm page stays on E1 (M2 still has no late-July/August dates).
+   - WhatsApp live (Q21): keys in flashwatch.env (temporary token, ~24 h; a permanent system-user token
+     is still to do). Webhook and WABA subscription set through the Graph API (app subscriptions +
+     subscribed_apps). Tunnel: `cloudflared tunnel --url http://127.0.0.1:8813` (address changes on
+     restart; re-point with the same API call). Server now logs each webhook call (run with `python -u`).
+
 **Priorities (James, Oct 28): (1) anything that meaningfully improves prediction, (2) the farmer tool,
 (3) modelling nice-to-haves. Nothing is cut; what misses Nov 4 continues after.**
 7. Burst (Nov 2), freeze, test years once, replay, video, write-up.

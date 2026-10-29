@@ -27,9 +27,9 @@ Development years 2005-2021, each scored by a model that never saw that year. Th
 are scored once, after the model is frozen.
 
 - **Forecasts.** On the tenth of farm-days FlashWatch rates riskiest, a flash drought begins in the
-  next 7 days 5.4 times as often as normal (29% against 5.3%); those flags hold 54% of all flash
+  next 7 days 5.9 times as often as normal (27% against 4.6%); those flags hold 59% of all flash
   droughts. A farmer's rule of thumb ("hot and dry lately", fitted the same way) manages 1.7 times.
-  Days 8-14: 2.4 times. Scored on the 16 spring forecast dates downloaded so far; summer is downloading.
+  Days 8-14: 2.7 times. Scored on the 31 forecast dates downloaded so far (April to early July).
 - **Ahead of the Drought Monitor.** The soil crosses the drought line a median 22 days before the
   Monitor first marks moderate drought (D1) at that place, before the forecast adds its one to two weeks.
 - **Value.** A flash drought with a week's warning is worth about $21 an acre on irrigated corn (yield

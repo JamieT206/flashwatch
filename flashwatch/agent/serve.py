@@ -79,15 +79,17 @@ class Handler(BaseHTTPRequestHandler):
         from flashwatch.agent.whatsapp import WhatsApp, handle, incoming, signed
         raw = self.rfile.read(int(self.headers.get("Content-Length", 0)))
         if not signed(raw, self.headers.get("X-Hub-Signature-256", "")):
+            print("whatsapp: bad signature, refused", flush=True)
             self._send(403, {"error": "bad signature"})
             return
         self._send(200, {"ok": True})                    # answer Meta at once; replies go out on their own
-        wa = WhatsApp()
-        for msg in incoming(json.loads(raw or b"{}")):
+        wa, msgs = WhatsApp(), incoming(json.loads(raw or b"{}"))
+        print(f"whatsapp: {len(msgs)} message(s)", *(m["type"] for m in msgs), flush=True)
+        for msg in msgs:
             try:
                 handle(msg, wa, Handler.chat)
             except Exception as e:                      # one bad message shouldn't stop the server
-                print("whatsapp:", type(e).__name__, e)
+                print("whatsapp:", type(e).__name__, e, flush=True)
 
     def log_message(self, fmt, *args):
         pass
