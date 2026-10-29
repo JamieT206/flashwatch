@@ -166,3 +166,28 @@ def test_blend_is_a_log_odds_mean():
     a, b = np.array([0.1, 0.5]), np.array([0.1, 0.9])
     assert np.allclose(mean_prob([a, a]), a)
     assert np.isclose(mean_prob([b[1:], 1 - b[1:]])[0], 0.5)
+
+
+def test_server_answers_tunnelled_requests_on_whatsapp_only():
+    import threading
+    import urllib.error
+    import urllib.request
+    from http.server import ThreadingHTTPServer
+    from flashwatch.agent.serve import Handler
+    srv = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    base = f"http://127.0.0.1:{srv.server_address[1]}"
+
+    def code(path, data=None, tunnel=False):
+        req = urllib.request.Request(base + path, data=data, headers={"Cf-Connecting-Ip": "203.0.113.5"} if tunnel else {})
+        try:
+            return urllib.request.urlopen(req, timeout=10).status
+        except urllib.error.HTTPError as e:
+            return e.code
+    try:
+        assert code("/ask", b"{}", tunnel=True) == 403 and code("/pivots", b"{}", tunnel=True) == 403
+        assert code("/health", tunnel=True) == 403
+        assert code("/ask", b"{}") == 500                      # local: reaches the handler (bad request -> 500)
+        assert code("/whatsapp", b"{}", tunnel=True) == 403    # tunnel reaches /whatsapp, refused without a signature
+    finally:
+        srv.shutdown()

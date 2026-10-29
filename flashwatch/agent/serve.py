@@ -7,7 +7,9 @@ POST /ask {"lat", "lon", "year", "date", "crop", "question", "history": [...]} -
 POST /pivots {"lat", "lon"} -> the pivots SAM 3.1 finds around the farm (agent/pivots.py)
 GET /whatsapp (Meta's subscription check) and POST /whatsapp (incoming messages, signature checked):
 the WhatsApp loop in agent/whatsapp.py. Meta reaches it through a tunnel (see there).
-Binds to 127.0.0.1 only: the API key stays on this machine, and the static site never sees it.
+Binds to 127.0.0.1 only: the API key stays on this machine, and the static site never sees it. When a tunnel
+publishes the server for WhatsApp, requests that came through it (Cloudflare's forwarding headers) may reach
+/whatsapp only, which checks Meta's signature; /ask and /pivots spend Meta API credit and answer this PC only.
 """
 
 from __future__ import annotations
@@ -20,6 +22,9 @@ from flashwatch.agent.llm import Chat
 from flashwatch.config import load_env
 
 PORT = 8813
+
+
+TUNNEL_HEADERS = ("Cf-Connecting-Ip", "Cf-Ray", "X-Forwarded-For")
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -35,6 +40,9 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def _via_tunnel(self) -> bool:
+        return any(self.headers.get(h) for h in TUNNEL_HEADERS)
+
     def do_OPTIONS(self):
         self._send(204, {})
 
@@ -49,6 +57,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(data)))
             self.end_headers()
             self.wfile.write(data)
+        elif self._via_tunnel():
+            self._send(403, {"error": "local only"})
         elif self.path == "/health":
             self._send(200, {"ok": True, "model": Handler.chat.model})
         else:
@@ -57,6 +67,9 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if self.path == "/whatsapp":
             self._whatsapp()
+            return
+        if self._via_tunnel():
+            self._send(403, {"error": "local only"})
             return
         if self.path not in ("/ask", "/pivots"):
             self._send(404, {"error": "not found"})
