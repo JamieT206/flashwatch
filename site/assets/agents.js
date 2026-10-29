@@ -30,14 +30,15 @@ function operator(o) {
       <p class="note">Wells: ${Object.entries(o.wells || {}).map(([w, s]) => `${w} gives ${s.gives_gpm} gpm to ${s.pivots.join(" and ")}`).join("; ")}.</p>`) +
     step(2, "<code>propose_commands</code>: the farm rules check each one", `<ul class="events">${o.accepted.map(c => `<li class="ok">Accepted: ${c.action} ${c.pivot}${c.action === "start" ? `, ${c.depth_in} in` : ""}</li>`).join("")}
       ${o.refused.map(c => `<li class="no">Refused: ${c.action} ${c.pivot}: ${esc(c.why)}</li>`).join("")}</ul>`) +
-    step(3, "The text to the farmer", `<div class="sms-ask">${esc(o.sms)}</div><p>${esc(o.note)}</p>
+    step(3, "As a text message (140 characters)", `<div class="sms-ask">${esc(o.sms)}</div>
       <p class="note">${o.drafts} draft${o.drafts === 1 ? "" : "s"}; ${o.cut_untraced && o.cut_untraced.length ? `figures the checker couldn't trace, removed: ${o.cut_untraced.join(", ")}` : "every figure traced to a tool result"}. Model: ${esc(o.model)}.</p>`) +
     step(4, "On WhatsApp: the farmer taps YES, the connector sends it", `<div class="wa">
-        <div class="wa-in">${esc(o.sms)}<div class="wa-btns"><span>YES</span><span>NO</span></div></div>
+        <div class="wa-in">${esc(o.note)} ${esc((o.sms.match(/Reply YES.*$/) || [""])[0])}<div class="wa-btns"><span>YES</span><span>NO</span></div></div>
         <div class="wa-out">YES</div>
         <div class="wa-in">Done. ${o.sent.map(c => `${c.pivot} ${c.action}${c.action === "start" ? ` ${c.depth_in} in` : ""}: ${c.state}`).join("; ")}.</div></div>
       <p class="note">Two days later the as-applied water shows up in each pivot's root zone and the agent plans again. The same thread takes
-        questions and voice notes. WhatsApp Cloud API; so far tested without a live account.</p>`);
+        questions and voice notes. WhatsApp Cloud API, tested on a real phone on Meta's test number: plan delivered,
+        YES tapped, commands sent and the confirmation back within about a minute.</p>`);
 }
 
 function voice(v) {
