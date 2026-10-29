@@ -274,6 +274,11 @@ training while the design moves; heavy burst ~Nov 2 Sydney (DESIGN.md B).
    - Glimmer run locally (James approved Oct 29): llama.cpp b11972 CUDA in data/tools/llama, official
      `meta-models/Muse-Glimmer-30B-GGUF` Q4_K_M (16.8 GB) in data/models/glimmer; `eval.glimmer_eval`
      gains `--shots` (real training-year weeks as in-context examples) and `--timeout`.
+     Results (7 common held-out weeks): alone, Glimmer and Spark both ~9% wording overlap, 0% untraced;
+     Glimmer 2-shot 15% overlap but 7% untraced (borrows details). Offline agents: operator on Glimmer
+     (`--tag glimmer`, META_TIMEOUT=1500) made Spark's plan for 2012-07-03, first draft clean, ~8 min;
+     Ask FlashWatch 3 questions (`data/logs/ask_compare.py`): right but slower/less thorough. On the
+     Agents page. Server: `bash data/logs/glimmer_server.sh` (port 8080; stop it before GPU training).
 
 **Priorities (James, Oct 28): (1) anything that meaningfully improves prediction, (2) the farmer tool,
 (3) modelling nice-to-haves. Nothing is cut; what misses Nov 4 continues after.**

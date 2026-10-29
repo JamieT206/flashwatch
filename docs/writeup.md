@@ -66,6 +66,11 @@ So the question an irrigator faces every summer morning is simple: *start the pi
     real past weeks first, it picks up the Monitor's style (15%) but borrows details it wasn't given, which
     the number checker flags (7% of figures). Next: a LoRA fine-tune on 749 weeks of the real narratives
     (TODO: results).
+    The same model also runs FlashWatch's agents offline, with the same tools, rules and checker. For
+    the demo farm's 3 July 2012 morning it made the same plan as Muse Spark, every figure traced on the
+    first draft, in about 8 minutes. Asked three farmer questions, it answered all correctly but took 1-4
+    minutes each (Spark: 13-32 seconds) and was less thorough (it skipped the water account once and
+    week 2 once). Spark stays the default; Glimmer is for no connection, or data that shouldn't leave the farm.
   Every figure an agent writes is traced to a tool result; untraced ones go back for a redraft and
   are cut if they can't be fixed.
 - **The big picture.** Value to a typical irrigated and rain-fed farm, how good the forecasts are,
@@ -95,7 +100,8 @@ ERA5-Land soil, rain, heat (as of each forecast date)     ECMWF extended-range e
   - The test years 2022-2024 are scored once, after the model is frozen.
 - **Meta models:** SAM 3.1 (pivot finder); Muse Spark (operator, Ask FlashWatch, morning text,
   briefing, voice-note structuring, map cross-check); Muse Voice Transcribe (field reports); Muse
-  Glimmer 30B, open weights (narrative writer; TODO).
+  Glimmer 30B, open weights, run locally (narrative writer, and an offline fallback for the operator
+  and Ask FlashWatch); WhatsApp Cloud API (texts, YES/NO approval, questions).
 
 ## Results (development years 2005-2021; test years TODO)
 

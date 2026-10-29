@@ -73,7 +73,24 @@ function glimmer(g) {
       <div><div class="tt">${name({local: ex.model.includes("glimmer"), shots: ex.shots})}, same week</div><blockquote>${esc(ex.draft)}</blockquote></div></div>
     <p class="note">On their own, both models write a list of numbers. Shown two past weeks, Glimmer picks up the Monitor's way of writing
       but starts borrowing details it wasn't given, such as a temperature range; the number checker catches these. The fine-tune is to
-      learn the style from all ${s.train ?? 749} weeks while keeping every figure to the input. Status: running locally; fine-tune not yet run.</p>`;
+      learn the style from all ${s.train ?? 749} weeks while keeping every figure to the input. Status: running locally; fine-tune not yet run.</p>`
+    + offline(g.offline);
+}
+
+function offline(o) {
+  if (!o) return "";
+  const gl = o.asks["muse-glimmer-30B"] || [], sp = o.asks["muse-spark-1.1"] || [];
+  const rows = gl.map((a, i) => `<tr><td>${esc(a.q)}</td><td>${esc(a.answer)}<div class="note">${a.seconds} s; tools: ${a.tools.join(", ")}${a.cut.length ? `; checker cut: ${a.cut.join(", ")}` : ""}</div></td>
+    <td>${sp[i] ? `${esc(sp[i].answer)}<div class="note">${sp[i].seconds} s; tools: ${sp[i].tools.join(", ")}${sp[i].cut.length ? `; checker cut: ${sp[i].cut.join(", ")}` : ""}</div>` : "-"}</td></tr>`).join("");
+  return `<h4 style="margin-top:24px">The same agents, offline</h4>
+    <p>Glimmer can also run FlashWatch's agents with no internet: the same tools, farm rules and number checker as Muse Spark.
+      For the demo farm on 3 July 2012 it planned the same morning as Spark (${o.operator.accepted.map(c => `start ${c.pivot} at ${c.depth_in} in`).join(", ")}),
+      with every figure in its first draft traced, in about 8 minutes on a 12 GB graphics card.</p>
+    <div class="sms-ask">${esc(o.operator.sms)}</div>
+    <div style="overflow-x:auto;margin-top:12px"><table class="asks"><thead><tr><th>Farmer asks</th><th>Muse Glimmer 30B, run locally</th><th>Muse Spark, API</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    <p class="note">Glimmer answers correctly but more slowly, and is less thorough: on the first question it didn't look at the field's water account,
+      and on the third it left out week 2. Spark stays the default; Glimmer is the fallback where there's no connection, or no data should leave the farm.</p>`;
 }
 
 function then(o, warn) {

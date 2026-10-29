@@ -68,6 +68,14 @@ def main():
     if g:
         out["glimmer"] = glimmer_table(g)
         out["glimmer"]["stats"] = _load(DATA / "glimmer" / "stats.json")
+    asks = {e["model"]: e for e in map(_load, sorted((DATA / "agent").glob("ask_compare_*.json")))}
+    op = _load(SITE / "data" / "ops" / "2012_07-03_glimmer.json")
+    if asks and op and "glimmer" in out:
+        out["glimmer"]["offline"] = {
+            "operator": {"sms": op["sms"], "accepted": op["accepted"], "drafts": len(op.get("drafts") or []),
+                         "cut_untraced": op.get("cut_untraced") or []},
+            "asks": {m: [{"q": a["q"], "answer": a["answer"], "seconds": a["seconds"], "tools": [t["tool"] for t in a["tools"]],
+                          "cut": a["cut_untraced"]} for a in e["answers"]] for m, e in asks.items()}}
     al = _load(SITE / "data" / "alerts" / "2012.json")
     if al:
         from flashwatch.agent.scorecard import score_alerts

@@ -326,3 +326,5 @@ blockquote { margin: 0; padding: 10px 14px; border-left: 4px solid var(--line); 
 .texts .then.wrong::before { content: "\2717\00a0"; color: var(--act); font-weight: 700; }
 .scorecard { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 14px; }
 @media (max-width: 860px) { .agrid.three { grid-template-columns: 1fr; } }
+
+.asks td { vertical-align: top; min-width: 200px; }
