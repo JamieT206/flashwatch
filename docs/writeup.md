@@ -144,6 +144,8 @@ ERA5-Land soil, rain, heat (as of each forecast date)     ECMWF extended-range e
   - Directional neighbourhood features: no gain.
   - Year-level climate indices: worse, so removed.
   - Training on each ensemble member separately: slightly worse.
+  - The map model on top of the weather forecasts: no gain (week 1 -1.0 points, within chance); it
+    helps only the model without forecasts.
 
 ## Limitations
 

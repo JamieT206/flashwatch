@@ -269,6 +269,11 @@ cross-validation per horizon; keep the simpler option unless the improvement is 
   16.8%); the M2+M3 blend 16.3% (paired -0.6, CI -3.8 to +2.2); week 2 3.5% vs 3.8%. Only ~16 pictures a
   year to learn from on forecast dates, against ~100 on all dates, so the map model is starved. Re-run when
   the summer forecast dates land; until then the blend is a land-only (M1) improvement.
+  **Re-run on 31 forecast dates (`m3fcsum`, M3 and M3b, Oct 29 evening): still no gain.** M3 alone week 1
+  8.7%, M3b 8.1%, their mean 10.8% (M2 17.4%). M2 + mean of the two, 50/50 fixed in advance: week 1 16.6%,
+  paired against M2 -1.0 point (-2.3 to +0.2); week 2 3.4% against 3.3%, +0.1 (-0.2 to +0.4). Doubling the
+  forecast dates didn't help the map model catch up. With the forecasts, the per-cell model stays alone
+  (M2); the map model's gain is for the land-only model (M1 + M3s, E1), used where no forecast exists.
   **Two M3s averaged (`m3seeds`: M3 and M3b, a wider net with another seed; then 50/50 with M1, fixed in
   advance).** Week 1 Brier skill **6.0%** (90% range 4.8-7.0) against M1's 4.3%: paired **+1.7 points (1.2 to
   2.3)**; PR-AUC 0.141 against 0.113 (+25%). Week 2: 1.7% against 1.2%, paired **+0.5 (0.1 to 0.8)**, now
