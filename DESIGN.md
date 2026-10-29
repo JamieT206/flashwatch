@@ -277,6 +277,10 @@ cross-validation per horizon; keep the simpler option unless the improvement is 
   **Recalibrating M2 (leave-one-year-out Platt map, `blend --recal`, `m2fcsum`):** slope 1.21 -> 0.98, but
   Brier skill falls a little (week 1 16.8% against 17.4%, paired -0.8, -2.3 to +0.3; week 2 2.8% against
   3.3%). M2 stays as it is: slightly too cautious at the extremes, but no better once straightened.
+  **Averaging M2 over seeds (B4; `m2seeds`, light training, 31 forecast dates):** three seeds score 17.4%,
+  17.1% and 17.5% at week 1; their mean 17.6%, paired against M2 +0.1 point (-0.2 to +0.5); week 2 +0.0.
+  The four cross-fitted inner models already average out most of the seed noise. By the burst rule (keep
+  the simpler unless the gain is clearly real), one M2.
   **Two M3s averaged (`m3seeds`: M3 and M3b, a wider net with another seed; then 50/50 with M1, fixed in
   advance).** Week 1 Brier skill **6.0%** (90% range 4.8-7.0) against M1's 4.3%: paired **+1.7 points (1.2 to
   2.3)**; PR-AUC 0.141 against 0.113 (+25%). Week 2: 1.7% against 1.2%, paired **+0.5 (0.1 to 0.8)**, now
