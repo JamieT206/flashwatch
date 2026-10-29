@@ -13,5 +13,7 @@ pyarrow
 eccodes
 scipy
 lightgbm
+xgboost       # optional: the boosting-library comparison (DESIGN.md B1)
+catboost      # optional: the same
 geopandas
 pillow

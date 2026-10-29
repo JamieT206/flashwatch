@@ -81,28 +81,73 @@ class Platt:
         return self.lr.predict_proba(self._logit(p))[:, 1]
 
 
+class _XGB:
+    """XGBoost booster with LightGBM's predict(X) -> probability; on the GPU when there is one."""
+
+    def __init__(self, X, y, p, n_rounds, mono):
+        import xgboost as xgb
+        rate = max(float(y.mean()), 1e-3)
+        dev = "cuda" if xgb.build_info().get("USE_CUDA") else "cpu"
+        prm = {"objective": "binary:logistic", "eta": p["learning_rate"], "tree_method": "hist", "device": dev,
+               "grow_policy": "lossguide", "max_depth": 0, "max_leaves": p["num_leaves"],
+               "min_child_weight": p["min_data_in_leaf"] * rate * (1 - rate),   # rows -> hessian (p(1-p) each)
+               "subsample": p["bagging_fraction"], "colsample_bytree": p["feature_fraction"],
+               "lambda": p["lambda_l2"], "max_bin": p["max_bin"], "seed": p["seed"],
+               "monotone_constraints": "(" + ",".join(map(str, mono)) + ")", "verbosity": 0}
+        self.b = xgb.train(prm, xgb.QuantileDMatrix(X, y, max_bin=p["max_bin"]), n_rounds)
+
+    def predict(self, X):
+        return self.b.inplace_predict(X)
+
+
+class _CatBoost:
+    """CatBoost (symmetric trees of depth log2(num_leaves)) with predict(X) -> probability."""
+
+    def __init__(self, X, y, p, n_rounds, mono):
+        from catboost import CatBoostClassifier
+        self.m = CatBoostClassifier(iterations=n_rounds, learning_rate=p["learning_rate"],
+                                    depth=int(np.log2(p["num_leaves"] + 1)), l2_leaf_reg=p["lambda_l2"],
+                                    border_count=p["max_bin"],
+                                    bootstrap_type="Bernoulli", subsample=p["bagging_fraction"],
+                                    rsm=p["feature_fraction"], monotone_constraints=mono, random_seed=p["seed"],
+                                    thread_count=-1, verbose=False, allow_writing_files=False)
+        self.m.fit(X, y)
+
+    def predict(self, X):
+        return self.m.predict_proba(X)[:, 1]
+
+
+LIBRARIES = {"lightgbm": None, "xgboost": _XGB, "catboost": _CatBoost}
+
+
 class GBM:
     forecast = False
     name = "M1"
 
     def __init__(self, params=None, n_rounds=None, inner_groups: int = 4, seed: int = 0,
-                 calibration: str = "crossfit", calibrator: str = "platt"):
+                 calibration: str = "crossfit", calibrator: str = "platt", library: str = "lightgbm"):
         """calibration (DESIGN.md A7): 'refit' fits the isotonic map on the inner models' OOF
         scores and applies it to a final model refitted on all rows; 'crossfit' keeps the inner
         models and predicts the mean of iso(inner model) over them, so the map is applied to the
         same models it was fitted on; 'none' returns raw LightGBM probabilities (diagnostic).
         calibrator: 'isotonic' (step function; flat beyond the scores seen) or 'platt' (logistic
-        on the log-odds of the raw score; can stretch past them)."""
+        on the log-odds of the raw score; can stretch past them).
+        library (DESIGN.md B1): 'lightgbm', or 'xgboost' / 'catboost' with PARAMS translated as closely
+        as each allows (same rounds, learning rate, leaves or depth, bagging, L2, bins, monotone signs)."""
         assert calibration in ("refit", "crossfit", "none") and calibrator in ("isotonic", "platt")
-        self.calibrator = calibrator
+        assert library in LIBRARIES
+        self.calibrator, self.library = calibrator, library
         self.use_tuned = params is None and n_rounds is None
         self.params = {**PARAMS, **(params or {}), "seed": seed}
         self.n_rounds, self.k, self.seed, self.calibration = n_rounds or N_ROUNDS, inner_groups, seed, calibration
 
     def _fit_raw(self, df, label):
-        import lightgbm as lgb
         mono = [MONOTONE.get(c, 0) for c in self.cols]
-        ds = lgb.Dataset(df[self.cols].to_numpy(np.float32), df[label].to_numpy(), free_raw_data=True)
+        X, y = df[self.cols].to_numpy(np.float32), df[label].to_numpy()
+        if self.library != "lightgbm":
+            return LIBRARIES[self.library](X, y, self.params, self.n_rounds, mono)
+        import lightgbm as lgb
+        ds = lgb.Dataset(X, y, free_raw_data=True)
         return lgb.train({**self.params, "monotone_constraints": mono}, ds, self.n_rounds)
 
     def fit(self, df: pd.DataFrame, label: str):

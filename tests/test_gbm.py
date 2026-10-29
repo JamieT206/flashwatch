@@ -71,3 +71,19 @@ def test_platt_calibrator():
     y = test.week1.to_numpy()
     p = GBM(n_rounds=60, calibrator="platt").fit(train, "week1").predict(test)
     assert ((p - y) ** 2).mean() < ((y.mean() - y) ** 2).mean() and abs(p.mean() - y.mean()) < 0.01
+
+
+def test_other_boosting_libraries_learn_calibrated_and_monotone():
+    df = toy(20000)
+    train, test = df[df.year < 2011], df[df.year >= 2011]
+    y = test.week1.to_numpy()
+    lgb = GBMForecast(n_rounds=60).fit(train, "week1").predict(test)
+    grid = test.iloc[:1].loc[[test.index[0]] * 50].copy()
+    grid["rz_pct"] = np.linspace(21, 99, 50)
+    for lib in ("xgboost", "catboost"):
+        m = GBMForecast(n_rounds=60, library=lib).fit(train, "week1")
+        p = m.predict(test)
+        assert ((p - y) ** 2).mean() < ((y.mean() - y) ** 2).mean(), lib
+        assert abs(((p - y) ** 2).mean() - ((lgb - y) ** 2).mean()) < 0.002, lib    # same ballpark as LightGBM
+        assert abs(p.mean() - y.mean()) < 0.01, lib
+        assert (np.diff(m.predict(grid)) <= 1e-9).all(), lib                       # monotone in rz_pct

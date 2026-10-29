@@ -154,6 +154,8 @@ MODELS = {"B0": Climatology, "B1": StateLogistic, "H1": WeatherRule, "B2raw": Ra
           "M1": lambda **kw: _gbm("M1", **kw),
           "M2": lambda **kw: _gbm("M2", **kw),
           "M2s1": lambda **kw: _gbm("M2", **{**kw, "seed": 1}),          # other seeds, for averaging (B4)
-          "M2s2": lambda **kw: _gbm("M2", **{**kw, "seed": 2})}
+          "M2s2": lambda **kw: _gbm("M2", **{**kw, "seed": 2}),
+          "M2x": lambda **kw: _gbm("M2", **{**kw, "library": "xgboost"}),       # other libraries (B1)
+          "M2c": lambda **kw: _gbm("M2", **{**kw, "library": "catboost"})}
 # Light GBM training for fast design iteration (eval.cv --fast); heavy training comes later.
 LIGHT = {"params": {"learning_rate": 0.1}, "n_rounds": 150}
