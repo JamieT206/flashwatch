@@ -252,12 +252,18 @@ survives); M1 skill week 1 **4.3%**, week 2 **1.2%**, any-28 **4.6%** (before: 4
 
 | # | Question | Candidates | Tooling ready |
 | --- | --- | --- | --- |
-| B1 | Boosting library | LightGBM (current), XGBoost (GPU), CatBoost | LightGBM only |
+| B1 | Boosting library | LightGBM (current), XGBoost (GPU), CatBoost | **Settled Oct 30: LightGBM** (below) |
 | B2 | Tuning settings | Random search per horizon on the dev years (Q3a) | `models.tune` |
 | B3 | Number of practice models for calibration | 2 vs 4 (depends on A7) | yes |
 | B4 | Ensembling | Several seeds averaged; blend M1 and M2; combine with B2 | No |
 | B5 | Which models make the headline | M1, M2, B2 (raw ECMWF, recalibrated) | yes (B2 built Oct 30) |
 | B6 | Use all grid cells or every other one | Does thinning cost skill? | `--thin` |
+
+**B1 result (Oct 30, `b1lib`, M2 on the 41 forecast dates, light training, LightGBM's settings translated to
+each library: `GBM(library=...)`, models M2x and M2c).** Week 1 Brier skill: LightGBM 16.5%, XGBoost 16.3%,
+CatBoost 15.8%; week 2: 3.7%, 3.4%, 3.6%. Against LightGBM (Brier skill with LightGBM as the reference, 90%
+year-bootstrap range): XGBoost week 1 -0.3% (-0.8 to +0.4), week 2 -0.3% (-0.5 to 0.0); CatBoost week 1 -0.9%
+(-2.7 to +0.2), week 2 -0.1% (-0.4 to +0.2). Neither is better; LightGBM stays (simpler: no change).
 
 Burst decision rule (to finalise before Nov 2): choose by Brier score over the full 17-year
 cross-validation per horizon; keep the simpler option unless the improvement is clearly real
