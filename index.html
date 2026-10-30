@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlashWatch: your farm</title>
+<meta name="description" content="Extra irrigation today? Flash-drought warnings and irrigation advice for your field.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='2' y='2' width='12' height='12' fill='%23d83933'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="brand"><span class="dot"></span>FlashWatch</div>
+  <nav><a class="on" href="index.html">Your farm</a><a href="region.html">The big picture</a><a href="agents.html">Agents</a><a href="help.html">Help</a><a href="about.html">About</a></nav>
+</div></header>
+
+<main class="wrap">
+  <div class="controls">
+    <div class="placebox">
+      <div class="place" id="place">Loading...</div>
+      <div class="place-sub" id="placeSub"></div>
+    </div>
+    <div class="seg" role="group" aria-label="Irrigated or rain-fed">
+      <button id="wIrr" aria-pressed="true">Irrigated</button><button id="wRain" aria-pressed="false">Rain-fed</button>
+    </div>
+    <div class="seg" role="group" aria-label="Today or a past season">
+      <button id="modeToday" aria-pressed="true">Today</button><button id="modeReplay" aria-pressed="false">Replay a past season</button>
+    </div>
+    <label id="yearBox" hidden>Season<select id="year"></select></label>
+  </div>
+  <div class="banner" id="banner" hidden></div>
+
+  <div class="strip-wrap">
+    <div class="strip" id="strip" role="slider" tabindex="0" aria-label="Forecast date"></div>
+    <div class="strip-legend" id="stripLegend"></div>
+  </div>
+
+  <div class="top2" id="top2">
+    <div class="col">
+      <section class="verdict" id="verdict">
+        <div class="q" id="vQ">Extra irrigation today? <a class="help" href="help.html#advice" title="What the advice means">?</a></div>
+        <div class="big" id="vBig"></div>
+        <div class="sub" id="vSub"></div>
+        <div id="vWhy"></div>
+        <div class="ev" id="evBox">
+          <div><b id="evNow"></b><span>Start today</span></div>
+          <div><b id="evWait"></b><span>Decide at the next forecast (in 2 days)</span></div>
+        </div>
+        <div class="note" id="evNote">Average gain per acre from extra irrigation, compared with starting the pivot the usual way.
+          <a href="help.html#dollars">How this is worked out</a></div>
+        <div class="trigger" id="trigger"></div>
+      </section>
+
+      <section class="card" id="valueCard">
+        <h3>FlashWatch value <a class="help" href="help.html#value" title="How the season value is worked out">?</a></h3>
+        <div class="tally" id="seasonTally"></div>
+        <ul class="events" id="events"></ul>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="card first">
+        <h3>Flash-drought risk <a class="help" href="help.html#risk" title="What these numbers mean">?</a></h3>
+        <div class="tiles">
+          <div class="tile"><div class="l">Next 7 days</div><div class="v" id="t1"></div><div class="x" id="t1x"></div></div>
+          <div class="tile"><div class="l">Days 8-14</div><div class="v" id="t2"></div><div class="x" id="t2x"></div></div>
+          <div class="tile"><div class="l">Soil moisture</div><div class="v" id="t3"></div><div class="l" id="t3x"></div></div>
+          <div class="tile"><div class="l">Drought Monitor</div><div class="v small" id="t4"></div></div>
+        </div>
+      </section>
+      <section class="card">
+        <div class="mapbar">
+          <form id="search" class="search"><input id="q" type="search" placeholder="Find your farm: address, town, or lat, lon" aria-label="Find your farm"><button class="primary">Find</button></form>
+          <div class="seg small" role="group" aria-label="Map type">
+            <button id="mapStreet" aria-pressed="true">Street map</button><button id="mapDrought" aria-pressed="false">Drought map</button>
+          </div>
+        </div>
+        <div id="map"></div>
+        <div class="legend" id="mapLegend"></div>
+        <div class="note" id="searchNote">Click the map or drag the pin to move your farm.</div>
+        <div id="pivotFind" hidden><button id="pivotBtn">Find my pivots</button> <span class="badge">SAM 3.1</span>
+          <span class="note" id="pivotNote">Looks at the USDA aerial photo around the pin and outlines each centre pivot.</span></div>
+      </section>
+    </div>
+  </div>
+
+  <section class="card full" id="askCard" hidden>
+    <h3>Ask FlashWatch <span class="badge">Muse Spark</span></h3>
+    <div class="askwrap">
+      <div id="askLog" class="asklog"></div>
+      <form id="askForm" class="search"><input id="askQ" type="search" placeholder="Should I turn the pivot on? I put an inch on yesterday. Spray fungicide this month?" aria-label="Your question"><button class="primary">Ask</button></form>
+      <p class="note">Answers come from FlashWatch's numbers through tools, and every figure is checked before you see it. Telling it what you've
+        irrigated ("an inch on yesterday") updates your field's water account.</p>
+    </div>
+  </section>
+
+  <section class="card full" id="waterCard" hidden>
+    <h3>Your field's water <a class="help" href="help.html#water" title="How the water account works">?</a></h3>
+    <div class="waterwrap">
+      <div>
+        <div class="tally three" id="waterNow"></div>
+        <p class="note" id="waterNote"></p>
+        <div class="chart-title">Irrigation you've put on</div>
+        <form id="irrForm" class="irrform">
+          <label>Date (MM-DD)<input id="irrDate" size="6"></label>
+          <label>Inches<input id="irrIn" type="number" step="0.05" min="0"></label>
+          <button class="primary">Add</button>
+        </form>
+        <ul class="events" id="irrList"></ul>
+        <p class="note"><button id="pivotImport">Read from your pivot</button> <button id="irrClear" class="linkish">clear</button><br>
+          Demo: fills in your usual schedule. On a real farm this comes from the pivot's own records (Lindsay FieldNET through Leaf) or the FlashWatch webhook.</p>
+      </div>
+      <div class="chart">
+        <div class="chart-title">Water the crop can use in the root zone (inches)</div>
+        <div id="waterChart"></div>
+        <div class="legend"><span><i style="background:var(--soil)"></i>Soil water (dashed: last 5 days estimated)</span>
+          <span><i style="background:var(--soil);opacity:.5;height:10px"></i>Rain</span><span>&#9650; Irrigation</span>
+          <span><i style="background:var(--act-bg);height:10px"></i>Crop short of water</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card full" id="noteCard" hidden>
+    <h3>Morning note</h3>
+    <div class="notewrap">
+      <div><div class="sms-from">Text message</div><div id="sms"></div></div>
+      <div><p id="note" style="margin:0 0 8px"></p>
+        <div class="note">Written by Meta's Muse Spark from FlashWatch's numbers. Every number is checked against them before sending.</div></div>
+    </div>
+  </section>
+
+  <section class="card full" id="opsCard" hidden>
+    <h3>Your pivots</h3>
+    <div class="notewrap">
+      <div><div class="sms-from">Text message: needs your YES</div><div id="opsSms" class="sms-ask"></div>
+        <div class="note" id="opsState" style="margin-top:8px"></div></div>
+      <div><div id="opsTable" style="overflow-x:auto"></div><p id="opsNote" style="margin:10px 0 6px"></p>
+        <div class="note">Muse Spark plans the starts; fixed farm rules (advice, well capacity, water allocation, season) check every command;
+          nothing moves until you reply YES. Pivots connect through a webhook, or show as a to-do in FieldNET or Valley 365.</div></div>
+    </div>
+  </section>
+
+  <section class="card full chart" id="seasonCard">
+    <h3>This season</h3>
+    <div class="chart-title">Chance of a flash drought in the next 7 days</div>
+    <div id="seasonChart"></div>
+    <div class="legend" id="riskLegend"></div>
+    <div class="chart-title">Soil moisture percentile for the date <a class="help" href="help.html#percentile" title="What the percentile means">?</a></div>
+    <div id="soilChart"></div>
+    <div class="legend" id="soilLegend"></div>
+    <div id="valueBlock">
+      <div class="chart-title">Value of extra irrigation today ($ an acre)</div>
+      <div id="valueChart"></div>
+      <div class="legend"><span><i style="background:var(--act-bg);height:10px"></i>Starting today pays</span><span><i style="background:var(--normal)"></i>Doesn't pay</span></div>
+    </div>
+  </section>
+
+  <section class="card full" id="decisions" hidden>
+    <h3 id="decTitle">Drought decisions <a class="help" href="help.html#other" title="About these decisions">?</a></h3>
+    <div id="decCards"></div>
+  </section>
+
+  <section class="card full">
+    <h3>Your farm</h3>
+    <div class="farmwrap">
+      <div>
+        <div class="settings" id="settings"></div>
+        <p class="note">Starting values are local averages (labelled under each box). Change any of them to match your farm; everything updates.
+          <button id="resetAll" class="linkish">Reset all to local values</button></p>
+      </div>
+      <div class="chart" id="noticeCard">
+        <div class="chart-title">What a day of warning is worth on this field</div>
+        <div id="noticeChart"></div>
+        <div class="note" id="noticeNote"></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Every other day, FlashWatch forecasts the chance that the soil at your farm drops into drought in the next one and two weeks.
+    A water-balance model of your field calculates the financial impact of supplemental irrigation.
+    Data: ERA5-Land (Copernicus Climate Change Service), US Drought Monitor (NDMC, USDA, NOAA), USDA NASS, US Census Gazetteer.
+    Map: &copy; OpenStreetMap contributors. Search: Nominatim.<br>Built by Jamie Twiss. &copy; 2026 Jamie Twiss.
+  </footer>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="assets/engine.js"></script>
+<script src="assets/rainfed.js"></script>
+<script src="assets/farm.js"></script>
+</body>
+</html>

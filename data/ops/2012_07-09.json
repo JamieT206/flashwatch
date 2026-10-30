@@ -1,0 +1,231 @@
+{
+ "date": "2012-07-09",
+ "farm": "Demo farm, Edmunds County SD",
+ "place": "Edmunds County, SD",
+ "overview": {
+  "date": "2012-07-09",
+  "farm": "Demo farm, Edmunds County SD",
+  "pivots": {
+   "N1": {
+    "crop": "corn",
+    "acres": 130,
+    "soil": "Sandy loam",
+    "pivot_capacity_gpm_per_acre": 4.5,
+    "pumps_gpm": 585,
+    "running": true,
+    "water_put_down_last_7_days_in": 1.42,
+    "water_allocation_left_in": null,
+    "root_zone": {
+     "share_full": 0.31,
+     "inches_to_fill": 2.88,
+     "days_until_stress_if_no_rain": 0.0,
+     "full_time_pumping_days_to_fill": 14.2
+    },
+    "advice": {
+     "soil_moisture_percentile": 25.0,
+     "drought_monitor": "D1 moderate drought",
+     "chance_flash_drought_next_7_days_pct": 10.0,
+     "normal_chance_next_7_days_pct": 3.0,
+     "times_normal_next_7_days": 3.3,
+     "chance_days_8_to_14_pct": 6.6,
+     "verdict": "no need to start early",
+     "value_of_starting_today_dollars_per_acre": -5.0,
+     "value_of_deciding_at_next_forecast_dollars_per_acre": 0.0,
+     "next_forecast_in_days": 2,
+     "loss_avoided_with_7_days_warning_dollars_per_acre": 25,
+     "what_would_change_it": "next forecast shows a 7-day chance of at least 20%",
+     "value_of_starting_today_dollars_whole_pivot": -650,
+     "root_zone_at_stress_line": true,
+     "farmer_reports_stress": false
+    },
+    "field_report": {
+     "date": "2012-07-03",
+     "severity": 2,
+     "symptoms": [
+      "curling by noon on the ridges"
+     ],
+     "farmer_said": "Corn on the sandy pivot, and one, one, is curling by noon on the ridges. We've had maybe a tenth of an inch since the 24th 24th of June. Tasseling should start in about a week."
+    }
+   },
+   "N2": {
+    "crop": "corn",
+    "acres": 125,
+    "soil": "Silt loam",
+    "pivot_capacity_gpm_per_acre": 5.0,
+    "pumps_gpm": 625,
+    "running": false,
+    "water_put_down_last_7_days_in": 0,
+    "water_allocation_left_in": null,
+    "root_zone": {
+     "share_full": 0.3,
+     "inches_to_fill": 4.22,
+     "days_until_stress_if_no_rain": 0.0,
+     "full_time_pumping_days_to_fill": 18.7
+    },
+    "advice": {
+     "soil_moisture_percentile": 25.0,
+     "drought_monitor": "D1 moderate drought",
+     "chance_flash_drought_next_7_days_pct": 10.0,
+     "normal_chance_next_7_days_pct": 3.0,
+     "times_normal_next_7_days": 3.3,
+     "chance_days_8_to_14_pct": 6.6,
+     "verdict": "no need to start early",
+     "value_of_starting_today_dollars_per_acre": -5.6,
+     "value_of_deciding_at_next_forecast_dollars_per_acre": 0.0,
+     "next_forecast_in_days": 2,
+     "loss_avoided_with_7_days_warning_dollars_per_acre": 27,
+     "what_would_change_it": "next forecast shows a 7-day chance of at least 20%",
+     "value_of_starting_today_dollars_whole_pivot": -700,
+     "root_zone_at_stress_line": true
+    }
+   },
+   "S1": {
+    "crop": "soybeans",
+    "acres": 130,
+    "soil": "Silt loam",
+    "pivot_capacity_gpm_per_acre": 5.5,
+    "pumps_gpm": 715,
+    "running": false,
+    "water_put_down_last_7_days_in": 0,
+    "water_allocation_left_in": null,
+    "root_zone": {
+     "share_full": 0.53,
+     "inches_to_fill": 2.8,
+     "days_until_stress_if_no_rain": 0.9,
+     "full_time_pumping_days_to_fill": 11.3
+    },
+    "advice": {
+     "soil_moisture_percentile": 25.0,
+     "drought_monitor": "D1 moderate drought",
+     "chance_flash_drought_next_7_days_pct": 10.0,
+     "normal_chance_next_7_days_pct": 3.0,
+     "times_normal_next_7_days": 3.3,
+     "chance_days_8_to_14_pct": 6.6,
+     "verdict": "no need to start early",
+     "value_of_starting_today_dollars_per_acre": -8.8,
+     "value_of_deciding_at_next_forecast_dollars_per_acre": 0.0,
+     "next_forecast_in_days": 2,
+     "loss_avoided_with_7_days_warning_dollars_per_acre": 14,
+     "what_would_change_it": "next forecast shows a 7-day chance of at least 36%",
+     "value_of_starting_today_dollars_whole_pivot": -1144,
+     "root_zone_at_stress_line": true,
+     "farmer_reports_stress": false
+    },
+    "field_report": {
+     "date": "2012-07-03",
+     "severity": 0,
+     "symptoms": [],
+     "farmer_said": "The south beans look fine."
+    }
+   },
+   "S2": {
+    "crop": "corn",
+    "acres": 60,
+    "soil": "Loam",
+    "pivot_capacity_gpm_per_acre": 4.0,
+    "pumps_gpm": 240,
+    "running": false,
+    "water_put_down_last_7_days_in": 0.36,
+    "water_allocation_left_in": 0.14,
+    "root_zone": {
+     "share_full": 0.28,
+     "inches_to_fill": 3.89,
+     "days_until_stress_if_no_rain": 0.0,
+     "full_time_pumping_days_to_fill": 21.6
+    },
+    "advice": {
+     "soil_moisture_percentile": 25.0,
+     "drought_monitor": "D1 moderate drought",
+     "chance_flash_drought_next_7_days_pct": 10.0,
+     "normal_chance_next_7_days_pct": 3.0,
+     "times_normal_next_7_days": 3.3,
+     "chance_days_8_to_14_pct": 6.6,
+     "verdict": "no need to start early",
+     "value_of_starting_today_dollars_per_acre": -4.5,
+     "value_of_deciding_at_next_forecast_dollars_per_acre": 0.0,
+     "next_forecast_in_days": 2,
+     "loss_avoided_with_7_days_warning_dollars_per_acre": 22,
+     "what_would_change_it": "next forecast shows a 7-day chance of at least 20%",
+     "value_of_starting_today_dollars_whole_pivot": -270,
+     "root_zone_at_stress_line": true
+    }
+   }
+  },
+  "wells": {
+   "North well": {
+    "gives_gpm": 1100,
+    "pivots": [
+     "N1",
+     "N2"
+    ]
+   }
+  },
+  "connection": "simulated",
+  "connection_can_start_pivots": true,
+  "suggested_order": [
+   "S2",
+   "N2",
+   "S1"
+  ]
+ },
+ "accepted": [
+  {
+   "id": "840e002d",
+   "pivot": "S1",
+   "action": "start",
+   "depth_in": 1.5,
+   "reason": "advice says start today",
+   "date": "2012-07-09",
+   "state": "sent",
+   "approved_by": "demo farmer",
+   "log": [
+    "simulated pivot S1: start"
+   ]
+  }
+ ],
+ "refused": [
+  {
+   "id": "aec3a375",
+   "pivot": "S2",
+   "action": "start",
+   "depth_in": 0.5,
+   "reason": "advice says start today",
+   "date": "2012-07-09",
+   "state": "rejected",
+   "approved_by": "",
+   "log": [],
+   "why": "pivot S2 has only 0.14 in of its water allocation left"
+  },
+  {
+   "id": "a577387c",
+   "pivot": "N2",
+   "action": "start",
+   "depth_in": 1.5,
+   "reason": "advice says start today",
+   "date": "2012-07-09",
+   "state": "rejected",
+   "approved_by": "",
+   "log": [],
+   "why": "well North well gives 1100 gpm; running N2 with the pivots already on it needs 1210 gpm"
+  }
+ ],
+ "sms": "FlashWatch: start S1 today. Reply YES to start S1.",
+ "note": "Start S1. Held back: S2: pivot S2 has only 0.14 in of its water allocation left; N2: well North well gives 1100 gpm; running N2 with the pivots already on it needs 1210 gpm.",
+ "approved_by": "demo farmer",
+ "sent": [
+  {
+   "id": "840e002d",
+   "pivot": "S1",
+   "action": "start",
+   "depth_in": 1.5,
+   "reason": "advice says start today",
+   "date": "2012-07-09",
+   "state": "sent",
+   "approved_by": "demo farmer",
+   "log": [
+    "simulated pivot S1: start"
+   ]
+  }
+ ],
+ "model": "rules"
+}

@@ -1,0 +1,352 @@
+{
+ "years": [
+  2005,
+  2006,
+  2007,
+  2008,
+  2009,
+  2010,
+  2011,
+  2012,
+  2013,
+  2014,
+  2015,
+  2016,
+  2017,
+  2018,
+  2019,
+  2020,
+  2021
+ ],
+ "season": [
+  "06-01",
+  "08-31"
+ ],
+ "radius_km": 40,
+ "results": {
+  "corn|all": {
+   "county_years": 16273,
+   "counties": 1064,
+   "raw": {
+    "mean_none": 2.19,
+    "mean_some (under half)": -0.52,
+    "mean_most (half or more)": -2.2,
+    "n_none": 8882,
+    "n_some (under half)": 2890,
+    "n_most (half or more)": 4501,
+    "slope_per_full_exposure": -5.32,
+    "most_exposed_monitor_flagged_mean": -6.01,
+    "most_exposed_monitor_flagged_n": 2567,
+    "most_exposed_monitor_not_flagged_mean": 2.86,
+    "most_exposed_monitor_not_flagged_n": 1934,
+    "slope_per_full_exposure_90": [
+     -7.98,
+     -1.79
+    ],
+    "mean_most (half or more)_90": [
+     -4.99,
+     0.7
+    ],
+    "most_exposed_monitor_not_flagged_mean_90": [
+     0.8,
+     5.18
+    ]
+   },
+   "within_year": {
+    "mean_none": 0.75,
+    "mean_some (under half)": -0.25,
+    "mean_most (half or more)": -1.32,
+    "n_none": 8882,
+    "n_some (under half)": 2890,
+    "n_most (half or more)": 4501,
+    "slope_per_full_exposure": -2.72,
+    "most_exposed_monitor_flagged_mean": -3.36,
+    "most_exposed_monitor_flagged_n": 2567,
+    "most_exposed_monitor_not_flagged_mean": 1.39,
+    "most_exposed_monitor_not_flagged_n": 1934,
+    "slope_per_full_exposure_90": [
+     -5.79,
+     1.2
+    ],
+    "mean_most (half or more)_90": [
+     -3.19,
+     0.92
+    ],
+    "most_exposed_monitor_not_flagged_mean_90": [
+     -0.33,
+     3.16
+    ]
+   }
+  },
+  "corn|irrigated": {
+   "county_years": 906,
+   "counties": 75,
+   "raw": {
+    "mean_none": 0.98,
+    "mean_some (under half)": 0.88,
+    "mean_most (half or more)": -1.84,
+    "n_none": 512,
+    "n_some (under half)": 167,
+    "n_most (half or more)": 227,
+    "slope_per_full_exposure": -3.59,
+    "most_exposed_monitor_flagged_mean": -2.07,
+    "most_exposed_monitor_flagged_n": 172,
+    "most_exposed_monitor_not_flagged_mean": -1.1,
+    "most_exposed_monitor_not_flagged_n": 55,
+    "slope_per_full_exposure_90": [
+     -6.36,
+     -0.2
+    ],
+    "mean_most (half or more)_90": [
+     -3.18,
+     0.28
+    ],
+    "most_exposed_monitor_not_flagged_mean_90": [
+     -2.66,
+     0.74
+    ]
+   },
+   "within_year": {
+    "mean_none": 0.15,
+    "mean_some (under half)": 0.82,
+    "mean_most (half or more)": -0.94,
+    "n_none": 512,
+    "n_some (under half)": 167,
+    "n_most (half or more)": 227,
+    "slope_per_full_exposure": -1.49,
+    "most_exposed_monitor_flagged_mean": -0.93,
+    "most_exposed_monitor_flagged_n": 172,
+    "most_exposed_monitor_not_flagged_mean": -0.97,
+    "most_exposed_monitor_not_flagged_n": 55,
+    "slope_per_full_exposure_90": [
+     -2.89,
+     0.0
+    ],
+    "mean_most (half or more)_90": [
+     -1.8,
+     -0.01
+    ],
+    "most_exposed_monitor_not_flagged_mean_90": [
+     -2.49,
+     1.27
+    ]
+   }
+  },
+  "corn|non-irrigated": {
+   "county_years": 906,
+   "counties": 75,
+   "raw": {
+    "mean_none": 13.29,
+    "mean_some (under half)": -4.28,
+    "mean_most (half or more)": -20.29,
+    "n_none": 512,
+    "n_some (under half)": 167,
+    "n_most (half or more)": 227,
+    "slope_per_full_exposure": -38.84,
+    "most_exposed_monitor_flagged_mean": -28.66,
+    "most_exposed_monitor_flagged_n": 172,
+    "most_exposed_monitor_not_flagged_mean": 5.89,
+    "most_exposed_monitor_not_flagged_n": 55,
+    "slope_per_full_exposure_90": [
+     -52.21,
+     -22.09
+    ],
+    "mean_most (half or more)_90": [
+     -33.43,
+     -3.69
+    ],
+    "most_exposed_monitor_not_flagged_mean_90": [
+     -1.24,
+     11.49
+    ]
+   },
+   "within_year": {
+    "mean_none": 2.59,
+    "mean_some (under half)": -0.35,
+    "mean_most (half or more)": -5.58,
+    "n_none": 512,
+    "n_some (under half)": 167,
+    "n_most (half or more)": 227,
+    "slope_per_full_exposure": -8.44,
+    "most_exposed_monitor_flagged_mean": -7.79,
+    "most_exposed_monitor_flagged_n": 172,
+    "most_exposed_monitor_not_flagged_mean": 1.32,
+    "most_exposed_monitor_not_flagged_n": 55,
+    "slope_per_full_exposure_90": [
+     -15.34,
+     -3.26
+    ],
+    "mean_most (half or more)_90": [
+     -9.66,
+     -2.49
+    ],
+    "most_exposed_monitor_not_flagged_mean_90": [
+     -4.63,
+     8.79
+    ]
+   }
+  },
+  "soybeans|all": {
+   "county_years": 15071,
+   "counties": 972,
+   "raw": {
+    "mean_none": 1.52,
+    "mean_some (under half)": 0.98,
+    "mean_most (half or more)": -1.7,
+    "n_none": 8275,
+    "n_some (under half)": 2682,
+    "n_most (half or more)": 4114,
+    "slope_per_full_exposure": -4.13,
+    "most_exposed_monitor_flagged_mean": -5.52,
+    "most_exposed_monitor_flagged_n": 2322,
+    "most_exposed_monitor_not_flagged_mean": 3.26,
+    "most_exposed_monitor_not_flagged_n": 1792,
+    "slope_per_full_exposure_90": [
+     -8.31,
+     1.7
+    ],
+    "mean_most (half or more)_90": [
+     -5.77,
+     3.2
+    ],
+    "most_exposed_monitor_not_flagged_mean_90": [
+     -1.47,
+     8.64
+    ]
+   },
+   "within_year": {
+    "mean_none": 0.82,
+    "mean_some (under half)": 0.11,
+    "mean_most (half or more)": -1.72,
+    "n_none": 8275,
+    "n_some (under half)": 2682,
+    "n_most (half or more)": 4114,
+    "slope_per_full_exposure": -3.12,
+    "most_exposed_monitor_flagged_mean": -4.41,
+    "most_exposed_monitor_flagged_n": 2322,
+    "most_exposed_monitor_not_flagged_mean": 1.77,
+    "most_exposed_monitor_not_flagged_n": 1792,
+    "slope_per_full_exposure_90": [
+     -5.95,
+     0.16
+    ],
+    "mean_most (half or more)_90": [
+     -3.22,
+     0.05
+    ],
+    "most_exposed_monitor_not_flagged_mean_90": [
+     -0.09,
+     3.52
+    ]
+   }
+  },
+  "soybeans|irrigated": {
+   "county_years": 445,
+   "counties": 37,
+   "raw": {
+    "mean_none": 0.95,
+    "mean_some (under half)": 0.45,
+    "mean_most (half or more)": -1.4,
+    "n_none": 240,
+    "n_some (under half)": 87,
+    "n_most (half or more)": 118,
+    "slope_per_full_exposure": -3.19,
+    "most_exposed_monitor_flagged_mean": -1.14,
+    "most_exposed_monitor_flagged_n": 92,
+    "most_exposed_monitor_not_flagged_mean": -2.34,
+    "most_exposed_monitor_not_flagged_n": 26,
+    "slope_per_full_exposure_90": [
+     -5.46,
+     -0.72
+    ],
+    "mean_most (half or more)_90": [
+     -3.54,
+     1.1
+    ],
+    "most_exposed_monitor_not_flagged_mean_90": [
+     -5.72,
+     2.17
+    ]
+   },
+   "within_year": {
+    "mean_none": 0.1,
+    "mean_some (under half)": 0.25,
+    "mean_most (half or more)": -0.38,
+    "n_none": 240,
+    "n_some (under half)": 87,
+    "n_most (half or more)": 118,
+    "slope_per_full_exposure": -0.81,
+    "most_exposed_monitor_flagged_mean": -0.55,
+    "most_exposed_monitor_flagged_n": 92,
+    "most_exposed_monitor_not_flagged_mean": 0.2,
+    "most_exposed_monitor_not_flagged_n": 26,
+    "slope_per_full_exposure_90": [
+     -2.36,
+     0.48
+    ],
+    "mean_most (half or more)_90": [
+     -1.3,
+     0.41
+    ],
+    "most_exposed_monitor_not_flagged_mean_90": [
+     -1.52,
+     2.0
+    ]
+   }
+  },
+  "soybeans|non-irrigated": {
+   "county_years": 445,
+   "counties": 37,
+   "raw": {
+    "mean_none": 10.24,
+    "mean_some (under half)": -0.14,
+    "mean_most (half or more)": -16.04,
+    "n_none": 240,
+    "n_some (under half)": 87,
+    "n_most (half or more)": 118,
+    "slope_per_full_exposure": -30.86,
+    "most_exposed_monitor_flagged_mean": -22.2,
+    "most_exposed_monitor_flagged_n": 92,
+    "most_exposed_monitor_not_flagged_mean": 5.76,
+    "most_exposed_monitor_not_flagged_n": 26,
+    "slope_per_full_exposure_90": [
+     -45.89,
+     -13.67
+    ],
+    "mean_most (half or more)_90": [
+     -29.73,
+     0.43
+    ],
+    "most_exposed_monitor_not_flagged_mean_90": [
+     -4.77,
+     16.29
+    ]
+   },
+   "within_year": {
+    "mean_none": 2.05,
+    "mean_some (under half)": -1.59,
+    "mean_most (half or more)": -3.0,
+    "n_none": 240,
+    "n_some (under half)": 87,
+    "n_most (half or more)": 118,
+    "slope_per_full_exposure": -6.29,
+    "most_exposed_monitor_flagged_mean": -4.01,
+    "most_exposed_monitor_flagged_n": 92,
+    "most_exposed_monitor_not_flagged_mean": 0.54,
+    "most_exposed_monitor_not_flagged_n": 26,
+    "slope_per_full_exposure_90": [
+     -12.52,
+     -1.59
+    ],
+    "mean_most (half or more)_90": [
+     -6.65,
+     -0.32
+    ],
+    "most_exposed_monitor_not_flagged_mean_90": [
+     -7.13,
+     9.51
+    ]
+   }
+  }
+ }
+}

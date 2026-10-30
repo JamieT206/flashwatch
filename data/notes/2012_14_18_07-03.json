@@ -1,0 +1,33 @@
+{
+ "sms": "Start pivot today. Flash drought risk 14% next 7 days, 5x normal (3%). Soil 39th %ile D0. Avg save $4.9/acre, $85/acre if it hits.",
+ "note": "Verdict: start the pivot today. Risk next 7 days is 14%, vs 3% normal - 5 times normal. Soil is 39th percentile and D0 abnormally dry. Risk stays 8% in days 8-14. Waiting 2 days for next forecast still saves $4.0 per acre on average vs usual, but starting today saves $4.9. If flash drought hits, a week's warning saves $85 per acre. What would change it: lower risk or wetter soil at next forecast.",
+ "status": {
+  "date": "2012-07-03",
+  "soil_moisture_percentile": 39.0,
+  "drought_monitor": "D0 abnormally dry",
+  "chance_flash_drought_next_7_days_pct": 14.4,
+  "normal_chance_next_7_days_pct": 2.9,
+  "times_normal_next_7_days": 5.0,
+  "chance_days_8_to_14_pct": 8.3,
+  "verdict": "start the pivot today",
+  "value_of_starting_today_dollars_per_acre": 4.9,
+  "value_of_deciding_at_next_forecast_dollars_per_acre": 4.0,
+  "next_forecast_in_days": 2,
+  "loss_avoided_with_7_days_warning_dollars_per_acre": 85,
+  "how_to_read": "value_* are average dollars per acre against starting the pivot the usual way (after the crop shows stress); negative means starting today costs more in pumping than it saves on average. The loss avoided is what a week's warning saves if a flash drought does come."
+ },
+ "model": "muse-spark-1.1",
+ "cut_untraced": [],
+ "drafts": [
+  {
+   "draft": "{\"sms\": \"Start pivot today. Flash drought risk 14% next 7 days, 5x normal (3%). Soil 39th %ile D0. Avg save $4.9/acre, $85/acre if it hits.\", \"note\": \"Verdict: start the pivot today. Risk next 7 days is 14%, vs 3% normal - 5 times normal. Soil is 39th percentile and D0 abnormally dry. Risk stays 8% in days 8-14. Waiting 2 days for next forecast still saves $4.0 per acre on average vs usual, but starting today saves $4.9. If flash drought hits, a week's warning saves $85 per acre. What would change it: lower risk or wetter soil at next forecast.\"}",
+   "untraced": []
+  }
+ ],
+ "usage": {
+  "prompt_tokens": 6411,
+  "completion_tokens": 11703,
+  "calls": 6
+ },
+ "place": "45.38, -99.38"
+}

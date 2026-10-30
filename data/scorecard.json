@@ -1,0 +1,46 @@
+{
+ "years": [
+  2006,
+  2009,
+  2012,
+  2015,
+  2018,
+  2021
+ ],
+ "farms": 148,
+ "farm_seasons": 1776,
+ "window_days": 14,
+ "normal_pct": 5.4,
+ "kinds": [
+  {
+   "watering": "irrigated",
+   "kind": "ease",
+   "sent": 528,
+   "followed_by_flash_drought_pct": 10.4,
+   "times_normal": 1.9
+  },
+  {
+   "watering": "irrigated",
+   "kind": "start",
+   "sent": 195,
+   "followed_by_flash_drought_pct": 26.2,
+   "times_normal": 4.8
+  },
+  {
+   "watering": "irrigated",
+   "kind": "watch",
+   "sent": 716,
+   "followed_by_flash_drought_pct": 17.9,
+   "times_normal": 3.3
+  },
+  {
+   "watering": "rain-fed",
+   "kind": "act",
+   "sent": 408,
+   "followed_by_flash_drought_pct": 19.9,
+   "times_normal": 3.7
+  }
+ ],
+ "onsets": 325,
+ "onsets_warned_pct": 34.9
+}

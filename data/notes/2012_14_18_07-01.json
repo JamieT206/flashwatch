@@ -1,0 +1,40 @@
+{
+ "sms": "No need to start early. 7-day flash drought chance 4% (normal 3%). Starting now costs $4.9/acre avg.",
+ "note": "No need to start early. Flash drought chance next 7 days is 4%, vs normal 3% (1.4 times normal). Soil at 37th percentile, D0 abnormally dry. Week after chance is 5%. Starting today costs $4.9/acre on average vs waiting, while waiting for next forecast in 2 days is $0/acre. If drought comes, a week's warning saves $85/acre. Start early if next forecast shows 7-day chance at least 7%.",
+ "status": {
+  "date": "2012-07-01",
+  "soil_moisture_percentile": 37.0,
+  "drought_monitor": "D0 abnormally dry",
+  "chance_flash_drought_next_7_days_pct": 4.1,
+  "normal_chance_next_7_days_pct": 2.9,
+  "times_normal_next_7_days": 1.4,
+  "chance_days_8_to_14_pct": 4.5,
+  "verdict": "no need to start early",
+  "value_of_starting_today_dollars_per_acre": -4.9,
+  "value_of_deciding_at_next_forecast_dollars_per_acre": 0.0,
+  "next_forecast_in_days": 2,
+  "loss_avoided_with_7_days_warning_dollars_per_acre": 85,
+  "how_to_read": "value_* are average dollars per acre against starting the pivot the usual way (after the crop shows stress); negative means starting today costs more in pumping than it saves on average. The loss avoided is what a week's warning saves if a flash drought does come.",
+  "what_would_change_it": "next forecast shows a 7-day chance of at least 7%"
+ },
+ "model": "muse-spark-1.1",
+ "cut_untraced": [],
+ "drafts": [
+  {
+   "draft": "{\"sms\": \"No need to start early. 7-day flash drought chance 4% (normal 3%). Starting now costs $4.9/acre avg.\", \"note\": \"No need to start early. Flash drought chance next 7 days is 4%, vs normal 3% (1.4 times normal). Soil moisture at 37th percentile, D0 abnormally dry. Days 8-14 chance is 5%. Starting today costs $4.9/acre on average vs waiting for stress, while waiting for next forecast in 2 days is $0/acre. If drought comes, a week's warning saves $85/acre. Start early if next forecast shows 7-day chance at least 7%.\"}",
+   "untraced": [
+    "14"
+   ]
+  },
+  {
+   "draft": "{\"sms\": \"No need to start early. 7-day flash drought chance 4% (normal 3%). Starting now costs $4.9/acre avg.\", \"note\": \"No need to start early. Flash drought chance next 7 days is 4%, vs normal 3% (1.4 times normal). Soil at 37th percentile, D0 abnormally dry. Week after chance is 5%. Starting today costs $4.9/acre on average vs waiting, while waiting for next forecast in 2 days is $0/acre. If drought comes, a week's warning saves $85/acre. Start early if next forecast shows 7-day chance at least 7%.\"}",
+   "untraced": []
+  }
+ ],
+ "usage": {
+  "prompt_tokens": 4645,
+  "completion_tokens": 8367,
+  "calls": 4
+ },
+ "place": "45.38, -99.38"
+}

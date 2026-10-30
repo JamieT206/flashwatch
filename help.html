@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlashWatch: help</title>
+<meta name="description" content="What FlashWatch's numbers mean and how to use the farm page.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='2' y='2' width='12' height='12' fill='%23d83933'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="brand"><span class="dot"></span>FlashWatch</div>
+  <nav><a href="index.html">Your farm</a><a href="region.html">The big picture</a><a href="agents.html">Agents</a><a class="on" href="help.html">Help</a><a href="about.html">About</a></nav>
+</div></header>
+
+<main class="wrap doc">
+  <h1>Help</h1>
+  <p class="intro">What the numbers on the farm page mean, and how to use them.</p>
+  <ul class="toc">
+    <li><a href="#flash">What is a flash drought?</a></li>
+    <li><a href="#advice">The advice</a></li>
+    <li><a href="#howmuch">How much to irrigate</a></li>
+    <li><a href="#water">Your field's water</a></li>
+    <li><a href="#risk">Flash-drought risk</a></li>
+    <li><a href="#percentile">Soil moisture percentile</a></li>
+    <li><a href="#dollars">The dollar figures</a></li>
+    <li><a href="#value">FlashWatch value</a></li>
+    <li><a href="#other">Other actions, and rain-fed farms</a></li>
+    <li><a href="#today">Today and Replay</a></li>
+    <li><a href="#map">The map</a></li>
+    <li><a href="#settings">Your farm's settings</a></li>
+    <li><a href="#agents">Morning text and pivot control</a></li>
+    <li><a href="#data">Data and limits</a></li>
+  </ul>
+
+  <section class="card" id="flash">
+    <h3>What is a flash drought?</h3>
+    <p>A drought that develops in two or three weeks instead of months, usually when a hot, dry, windy spell dries the soil fast.
+      FlashWatch counts one when the moisture in the top 40 cm (16 inches) of soil falls from normal or wetter (the 40th percentile
+      or above) into drought (the 20th percentile or below) and stays there for at least 10 days.</p>
+  </section>
+
+  <section class="card" id="advice">
+    <h3>The advice</h3>
+    <dl class="keys-list">
+      <dt><b class="k-act"></b>Start extra irrigation today</dt><dd>A flash drought is likely enough, soon enough, that starting the pivot now pays on average,
+        and more than waiting two days for the next forecast.</dd>
+      <dt><b class="k-wait"></b>Not yet: keep checking forecasts</dt><dd>The risk is up, but waiting for the next forecast pays more than starting now.
+        The box says what the next forecast would have to show to change the answer.</dd>
+      <dt><b class="k-calm"></b>Irrigate as usual</dt><dd>Flash-drought risk is low. Keep to your normal schedule; FlashWatch is not telling you to stop irrigating.</dd>
+      <dt><b class="k-drought"></b>In drought now</dt><dd>The soil is already in drought, so there is no flash drought left to warn about. This is when
+        irrigation matters most. Warnings start again when the soil recovers.</dd>
+      <dt><b class="k-off"></b>Frozen ground, or outside the irrigation season</dt><dd>No forecast while there is snow or frozen soil. Irrigation advice runs June to August;
+        the risk numbers apply all season.</dd>
+    </dl>
+  </section>
+
+  <section class="card" id="howmuch">
+    <h3>How much to irrigate</h3>
+    <p>"Start extra irrigation" means run the pivot full time, so the soil is as full as it can be when the dry spell arrives.
+      Most pivots put down less water a day than a corn crop uses in a heat wave (the farm page shows both numbers for your field),
+      so a pivot started late can't catch up. Keep going until about an inch of rain falls or the risk drops back to normal.</p>
+    <p>Once you log what you've put on (see <a href="#water">Your field's water</a>), the advice says how many days of full-time pumping
+      fill your root zone.</p>
+  </section>
+
+  <section class="card" id="water">
+    <h3>Your field's water</h3>
+    <p>A day-by-day account of the water in your root zone, the way irrigators keep a "checkbook": rain and irrigation go in,
+      the crop's water use comes out. Crop water use is the day's evaporation demand (from ERA5-Land temperature, humidity and sunshine,
+      by the FAO-56 method) times a crop coefficient that follows the growth stage: low after planting, highest from about tasseling
+      to dent. The account starts full on April 1. ERA5-Land arrives five days late, so the last five days are estimated (no rain,
+      the past week's water use); a rain gauge reading would replace that.</p>
+    <p><strong>Logging irrigation</strong> (by hand, or read from the pivot's own records) does two things: the account counts it, and
+      the advice above starts from your actual deficit instead of assuming a full root zone. A field you've just filled gains less
+      from extra irrigation, so FlashWatch can tell you when you can stop.</p>
+  </section>
+
+  <section class="card" id="risk">
+    <h3>Flash-drought risk</h3>
+    <p><strong>Next 7 days, days 8-14:</strong> the chance that a flash drought begins at your farm in that week, from FlashWatch's
+      forecast. It combines the state of your soil with ECMWF's weather forecasts for the coming weeks.</p>
+    <p><strong>Normal:</strong> how often a flash drought begins in that week at this place and time of year, from 2005-2024 records.
+      "3.7 times normal" means FlashWatch's forecast is 3.7 times that.</p>
+    <p><strong>How good is it?</strong> On the 10% of farm-days FlashWatch rates riskiest, a flash drought begins in the next 7 days about
+      5 times as often as normal (see <a href="region.html">The big picture</a>).</p>
+  </section>
+
+  <section class="card" id="percentile">
+    <h3>Soil moisture percentile</h3>
+    <p>How wet the top 40 cm of soil is compared with the same time of year in 2005-2024 at this place: 50 is typical for the date,
+      below 20 is drought. Being relative to the date matters: a low percentile in a normally wet May can still leave plenty of water,
+      while the same percentile in late July is serious. That's one reason irrigation advice runs only in June to August, when crops
+      use the most water. The dollar figures use your soil's actual water-holding capacity in inches, not the percentile.</p>
+  </section>
+
+  <section class="card" id="dollars">
+    <h3>The dollar figures</h3>
+    <p><strong>Start today</strong> and <strong>Decide at the next forecast</strong> are average gains per acre from extra irrigation,
+      compared with starting the pivot the usual way (a couple of days after the crop shows stress).
+      They come from a day-by-day water balance of your field (the FAO-56 method):</p>
+    <ul>
+      <li>how much water your soil holds, and how fast your pivot can put it back;</li>
+      <li>how much the crop uses in a heat wave, and how much yield it loses when short of water;</li>
+      <li>a dry spell of 21 days, the length that matches yield losses in USDA county records;</li>
+      <li>your yield, price and pumping cost.</li>
+    </ul>
+    <p>Starting early costs pumping, some of it wasted if the dry spell never comes. It pays when the yield it saves is worth more.</p>
+  </section>
+
+  <section class="card" id="value">
+    <h3>FlashWatch value</h3>
+    <p>The season replayed one forecast at a time: every time FlashWatch said "start extra irrigation", did a flash drought follow?
+      Each caught dry spell is worth the yield saved minus the extra pumping; each false alarm costs about a week of pumping.
+      "Average of past seasons" repeats this for the six past seasons on file at your farm. The forecasts for each past season come from a
+      model trained without that season.</p>
+  </section>
+
+  <section class="card" id="other">
+    <h3>Other actions, and rain-fed farms</h3>
+    <p>For rain-fed fields (set <em>Watering</em> to rain-fed under Your farm), the advice box shows drought decisions instead of irrigation:
+      cutting side-dress nitrogen in June (a crop short of water can't use it), and buying hay or feed before drought pushes prices up.
+      These values are rougher than the irrigation model. Starting values are local where USDA publishes them (state hay prices, and how
+      much they rose in 2012) and are labelled under each box.</p>
+  </section>
+
+  <section class="card" id="today">
+    <h3>Today and Replay</h3>
+    <p><strong>Today</strong> shows the latest forecast and moves on by itself each day. <strong>Replay</strong> lets you step through a
+      past season (2006, 2009, 2012, 2015, 2018 or 2021) to see what FlashWatch would have said. The live feed isn't connected yet, so for
+      now Today shows July 3, 2012 as a demonstration.</p>
+  </section>
+
+  <section class="card" id="map">
+    <h3>The map</h3>
+    <p>Search for an address or town, type a latitude and longitude ("40.87, -97.99"), click the map, or drag the pin.
+      The dashed line is FlashWatch's coverage. The drought map shows the 7-day risk compared with normal, square by square.
+      Searches are sent to OpenStreetMap's Nominatim service; nothing else about your farm leaves your browser.</p>
+  </section>
+
+  <section class="card" id="settings">
+    <h3>Your farm's settings</h3>
+    <p>Each box starts at a local value, labelled with its source: USDA prices for your state, USDA county yields, and typical figures
+      where USDA has none. Change any of them; your values are kept in this browser and marked "Your value", with a reset link.</p>
+  </section>
+
+  <section class="card" id="agents">
+    <h3>Morning text and pivot control</h3>
+    <p>Each morning an AI agent (Meta's Muse Spark) writes a short text from FlashWatch's numbers; every figure in it is checked against
+      them before it goes out. For farms with several pivots, an agent plans which to start and stop, checked by fixed farm rules
+      (well capacity, water allocation, the advice). Nothing moves until you reply YES. You can also send a voice note
+      ("corn on the sandy pivot is curling by noon"), which is transcribed and taken into account.</p>
+  </section>
+
+  <section class="card" id="data">
+    <h3>Data and limits</h3>
+    <ul>
+      <li>Soil and weather: ERA5-Land (Copernicus Climate Change Service), on a grid of about 28 km squares.</li>
+      <li>Weather forecasts: ECMWF's extended-range ensemble (11 runs per forecast).</li>
+      <li>Drought Monitor: NDMC, USDA, NOAA. Crop prices, yields and acres: USDA NASS. Place names: US Census Gazetteer.</li>
+      <li>FlashWatch forecasts a 28 km square, not your field. Your soil and rain can differ.</li>
+      <li>The dollar figures come from a textbook water balance calibrated to county yields, not from field trials.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,213 @@
+{
+ "date": "2012-07-03",
+ "farm": "Demo farm, Edmunds County SD",
+ "place": "Edmunds County, SD",
+ "overview": {
+  "date": "2012-07-03",
+  "farm": "Demo farm, Edmunds County SD",
+  "pivots": {
+   "N1": {
+    "crop": "corn",
+    "acres": 130,
+    "soil": "Sandy loam",
+    "pivot_capacity_gpm_per_acre": 4.5,
+    "pumps_gpm": 585,
+    "running": true,
+    "water_put_down_last_7_days_in": 0.41,
+    "water_allocation_left_in": null,
+    "root_zone": {
+     "share_full": 0.48,
+     "inches_to_fill": 2.2,
+     "days_until_stress_if_no_rain": 0.4,
+     "full_time_pumping_days_to_fill": 10.9
+    },
+    "advice": {
+     "soil_moisture_percentile": 39.0,
+     "drought_monitor": "D0 abnormally dry",
+     "chance_flash_drought_next_7_days_pct": 14.4,
+     "normal_chance_next_7_days_pct": 2.9,
+     "times_normal_next_7_days": 5.0,
+     "chance_days_8_to_14_pct": 8.3,
+     "verdict": "no need to start early",
+     "value_of_starting_today_dollars_per_acre": -3.1,
+     "value_of_deciding_at_next_forecast_dollars_per_acre": 0.0,
+     "next_forecast_in_days": 2,
+     "loss_avoided_with_7_days_warning_dollars_per_acre": 25,
+     "what_would_change_it": "next forecast shows a 7-day chance of at least 21%",
+     "value_of_starting_today_dollars_whole_pivot": -403,
+     "root_zone_at_stress_line": true,
+     "farmer_reports_stress": true
+    },
+    "field_report": {
+     "date": "2012-07-03",
+     "severity": 2,
+     "symptoms": [
+      "curling by noon on the ridges"
+     ],
+     "farmer_said": "Corn on the sandy pivot, and one, one, is curling by noon on the ridges. We've had maybe a tenth of an inch since the 24th 24th of June. Tasseling should start in about a week."
+    }
+   },
+   "N2": {
+    "crop": "corn",
+    "acres": 125,
+    "soil": "Silt loam",
+    "pivot_capacity_gpm_per_acre": 5.0,
+    "pumps_gpm": 625,
+    "running": false,
+    "water_put_down_last_7_days_in": 0,
+    "water_allocation_left_in": null,
+    "root_zone": {
+     "share_full": 0.58,
+     "inches_to_fill": 2.55,
+     "days_until_stress_if_no_rain": 3.0,
+     "full_time_pumping_days_to_fill": 11.3
+    },
+    "advice": {
+     "soil_moisture_percentile": 39.0,
+     "drought_monitor": "D0 abnormally dry",
+     "chance_flash_drought_next_7_days_pct": 14.4,
+     "normal_chance_next_7_days_pct": 2.9,
+     "times_normal_next_7_days": 5.0,
+     "chance_days_8_to_14_pct": 8.3,
+     "verdict": "not yet: wait for the next forecast",
+     "value_of_starting_today_dollars_per_acre": 1.0,
+     "value_of_deciding_at_next_forecast_dollars_per_acre": 1.8,
+     "next_forecast_in_days": 2,
+     "loss_avoided_with_7_days_warning_dollars_per_acre": 53,
+     "what_would_change_it": "next forecast shows a 7-day chance of at least 13%",
+     "value_of_starting_today_dollars_whole_pivot": 125
+    }
+   },
+   "S1": {
+    "crop": "soybeans",
+    "acres": 130,
+    "soil": "Silt loam",
+    "pivot_capacity_gpm_per_acre": 5.5,
+    "pumps_gpm": 715,
+    "running": false,
+    "water_put_down_last_7_days_in": 0,
+    "water_allocation_left_in": null,
+    "root_zone": {
+     "share_full": 0.74,
+     "inches_to_fill": 1.53,
+     "days_until_stress_if_no_rain": 8.5,
+     "full_time_pumping_days_to_fill": 6.2
+    },
+    "advice": {
+     "soil_moisture_percentile": 39.0,
+     "drought_monitor": "D0 abnormally dry",
+     "chance_flash_drought_next_7_days_pct": 14.4,
+     "normal_chance_next_7_days_pct": 2.9,
+     "times_normal_next_7_days": 5.0,
+     "chance_days_8_to_14_pct": 8.3,
+     "verdict": "no need to start early",
+     "value_of_starting_today_dollars_per_acre": -6.3,
+     "value_of_deciding_at_next_forecast_dollars_per_acre": 0.0,
+     "next_forecast_in_days": 2,
+     "loss_avoided_with_7_days_warning_dollars_per_acre": 24,
+     "what_would_change_it": "next forecast shows a 7-day chance of at least 29%",
+     "value_of_starting_today_dollars_whole_pivot": -819,
+     "farmer_reports_stress": false
+    },
+    "field_report": {
+     "date": "2012-07-03",
+     "severity": 0,
+     "symptoms": [],
+     "farmer_said": "The south beans look fine."
+    }
+   },
+   "S2": {
+    "crop": "corn",
+    "acres": 60,
+    "soil": "Loam",
+    "pivot_capacity_gpm_per_acre": 4.0,
+    "pumps_gpm": 240,
+    "running": false,
+    "water_put_down_last_7_days_in": 0,
+    "water_allocation_left_in": 0.5,
+    "root_zone": {
+     "share_full": 0.53,
+     "inches_to_fill": 2.55,
+     "days_until_stress_if_no_rain": 1.7,
+     "full_time_pumping_days_to_fill": 14.1
+    },
+    "advice": {
+     "soil_moisture_percentile": 39.0,
+     "drought_monitor": "D0 abnormally dry",
+     "chance_flash_drought_next_7_days_pct": 14.4,
+     "normal_chance_next_7_days_pct": 2.9,
+     "times_normal_next_7_days": 5.0,
+     "chance_days_8_to_14_pct": 8.3,
+     "verdict": "not yet: wait for the next forecast",
+     "value_of_starting_today_dollars_per_acre": -0.8,
+     "value_of_deciding_at_next_forecast_dollars_per_acre": 0.5,
+     "next_forecast_in_days": 2,
+     "loss_avoided_with_7_days_warning_dollars_per_acre": 33,
+     "what_would_change_it": "next forecast shows a 7-day chance of at least 16%",
+     "value_of_starting_today_dollars_whole_pivot": -48,
+     "root_zone_at_stress_line": true
+    }
+   }
+  },
+  "wells": {
+   "North well": {
+    "gives_gpm": 1100,
+    "pivots": [
+     "N1",
+     "N2"
+    ]
+   }
+  },
+  "connection": "simulated",
+  "connection_can_start_pivots": true,
+  "suggested_order": [
+   "S2"
+  ]
+ },
+ "accepted": [
+  {
+   "id": "1a7cd4c1",
+   "pivot": "S2",
+   "action": "start",
+   "depth_in": 0.5,
+   "reason": "root zone at stress line, days until stress 1.7, water allocation left 0.5 in",
+   "date": "2012-07-03",
+   "state": "sent",
+   "approved_by": "demo",
+   "log": [
+    "simulated pivot S2: start"
+   ]
+  }
+ ],
+ "refused": [],
+ "sms": "Start S2 today for root zone at stress line. N1 stays running for farmer-reported curling. Reply YES to start S2.",
+ "note": "Starting S2 today because root_zone_at_stress_line is true with days until stress 2 if no rain and water allocation left 0.5 in. Depth set to 0.5 in to respect allocation. N1 is already running and stays on: farmer reports stress quoting 'Corn on the sandy pivot, and one, one, is curling by noon on the ridges' and root zone at stress line with 0.4 days until stress. Held back N2: advice is not yet, wait for next forecast in 2 days, value of starting today $125 whole pivot vs $1.8 per acre if decide later, and North well 1100 gpm cannot run N1 585 gpm plus N2 625 gpm together. Held back S1: advice no need to start early, value of starting today -$819 whole pivot, root zone 74% full and farmer says 'The south beans look fine.'",
+ "approved_by": "demo",
+ "sent": [
+  {
+   "id": "1a7cd4c1",
+   "pivot": "S2",
+   "action": "start",
+   "depth_in": 0.5,
+   "reason": "root zone at stress line, days until stress 1.7, water allocation left 0.5 in",
+   "date": "2012-07-03",
+   "state": "sent",
+   "approved_by": "demo",
+   "log": [
+    "simulated pivot S2: start"
+   ]
+  }
+ ],
+ "model": "muse-glimmer-30B",
+ "tool_calls": [
+  "farm_overview",
+  "propose_commands"
+ ],
+ "drafts": [
+  {
+   "draft": "{\"sms\": \"Start S2 today for root zone at stress line. N1 stays running for farmer-reported curling.\", \"note\": \"Starting S2 today because root_zone_at_stress_line is true with days until stress 2 if no rain and water allocation left 0.5 in. Depth set to 0.5 in to respect allocation. N1 is already running and stays on: farmer reports stress quoting 'Corn on the sandy pivot, and one, one, is curling by noon on the ridges' and root zone at stress line with 0.4 days until stress. Held back N2: advice is not yet, wait for next forecast in 2 days, value of starting today $125 whole pivot vs $1.8 per acre if decide later, and North well 1100 gpm cannot run N1 585 gpm plus N2 625 gpm together. Held back S1: advice no need to start early, value of starting today -$819 whole pivot, root zone 74% full and farmer says 'The south beans look fine.'\"}",
+   "untraced": []
+  }
+ ],
+ "cut_untraced": []
+}

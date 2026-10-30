@@ -1,0 +1,34 @@
+[
+ {
+  "date": "2012-07-03",
+  "transcript": "Hi, it's the North Place. Corn on the sandy pivot, and one, one, is curling by noon on the ridges. We've had maybe a tenth of an inch since the 24th 24th of June. Tasseling should start in about a week. The south beans look fine.",
+  "reports": [
+   {
+    "pivot": "N1",
+    "crop": "corn",
+    "stage": "tasseling should start in about a week",
+    "symptoms": [
+     "curling by noon on the ridges"
+    ],
+    "severity": 2,
+    "rain_in_since": null,
+    "since": "24th of June",
+    "quote": "Corn on the sandy pivot, and one, one, is curling by noon on the ridges. We've had maybe a tenth of an inch since the 24th 24th of June. Tasseling should start in about a week."
+   },
+   {
+    "pivot": "S1",
+    "crop": "soybeans",
+    "stage": null,
+    "symptoms": [],
+    "severity": 0,
+    "rain_in_since": null,
+    "since": null,
+    "quote": "The south beans look fine."
+   }
+  ],
+  "summary": "North sandy corn N1 is curling by noon on ridges with maybe a tenth of an inch since the 24th of June and tasseling in about a week, while south beans S1 look fine.",
+  "numbers_checked": [
+   "24.0"
+  ]
+ }
+]

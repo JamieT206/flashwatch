@@ -1,0 +1,39 @@
+{
+ "sms": "Start pivot today. Flash drought chance 13% vs 4% normal. Worth $5.6/acre avg to start now.",
+ "note": "Verdict: start the pivot today. Flash drought risk is 13% vs 4% normal, about 3.1 times normal. Soil moisture is at 54th percentile and Drought Monitor is D0 abnormally dry. Risk stays 11% in the week after. Starting today is worth $5.6 per acre on average vs waiting for crop stress, and $85 per acre if flash drought hits. Waiting 2 days for next forecast is worth $4.8 per acre. Lower risk or wetter soil would change it.",
+ "status": {
+  "date": "2012-08-21",
+  "soil_moisture_percentile": 54.0,
+  "drought_monitor": "D0 abnormally dry",
+  "chance_flash_drought_next_7_days_pct": 12.6,
+  "normal_chance_next_7_days_pct": 4.1,
+  "times_normal_next_7_days": 3.1,
+  "chance_days_8_to_14_pct": 10.7,
+  "verdict": "start the pivot today",
+  "value_of_starting_today_dollars_per_acre": 5.6,
+  "value_of_deciding_at_next_forecast_dollars_per_acre": 4.8,
+  "next_forecast_in_days": 2,
+  "loss_avoided_with_7_days_warning_dollars_per_acre": 85,
+  "how_to_read": "value_* are average dollars per acre against starting the pivot the usual way (after the crop shows stress); negative means starting today costs more in pumping than it saves on average. The loss avoided is what a week's warning saves if a flash drought does come."
+ },
+ "model": "muse-spark-1.1",
+ "cut_untraced": [],
+ "drafts": [
+  {
+   "draft": "{\"sms\": \"Start pivot today. Flash drought chance next 7 days 13% vs 4% normal. Worth $5.6/acre avg to start now.\", \"note\": \"Verdict: start the pivot today. Flash drought risk next 7 days is 13%, vs 4% normal, about 3.1 times normal. Soil moisture is at 54th percentile, and Drought Monitor is D0 abnormally dry. Risk stays 11% in days 8-14. Starting today is worth $5.6 per acre on average vs waiting for crop stress, and $85 per acre if flash drought hits. Waiting 2 days for next forecast is worth $4.8 per acre. Lower risk or wetter soil would change it.\"}",
+   "untraced": [
+    "14"
+   ]
+  },
+  {
+   "draft": "{\"sms\": \"Start pivot today. Flash drought chance 13% vs 4% normal. Worth $5.6/acre avg to start now.\", \"note\": \"Verdict: start the pivot today. Flash drought risk is 13% vs 4% normal, about 3.1 times normal. Soil moisture is at 54th percentile and Drought Monitor is D0 abnormally dry. Risk stays 11% in the week after. Starting today is worth $5.6 per acre on average vs waiting for crop stress, and $85 per acre if flash drought hits. Waiting 2 days for next forecast is worth $4.8 per acre. Lower risk or wetter soil would change it.\"}",
+   "untraced": []
+  }
+ ],
+ "usage": {
+  "prompt_tokens": 10975,
+  "completion_tokens": 19787,
+  "calls": 10
+ },
+ "place": "45.38, -99.38"
+}
