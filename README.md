@@ -12,8 +12,10 @@ It covers the Corn Belt and northern Plains (36-49 N, 104-80 W): 143 million acr
 
 ## The site
 
-Build its data first (Get the data and keys, then Run it, below), then `python -m http.server 8812 --directory site`
-and open http://localhost:8812.
+Live at **https://jamiet206.github.io/flashwatch/** (development years only, replayed; Ask FlashWatch and the
+pivot finder need the local agent server, so the live site shows their saved runs on the Agents page).
+To run it yourself, build its data first (Get the data and keys, then Run it, below), then `python -m http.server 8812 --directory site`
+and open http://localhost:8812. `python -m flashwatch.site.publish` pushes it to the `gh-pages` branch.
 
 | Page | What's on it |
 | --- | --- |

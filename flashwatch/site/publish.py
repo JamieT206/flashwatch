@@ -23,8 +23,9 @@ SKIP = ("data/live.json",)   # a local Today feed, if one exists
 
 
 def git(*args, env=None, inp=None) -> str:
-    return subprocess.run(["git", *args], cwd=ROOT, env=env, input=inp, capture_output=True, text=True,
-                          check=True).stdout.strip()
+    # bytes, not text mode: on Windows text mode turns \n into \r\n and git drops every --index-info line
+    return subprocess.run(["git", *args], cwd=ROOT, env=env, input=None if inp is None else inp.encode(),
+                          capture_output=True, check=True).stdout.decode().strip()
 
 
 def main():
@@ -44,6 +45,8 @@ def main():
         index = [f"100644 blob {b}\t{p.relative_to(SITE).as_posix()}" for b, p in zip(blobs, files)]
         git("update-index", "--index-info", env=env, inp="\n".join(index + [f"100644 blob {empty}\t.nojekyll"]) + "\n")
         tree = git("write-tree", env=env)
+    n = len(git("ls-tree", "-r", "--name-only", tree).splitlines())
+    assert n == len(files) + 1, f"tree has {n} files, expected {len(files) + 1}"
     try:
         parent = ["-p", git("rev-parse", f"{args.remote}/gh-pages")]
     except subprocess.CalledProcessError:
