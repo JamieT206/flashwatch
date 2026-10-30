@@ -55,9 +55,10 @@ So the question an irrigator faces every summer morning is simple: *start the pi
     something changes: the advice turns to start, a rain-fed decision's moment comes, the pivot can't
     keep up. It keeps score of itself: every forecast text is checked against what happened in the
     next two weeks. Over six past seasons on 148 farms, a flash drought followed its "start the pivot"
-    texts 26% of the time, 4.8 times the normal 5.4%; rain-fed "act now" texts 3.7 times; "risk eased"
-    texts still 1.9 times (eased means lower, not gone). A third of onsets had a warning text in the
-    two weeks before.
+    texts 14% of the time, 2.7 times the normal 5.4%; rain-fed "act now" texts 27% (5.1 times); after
+    "risk eased" texts 2.3%, under half the normal rate. Just over half of onsets (54%) had a warning
+    text in the two weeks before. Now that a false start is priced on the water it really wastes, "start"
+    is sent more often: more onsets get a warning, and a smaller share of starts are followed by one.
   - *Weekly briefing (Muse Spark)* for a county or extension office.
   - *Drought Monitor-style narrative (Muse Glimmer 30B, open weights)*: writes the Monitor's weekly
     High Plains and Midwest summary from that week's numbers. It runs locally (4-bit, one 12 GB graphics

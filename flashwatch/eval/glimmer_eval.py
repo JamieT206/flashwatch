@@ -13,7 +13,9 @@ JSON as in training and writes the High Plains / Midwest narrative. Scores, per 
 - rouge_l: word-level longest-common-subsequence F1 with the real text (style and content overlap).
 --shots k puts k real weeks from the training years (same month, latest years first) before the
 week to write, as earlier turns of the chat: in-context examples of the style, no training.
-Writes data/glimmer/eval_<model>[_<k>shot].json with every draft.
+--nomap scores the set written without this week's Drought Monitor map (data/glimmer/nomap, last week's map
+instead): direction is then a forecast of which way the Monitor moved, checked against the row's `truth`.
+Writes data/glimmer/[nomap/]eval_<model>[_<k>shot].json with every draft.
 """
 
 from __future__ import annotations
@@ -67,11 +69,12 @@ def f1(pred: set, true: set) -> float:
     return 0.0 if tp == 0 else 2 * tp / (len(pred) + len(true))
 
 
-def score(draft: str, real: str, inp: dict) -> dict:
+def score(draft: str, real: str, inp: dict, truth: dict | None = None) -> dict:
+    """`truth` (region: D1+ change) when the input doesn't carry this week's map."""
     nums = numbers_in(draft)
     bad = unsupported(draft, [inp])
-    d1 = inp["regions"]
-    change = sum(r.get("D1_or_worse_change_pct", 0) for r in d1.values())
+    change = (sum(truth.values()) if truth is not None
+              else sum(r.get("D1_or_worse_change_pct", 0) for r in inp["regions"].values()))
     true_dir = 0 if abs(change) < 1 else (1 if change > 0 else -1)
     return {"untraced": len(bad) / max(len(nums), 1), "untraced_figures": bad,
             "states": f1(states_named(draft), states_named(real)),
@@ -91,18 +94,22 @@ def examples(train: list[dict], date: str, k: int) -> list[dict]:
     return [m for r in reversed(picked) for m in r["messages"][1:]]
 
 
-def pick(n: int, season_only: bool = False) -> list[dict]:
+def folder(nomap: bool = False):
+    return DATA / "glimmer" / ("nomap" if nomap else "")
+
+
+def pick(n: int, season_only: bool = False, nomap: bool = False) -> list[dict]:
     """n validation weeks spread through the set (the same weeks for every writer)."""
-    rows = [json.loads(l) for l in open(DATA / "glimmer" / "val.jsonl", encoding="utf-8")]
+    rows = [json.loads(l) for l in open(folder(nomap) / "val.jsonl", encoding="utf-8")]
     if season_only:
         rows = [r for r in rows if "04" <= r["date"][5:7] <= "09"]
     return rows[:: max(1, len(rows) // n)][:n]
 
 
-def report(model: str, shots: int, out: list[dict], usage=None):
+def report(model: str, shots: int, out: list[dict], usage=None, nomap: bool = False):
     mean = {k: round(sum(o[k] for o in out) / len(out), 3) for k in ("untraced", "states", "direction", "rouge_l")}
     print("mean", mean, "tokens", usage)
-    f = DATA / "glimmer" / f"eval_{model}{f'_{shots}shot' if shots else ''}.json"
+    f = folder(nomap) / f"eval_{model}{f'_{shots}shot' if shots else ''}.json"
     f.write_text(json.dumps({"model": model, "shots": shots, "mean": mean, "weeks": out, "usage": usage}, indent=1))
 
 
@@ -113,9 +120,10 @@ def main():
     ap.add_argument("--season-only", action="store_true", help="only weeks from April to September")
     ap.add_argument("--shots", type=int, default=0, help="real training-year weeks shown first as examples")
     ap.add_argument("--timeout", type=int, default=300, help="seconds per week (a local model can be slow)")
+    ap.add_argument("--nomap", action="store_true", help="the set without this week's Drought Monitor map")
     args = ap.parse_args()
-    rows = pick(args.n, args.season_only)
-    train = [json.loads(l) for l in open(DATA / "glimmer" / "train.jsonl", encoding="utf-8")] if args.shots else []
+    rows = pick(args.n, args.season_only, args.nomap)
+    train = [json.loads(l) for l in open(folder(args.nomap) / "train.jsonl", encoding="utf-8")] if args.shots else []
     chat = Chat(timeout=args.timeout)
     out = []
     for r in rows:
@@ -125,11 +133,11 @@ def main():
         except Exception as e:                            # one slow week shouldn't lose the rest
             print(f"{r['date']}: skipped ({type(e).__name__})")
             continue
-        s = score(draft, real["content"], json.loads(user["content"]))
+        s = score(draft, real["content"], json.loads(user["content"]), r.get("truth"))
         out.append({"date": r["date"], **s, "draft": draft, "real": real["content"]})
         print(f"{r['date']}: untraced {s['untraced']:.2f} states {s['states']:.2f} direction {s['direction']:.0f} "
               f"rouge-L {s['rouge_l']:.2f}")
-    report(chat.model, args.shots, out, chat.usage)
+    report(chat.model, args.shots, out, chat.usage, args.nomap)
 
 
 if __name__ == "__main__":

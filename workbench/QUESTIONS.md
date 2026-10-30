@@ -375,6 +375,18 @@ is now close to BSS vs a seasonal base rate, i.e. an honest (harder) reference.
 - **Hosting:** a static site in the repo (`site/`), previewed locally; James switches on GitHub Pages.
   Site data stays out of git until Q2 (ECMWF licence) is settled for anything forecast-derived.
 
+### Q23. Live feed on ECMWF open data: now or after Nov 4? (Oct 31)
+Jamie offered to do it today. What it takes: M2 retrained on week 1-2 forecast inputs only (open data runs 15 days, no weeks 3-4)
+and re-scored by CV; forecast anomalies need a reforecast climatology, which open data doesn't carry (use the S2S reforecasts of
+the current model cycle); open fields regridded to 1.5 degrees, and soil moisture and dew point checked among them; ERA5-Land from
+Earth Engine runs about a week behind, a gap the training never saw; then a daily job and `site.publish`.
+Against doing it now: (1) it's Oct 31: the model is trained on Apr 1 - Oct 15 issue dates for a Jun-Sep season, so a live
+forecast today would show nothing useful until spring, and the labelled July 3, 2012 demo is the better show for judges;
+(2) it changes `flashwatch/` around the post-download rebuild and the freeze, and `eval.final score` refuses to run if the
+package changed after `freeze`, so it can't land between freeze and the test-year scoring.
+**Recommendation:** after Nov 4 (or after the test years are scored, if time is left). **Default:** after Nov 4; Glimmer
+without the map was done Oct 31 instead.
+
 ## Defaults taken (Oct 28, evening)
 - Agent number checker ignores the sign of a figure ("2.6 below normal" matches -2.6) and exempts
   time spans ("28 days"); agent tools now return percentages. Found in the first live Muse run.

@@ -84,7 +84,19 @@ function glimmer(g) {
       <th>States named right</th><th>Figures not in the input</th><th>Words</th></tr></thead><tbody>${rows}</tbody></table></div>
     <div class="tt" style="margin-top:20px">Both written about the week of ${day(ex.date)}</div>
     <div class="agrid"><div><div class="tt">${name({local: ex.model.includes("glimmer"), tuned: ex.model.includes("lora"), shots: ex.shots})}</div><blockquote>${esc(ex.draft)}</blockquote></div>
-      <div><div class="tt">The Drought Monitor</div><blockquote>${esc(ex.real)}</blockquote></div></div>`;
+      <div><div class="tt">The Drought Monitor</div><blockquote>${esc(ex.real)}</blockquote></div></div>` + nomap(g.nomap, name);
+}
+
+// The same writers given last week's Drought Monitor map instead of this week's, so the summary can come out first.
+function nomap(n, name) {
+  if (!n) return "";
+  const rows = n.rows.map(r => `<tr><td>${name(r)}</td><td>${Math.round(100 * r.direction)}%</td><td>${Math.round(100 * r.rouge_l)}%</td>
+    <td>${Math.round(100 * r.states)}%</td><td>${Math.round(100 * r.untraced)}%</td></tr>`).join("");
+  return `<div class="tt" style="margin-top:24px">Before the Monitor's map is out</div>
+    <p class="note">The same task with last week's Drought Monitor map instead of this week's, so the summary can be written as soon as the
+      week's weather data is in. The writer now has to judge whether drought spread or eased. ${n.weeks} held-out weeks.</p>
+    <div style="overflow-x:auto"><table><thead><tr><th>Writer, from the week's numbers and last week's map</th><th>Got right whether drought spread or eased</th>
+      <th>Wording shared with the real text</th><th>States named right</th><th>Figures not in the input</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function then(o, warn) {

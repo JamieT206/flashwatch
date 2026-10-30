@@ -28,7 +28,7 @@ def glimmer_table(evals: dict) -> dict:
         ws = [weeks[k][d] for d in common]
         rows.append({"model": e["model"], "local": "glimmer" in e["model"], "tuned": "lora" in e["model"],
                      "shots": e.get("shots", 0),
-                     **{m: round(sum(w[m] for w in ws) / len(ws), 3) for m in ("untraced", "states", "rouge_l")},
+                     **{m: round(sum(w[m] for w in ws) / len(ws), 3) for m in ("untraced", "states", "direction", "rouge_l")},
                      "words": round(sum(len(w["draft"].split()) for w in ws) / len(ws))})
     best = max(rows, key=lambda r: r["rouge_l"])
     key = next(k for k, e in evals.items() if e["model"] == best["model"] and e.get("shots", 0) == best["shots"])
@@ -70,6 +70,10 @@ def main():
     if g:
         out["glimmer"] = glimmer_table(g)
         out["glimmer"]["stats"] = _load(DATA / "glimmer" / "stats.json")
+        # Without this week's Drought Monitor map (last week's instead): written before the Monitor comes out.
+        gn = {f.stem[5:]: _load(f) for f in sorted((DATA / "glimmer" / "nomap").glob("eval_*.json"))}
+        if gn:
+            out["glimmer"]["nomap"] = glimmer_table(gn)
     # Ask FlashWatch on the demo farm's 3 July 2012 (Muse Spark), for the WhatsApp thread on the page.
     ask = _load(DATA / "agent" / "ask_compare_muse-spark-1.1.json")
     if ask:

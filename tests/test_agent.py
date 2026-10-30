@@ -191,3 +191,20 @@ def test_server_answers_tunnelled_requests_on_whatsapp_only():
         assert code("/whatsapp", b"{}", tunnel=True) == 403    # tunnel reaches /whatsapp, refused without a signature
     finally:
         srv.shutdown()
+
+
+def test_glimmer_input_without_the_map_has_only_last_weeks_monitor_shares():
+    import pandas as pd
+    from flashwatch.agent.glimmer_data import state_json
+    row = {"date": pd.Timestamp("2021-06-01"), "rain_pct_normal": 50.0, "temp_dep_f": 3.0, "soil_pct_normal": 80.0,
+           "soil_change_pct": -4.0, "onset_share": 0.02, "D1_or_worse_change_pct": 7.5,
+           **{f"D{c}_or_worse_pct": 40.0 - c for c in range(5)},
+           **{f"D{c}_or_worse_pct_last_week": 30.0 - c for c in range(5)}}
+    g = pd.DataFrame([{**row, "area": "High Plains"}, {**row, "area": "SD"}])
+    with_map, without = state_json(g), state_json(g, nomap=True)
+    assert with_map["regions"]["High Plains"]["D1_or_worse_pct"] == 39.0
+    assert "D1_or_worse_change_pct" in with_map["states"]["SD"]
+    for area in (without["regions"]["High Plains"], without["states"]["SD"]):
+        monitor = {k for k in area if k.startswith("D")}
+        assert monitor == {f"D{c}_or_worse_pct_last_week" for c in range(5)}
+        assert 39.0 not in area.values() and 7.5 not in area.values()

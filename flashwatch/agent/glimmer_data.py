@@ -2,6 +2,7 @@
 
     python -m flashwatch.ingest.usdm_text          # the real weekly narratives (once)
     python -m flashwatch.agent.glimmer_data        # -> data/glimmer/{train,val}.jsonl + stats
+    python -m flashwatch.agent.glimmer_data --nomap   # -> data/glimmer/nomap/: without this week's map
 
 Each example is one Drought Monitor week (valid Tuesday). Input: what the data showed over the 7
 days to that Tuesday for the High Plains and Midwest, by region and by state (ERA5-Land rain as a
@@ -14,6 +15,10 @@ years are not used in their own inputs.
 Splits: train 2005-2019, validation 2020-2021. Test years (2022-2024) are not written here.
 The aim is a small open model that writes the regional summary in the Monitor's voice from
 FlashWatch's numbers; it is scored against held-out real narratives plus the number checker.
+
+--nomap: the same weeks, but the input has last week's Drought Monitor shares (public a week earlier) instead of
+this week's and their change, so the summary can be written before the Monitor's map comes out. Each row keeps
+the real D1+ change by region as `truth`, for scoring only.
 """
 
 from __future__ import annotations
@@ -33,6 +38,9 @@ REGIONS = {"High Plains": ["ND", "SD", "NE", "KS", "CO", "WY", "MT"],
 SYSTEM = ("You write the US Drought Monitor's weekly narrative for the High Plains and the Midwest. "
           "Use only the numbers and places in the data you are given; describe changes in plain words, "
           "in the Monitor's usual style (what the weather did, then where drought categories changed and why).")
+SYSTEM_NOMAP = SYSTEM + (
+    " You have last week's Drought Monitor map (the D-category shares marked last_week), not this week's: from the "
+    "week's weather and soil moisture, say where drought most likely expanded, eased or held.")
 
 
 def cell_states() -> np.ndarray:
@@ -126,18 +134,20 @@ def monitor_shares(states, land, tuesdays) -> pd.DataFrame:
             now, prev = cat[k][m], cat[k - 1][m]
             rows.append({"date": t, "area": a, **{f"D{c}_or_worse_pct": round(100 * float((now >= c).mean()), 1)
                                                 for c in range(5)},
+                         **{f"D{c}_or_worse_pct_last_week": round(100 * float((prev >= c).mean()), 1) for c in range(5)},
                          "D1_or_worse_change_pct": round(100 * float((now >= 1).mean() - (prev >= 1).mean()), 1)})
     return pd.DataFrame(rows)
 
 
-def state_json(g: pd.DataFrame) -> dict:
-    """The model's input for one week: regions first, then states."""
+def state_json(g: pd.DataFrame, nomap: bool = False) -> dict:
+    """The model's input for one week: regions first, then states. `nomap`: last week's map only."""
+    end = ("_last_week",) if nomap else ("pct",)
     def area(r):
         return {"rain_percent_of_normal": int(round(r.rain_pct_normal)), "temperature_departure_F": round(r.temp_dep_f, 1),
                 "soil_moisture_percent_of_normal": int(round(r.soil_pct_normal)),
                 "soil_moisture_change_this_week_pct": round(r.soil_change_pct, 1),
                 "new_flash_drought_onsets_percent_of_area": round(100 * r.onset_share, 1),
-                **{k: r[k] for k in r.index if k.startswith("D") and k.endswith(("pct",))}}
+                **{k: r[k] for k in r.index if k.startswith("D") and k.endswith(end)}}
     regions = {r.area: area(r) for _, r in g.iterrows() if r.area in REGIONS}
     states = {r.area: area(r) for _, r in g.iterrows() if r.area not in REGIONS}
     t = g.date.iloc[0]
@@ -145,7 +155,12 @@ def state_json(g: pd.DataFrame) -> dict:
 
 
 def main():
+    import argparse
     from flashwatch.obs import land_mask, open_obs
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--nomap", action="store_true", help="last week's Drought Monitor map instead of this week's")
+    nomap = ap.parse_args().nomap
+    out = OUT / "nomap" if nomap else OUT
     narr = {}
     for f in sorted((RAW / "usdm_text").glob("*.json")):
         n = json.loads(f.read_text(encoding="utf-8"))
@@ -156,9 +171,9 @@ def main():
     states = cell_states()
     d = with_normals(weekly_series(states, land, tues)).merge(monitor_shares(states, land, tues), on=["date", "area"])
     d = d.set_index("area")
-    OUT.mkdir(parents=True, exist_ok=True)
+    out.mkdir(parents=True, exist_ok=True)
     counts = {"train": 0, "val": 0, "no_section": 0}
-    files = {k: open(OUT / f"{k}.jsonl", "w", encoding="utf-8") for k in ("train", "val")}
+    files = {k: open(out / f"{k}.jsonl", "w", encoding="utf-8") for k in ("train", "val")}
     for t in tues:
         text = target(narr[t])
         if not text:
@@ -167,16 +182,19 @@ def main():
         g = d[d.date == t].reset_index()
         if g.empty:
             continue
-        inp = state_json(g)
+        inp = state_json(g, nomap)
         split = "train" if t.year in TRAIN else "val"
-        files[split].write(json.dumps({"messages": [{"role": "system", "content": SYSTEM},
-                                                    {"role": "user", "content": json.dumps(inp)},
-                                                    {"role": "assistant", "content": text}],
-                                       "date": t.date().isoformat()}) + "\n")
+        row = {"messages": [{"role": "system", "content": SYSTEM_NOMAP if nomap else SYSTEM},
+                            {"role": "user", "content": json.dumps(inp)},
+                            {"role": "assistant", "content": text}],
+               "date": t.date().isoformat()}
+        if nomap:
+            row["truth"] = {r.area: float(r.D1_or_worse_change_pct) for _, r in g.iterrows() if r.area in REGIONS}
+        files[split].write(json.dumps(row) + "\n")
         counts[split] += 1
     for f in files.values():
         f.close()
-    (OUT / "stats.json").write_text(json.dumps(counts, indent=1))
+    (out / "stats.json").write_text(json.dumps(counts, indent=1))
     print(counts)
 
 

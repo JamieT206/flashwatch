@@ -4,6 +4,8 @@
     modal run flashwatch/agent/glimmer_train.py --smoke   # 2 steps on 16 weeks: checks the pipeline (~15 min)
     modal run flashwatch/agent/glimmer_train.py           # uploads data/glimmer/*.jsonl, trains, saves the adapter
     modal run flashwatch/agent/glimmer_train.py::score    # the adapter's drafts for the 12 validation weeks, scored
+    modal run flashwatch/agent/glimmer_train.py --nomap   # without this week's Drought Monitor map (glimmer_data --nomap)
+    modal run flashwatch/agent/glimmer_train.py::score --nomap
 
 Needs a Modal secret named `huggingface` holding HF_TOKEN. The model (transformers 5.15+; a text and vision
 model, of which only the language part is adapted) is cached on the Modal volume, so reruns skip the download.
@@ -30,12 +32,17 @@ image = (modal.Image.debian_slim(python_version="3.12")
                       "accelerate==1.15.0", "datasets==5.1.0", "trl==1.17.0")
          .env(CACHE))
 app = modal.App("flashwatch-glimmer", image=image)
+def adapter(nomap: bool = False) -> str:
+    return "/vol/glimmer-lora-nomap" if nomap else "/vol/glimmer-lora"
+
+
 TARGETS = r".*language_model.*\.(q_proj|k_proj|v_proj|o_proj|gate_proj|up_proj|down_proj)"   # not the vision tower
 
 
 @app.function(gpu="A100-80GB", timeout=4 * 3600, max_containers=1, volumes={"/vol": VOL},
               secrets=[modal.Secret.from_name("huggingface")])
-def train(epochs: int = 2, rank: int = 16, lr: float = 2e-4, max_len: int = 4608, smoke: bool = False):
+def train(epochs: int = 2, rank: int = 16, lr: float = 2e-4, max_len: int = 4608, smoke: bool = False,
+          nomap: bool = False):
     import torch
     from datasets import load_dataset
     from peft import LoraConfig
@@ -49,13 +56,14 @@ def train(epochs: int = 2, rank: int = 16, lr: float = 2e-4, max_len: int = 4608
                                                bnb_4bit_compute_dtype=torch.bfloat16, bnb_4bit_use_double_quant=True,
                                                llm_int8_skip_modules=["vision_tower", "vision_adapter",
                                                                       "vision_projection", "lm_head"]))
-    ds = load_dataset("json", data_files={"train": "/vol/train.jsonl", "val": "/vol/val.jsonl"})
+    d = "/vol/nomap" if nomap else "/vol"
+    ds = load_dataset("json", data_files={"train": f"{d}/train.jsonl", "val": f"{d}/val.jsonl"})
     # prompt = system + the week's numbers, completion = the real narrative: the loss is on the narrative only
     ds = ds.map(lambda r: {"prompt": r["messages"][:-1], "completion": r["messages"][-1:]},
                 remove_columns=ds["train"].column_names)
     if smoke:
         ds["train"], ds["val"] = ds["train"].select(range(16)), ds["val"].select(range(4))
-    cfg = SFTConfig(output_dir="/vol/run-smoke" if smoke else "/vol/run", num_train_epochs=epochs, learning_rate=lr,
+    cfg = SFTConfig(output_dir="/vol/run-smoke" if smoke else f"/vol/run{'-nomap' if nomap else ''}", num_train_epochs=epochs, learning_rate=lr,
                     per_device_train_batch_size=1, gradient_accumulation_steps=8, lr_scheduler_type="cosine",
                     warmup_steps=0.05, bf16=True, logging_steps=1 if smoke else 10, eval_strategy="epoch",
                     save_strategy="no" if smoke else "epoch", max_length=max_len, max_steps=2 if smoke else -1,
@@ -65,14 +73,15 @@ def train(epochs: int = 2, rank: int = 16, lr: float = 2e-4, max_len: int = 4608
                     processing_class=tok)
     tr.train()
     if not smoke:
-        tr.save_model("/vol/glimmer-lora")
+        tr.save_model(adapter(nomap))
     VOL.commit()
     return tr.state.log_history
 
 
 @app.function(gpu="A100-80GB", timeout=1800, max_containers=1, volumes={"/vol": VOL},
               secrets=[modal.Secret.from_name("huggingface")])
-def generate(chats: list, max_new_tokens: int = 1200, temperature: float = 0.2, batch: int = 6) -> list[str]:
+def generate(chats: list, max_new_tokens: int = 1200, temperature: float = 0.2, batch: int = 6,
+             nomap: bool = False) -> list[str]:
     """Drafts from the base model in bf16 plus the saved adapter, for a list of chats (system + user)."""
     import torch
     from peft import PeftModel
@@ -82,7 +91,7 @@ def generate(chats: list, max_new_tokens: int = 1200, temperature: float = 0.2, 
     tok.padding_side = "left"
     tok.pad_token = tok.pad_token or "<|finetune_right_pad|>"
     model = MuseGlimmerForConditionalGeneration.from_pretrained(BASE, device_map="auto", dtype=torch.bfloat16)
-    model = PeftModel.from_pretrained(model, "/vol/glimmer-lora").eval()
+    model = PeftModel.from_pretrained(model, adapter(nomap)).eval()
     out = []
     for i in range(0, len(chats), batch):
         enc = tok.apply_chat_template(chats[i:i + batch], add_generation_prompt=True, return_tensors="pt",
@@ -95,32 +104,32 @@ def generate(chats: list, max_new_tokens: int = 1200, temperature: float = 0.2, 
 
 
 @app.local_entrypoint()
-def main(epochs: int = 2, smoke: bool = False):
-    data = Path(__file__).resolve().parents[2] / "data" / "glimmer"   # on this PC, not in the container
+def main(epochs: int = 2, smoke: bool = False, nomap: bool = False):
+    data = Path(__file__).resolve().parents[2] / "data" / "glimmer" / ("nomap" if nomap else "")   # on this PC
     with VOL.batch_upload(force=True) as up:
         for name in ("train.jsonl", "val.jsonl"):
-            up.put_file(str(data / name), f"/{name}")
-    hist = train.remote(epochs=epochs, smoke=smoke)
+            up.put_file(str(data / name), f"{'/nomap' if nomap else ''}/{name}")
+    hist = train.remote(epochs=epochs, smoke=smoke, nomap=nomap)
     for h in hist:
         if "eval_loss" in h or "loss" in h:
             print({k: round(v, 4) if isinstance(v, float) else v for k, v in h.items()})
 
 
 @app.local_entrypoint()
-def score(n: int = 12):
-    """Scores the adapter like eval.glimmer_eval (same weeks and measures); writes eval_glimmer-lora.json."""
+def score(n: int = 12, nomap: bool = False):
+    """Scores the adapter like eval.glimmer_eval (same weeks and measures); writes [nomap/]eval_glimmer-lora.json."""
     import json
     import re
     from flashwatch.eval.glimmer_eval import pick, report
     from flashwatch.eval.glimmer_eval import score as score_draft
-    rows = pick(n)
-    drafts = generate.remote([r["messages"][:2] for r in rows])
+    rows = pick(n, nomap=nomap)
+    drafts = generate.remote([r["messages"][:2] for r in rows], nomap=nomap)
     out = []
     for r, d in zip(rows, drafts):
         d = re.sub(r"^\s*to=\w+\s*", "", d)   # the chat template's recipient tag survives skip_special_tokens
         _, user, real = r["messages"]
-        s = score_draft(d, real["content"], json.loads(user["content"]))
+        s = score_draft(d, real["content"], json.loads(user["content"]), r.get("truth"))
         out.append({"date": r["date"], **s, "draft": d, "real": real["content"]})
         print(f"{r['date']}: untraced {s['untraced']:.2f} states {s['states']:.2f} direction {s['direction']:.0f} "
               f"rouge-L {s['rouge_l']:.2f}")
-    report("glimmer-lora", 0, out)
+    report("glimmer-lora", 0, out, nomap=nomap)
