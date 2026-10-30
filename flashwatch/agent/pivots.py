@@ -135,8 +135,9 @@ def annotate(image: bytes, pivots: list[dict], path) -> None:
         x1, y1, x2, y2 = p["box_px"]
         if p.get("shape"):                              # part or half circle: its box, in orange
             dr.rectangle([x1, y1, x2, y2], outline=(240, 150, 30), width=4)
-        else:
-            dr.ellipse([x1, y1, x2, y2], outline=(216, 57, 51), width=4)
+        else:                                           # a true circle, the diameter the acres use (box sides may differ by 25%)
+            cx, cy, r = (x1 + x2) / 2, (y1 + y2) / 2, (x2 - x1 + y2 - y1) / 4
+            dr.ellipse([cx - r, cy - r, cx + r, cy + r], outline=(216, 57, 51), width=4)
         dr.text(((x1 + x2) / 2 - 18, (y1 + y2) / 2 - 8), f"P{k} {p['acres']} ac", fill=(255, 255, 255))
     im.save(path)
 

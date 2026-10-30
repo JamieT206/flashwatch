@@ -69,19 +69,15 @@ def main():
     if g:
         out["glimmer"] = glimmer_table(g)
         out["glimmer"]["stats"] = _load(DATA / "glimmer" / "stats.json")
-    asks = {e["model"]: e for e in map(_load, sorted((DATA / "agent").glob("ask_compare_*.json")))}
-    op = _load(SITE / "data" / "ops" / "2012_07-03_glimmer.json")
-    if asks and op and "glimmer" in out:
-        out["glimmer"]["offline"] = {
-            "operator": {"sms": op["sms"], "accepted": op["accepted"], "drafts": len(op.get("drafts") or []),
-                         "cut_untraced": op.get("cut_untraced") or []},
-            "asks": {m: [{"q": a["q"], "answer": a["answer"], "seconds": a["seconds"], "tools": [t["tool"] for t in a["tools"]],
-                          "cut": a["cut_untraced"]} for a in e["answers"]] for m, e in asks.items()}}
+    # Ask FlashWatch on the demo farm's 3 July 2012 (Muse Spark), for the WhatsApp thread on the page.
+    ask = _load(DATA / "agent" / "ask_compare_muse-spark-1.1.json")
+    if ask:
+        out["ask"] = [{"q": a["q"].strip(), "answer": a["answer"]} for a in ask["answers"]]
     al = _load(SITE / "data" / "alerts" / "2012.json")
     if al:
         from flashwatch.agent.scorecard import score_alerts
         out["alerts"] = {"year": al["year"], "farms": [{k: f[k] for k in ("name", "crop", "watering", "dates_checked")} |
-                                                        {"alerts": [{k: x[k] for k in ("date", "level", "text", "by", "outcome") if k in x}
+                                                        {"alerts": [{k: x[k] for k in ("date", "kind", "level", "text", "by", "outcome", "facts") if k in x}
                                                                     for x in score_alerts(f["alerts"], f, al["year"])]}
                                                         for f in al["farms"]]}
     sc = _load(SITE / "data" / "scorecard.json")

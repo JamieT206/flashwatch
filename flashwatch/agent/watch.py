@@ -112,10 +112,13 @@ def _days(a: str, b: str) -> int:
 def template(e: dict, sub: dict) -> str:
     f = e["facts"]
     if e["kind"] == "start":
+        v = f.get("value_of_starting_today_dollars_per_acre")
         return (f"{sub['name']}: start extra irrigation today. Flash-drought chance {f.get('chance_flash_drought_next_7_days_pct')}% "
-                f"this week, {f.get('times_normal_next_7_days')}x normal.")
+                f"this week, {f.get('times_normal_next_7_days')}x normal." + (f" Worth about ${v:.0f} an acre on average." if v else ""))
     if e["kind"] == "watch":
-        return f"{sub['name']}: flash-drought risk rising ({f.get('chance_flash_drought_next_7_days_pct')}% this week). Not yet: we'll text if it's time."
+        v = f.get("value_of_starting_today_dollars_per_acre")
+        return (f"{sub['name']}: flash-drought risk rising ({f.get('chance_flash_drought_next_7_days_pct')}% this week). Not yet: we'll text if it's time."
+                + (f" Starting today: {'-' if v < 0 else ''}${abs(v):.1f} an acre." if v is not None else ""))
     if e["kind"] == "ease":
         return f"{sub['name']}: risk has eased. Irrigate as usual."
     if e["kind"] == "water_now":
