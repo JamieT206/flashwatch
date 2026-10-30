@@ -651,6 +651,8 @@ function importFromPivot() {
 const ASK = "http://127.0.0.1:8813";
 S.askHist = [];
 async function initAsk() {
+  // Only where the page itself is local: from a published page the probe would make browsers ask about local network access.
+  if (!["localhost", "127.0.0.1", ""].includes(location.hostname)) return;
   try {
     const r = await fetch(`${ASK}/health`, { signal: AbortSignal.timeout(1500) });
     if (!r.ok) return;
