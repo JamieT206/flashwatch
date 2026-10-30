@@ -18,7 +18,7 @@ dry are forecast. Places under snow or frozen ground are left out.
 | Name | What it is | Used for |
 | --- | --- | --- |
 | **M2** | LightGBM on observed land features plus ECMWF extended-range forecast features (11 ensemble members), calibrated | The headline results |
-| **E1** | M1 (LightGBM on observed land features only) averaged with four small U-Nets that see the whole map | The farm page and maps, until the forecasts for late July and August finish downloading |
+| **E1** | M1 (LightGBM on observed land features only) averaged with four small U-Nets that see the whole map | The farm page and maps on dates with no archived ECMWF forecast (M2 is used on the rest) |
 | B0, B1, H1, B2 | Seasonal normal; logistic regression on soil moisture; a farmer's rule of thumb ("hot and dry lately"); the raw ECMWF forecast, recalibrated | Comparisons |
 
 - **Inputs** use only what was public on the forecast date, allowing for ERA5-Land's 5-day delay:
@@ -41,7 +41,7 @@ dry are forecast. Places under snow or frozen ground are left out.
 - Cross-validation by year, 2005-2021: each year is predicted by models that never saw it. Normals and
   percentile thresholds come from the training years only.
 - Ranges are 90% ranges from resampling whole years.
-- M2 is scored on the 41 ECMWF forecast start dates downloaded so far (April 1 to July 13); the rest of the
+- M2 is scored on the 53 ECMWF forecast start dates downloaded so far (April 1 to August 11); the rest of the
   season is still downloading.
 - Four expectations were written down before any model ran (results below).
 
@@ -49,24 +49,24 @@ dry are forecast. Places under snow or frozen ground are left out.
 
 | | Week 1 | Week 2 |
 | --- | --- | --- |
-| M2, Brier skill against the seasonal normal | 16.5% (13.4 to 18.5) | 3.7% (1.7 to 5.2) |
-| M2, riskiest tenth of farm-days: onsets against normal | 6.2 times (25% against 4.0%) | 3.1 times |
+| M2, Brier skill against the seasonal normal | 16.3% (13.4 to 18.1) | 3.6% (1.7 to 5.0) |
+| M2, riskiest tenth of farm-days: onsets against normal | 6.3 times (24% against 3.8%) | 3.2 times |
 | Rule of thumb (H1), riskiest tenth | 1.7 times | 0.7 times |
 | Raw ECMWF, recalibrated (B2), Brier skill | 2.2% | 0.3% |
 | Land only (E1), all dates, Brier skill | 6.1% | 1.7% |
 
-- Of all onsets, 62% fall in M2's riskiest tenth at week 1.
+- Of all onsets, 63% fall in M2's riskiest tenth at week 1.
 - The soil crosses the drought line a median 22 days before the Drought Monitor first marks moderate
   drought (D1) at that place.
 - **Pre-registered expectations:**
   1. The land model beats a simple soil-moisture baseline at weeks 1-2: holds.
   2. Forecasts help only at weeks 3-4: wrong; they help most at week 1.
   3. The raw ECMWF forecast is badly calibrated: holds; Brier skill -166% before recalibration.
-  4. More skill in the western Plains than the humid east: holds; week 1 19% against 13%.
+  4. More skill in the western Plains than the humid east: holds; week 1 19.7% against 12.6%.
 
 ## Limits and known problems
 
-- **The test years are not scored yet.** Development numbers on 41 spring and early-summer dates may not hold
+- **The test years are not scored yet.** Development numbers on 53 dates from April to mid-August may not hold
   for late summer.
 - **Many onsets don't cost anything.** About half the onsets warned about break before they hurt yields. A
   "damaging drought" label is the first change planned after the hackathon.

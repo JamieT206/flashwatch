@@ -78,8 +78,8 @@ function renderFlags() {
     svg.append("text").attr("x", bx + x1.bandwidth() / 2).attr("y", y(v) - 4).attr("text-anchor", "middle").attr("font-size", 11).attr("fill", css("--ink")).text(pct1(v));
   }
   $("flagNote").innerHTML = groups.map(([, label, col]) => `<span style="display:inline-block;width:10px;height:10px;background:${col}"></span> ${label}`).join(" &nbsp; ") +
-    `<br>Chance that a flash drought begins, on all farm-days and on the riskiest tenth by each method. Scored on ${R.ev.m2_dates} spring forecast dates
-     in six past seasons; summer forecast dates are still downloading.`;
+    `<br>Chance that a flash drought begins, on all farm-days and on the riskiest tenth by each method. Scored on ${R.ev.m2_dates} ECMWF forecast dates
+     (April to mid-August) in six past seasons; late August to October are still downloading.`;
 }
 
 // ---------- value by corn price ----------
@@ -169,7 +169,7 @@ function renderMonitor() {
 async function init() {
   const get = (u, fallback = null) => fetch(u).then(r => r.ok ? r.json() : fallback).catch(() => fallback);
   [R.meta, R.ev, R.roll, R.defaults] = await Promise.all([get("data/meta.json"), get("data/evidence.json"),
-    get("data/rollup_blur07_cal.json"), get("data/defaults.json")]);
+    get("data/rollup_m2fc53_cal.json"), get("data/defaults.json")]);
   R.prices = await Promise.all(PRICES.map(async p => {
     const r = await get(`data/rollup_price${String(p).replace(".", "")}.json`);
     const h = r && r.headline.find(x => x.baseline === "careful");

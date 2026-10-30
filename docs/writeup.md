@@ -111,15 +111,15 @@ ERA5-Land soil, rain, heat (as of each forecast date)     ECMWF extended-range e
 
 - **A week ahead is where the forecasts pay.** With ECMWF weather forecasts:
   - on the tenth of farm-days FlashWatch rates riskiest, a flash drought begins in the next 7 days
-    **6.2 times** as often as normal (25% against 4.0%), and those flags hold 62% of all onsets;
+    **6.3 times** as often as normal (24% against 3.8%), and those flags hold 63% of all onsets;
   - a farmer's rule of thumb ("hot and dry lately", fitted the same way) manages 1.7 times;
   - week-1 skill is about 17% better than the seasonal normal (Brier skill score);
-  - beyond the first week the edge fades (week 2: about 4%, 3.1 times normal on the top tenth);
-  - scored on the 41 ECMWF forecast dates downloaded so far, April to mid-July.
+  - beyond the first week the edge fades (week 2: about 4%, 3.2 times normal on the top tenth);
+  - scored on the 53 ECMWF forecast dates downloaded so far, April to mid-August.
 - **Seeing the map helps.** Without the weather forecasts, a small convolutional network that sees
   the whole map at once (where a drying patch is, and what surrounds it) adds to the per-cell model:
   week-1 skill 6.1% against 4.3% when the two are averaged (paired gain 1.8 points, 90% range 1.3-2.4).
-  The farm page runs on this pair until the summer ECMWF forecasts finish downloading.
+  The farm page uses this pair on dates with no archived ECMWF forecast, and the forecast model on the rest.
 - **Ahead of the Drought Monitor.** The soil crosses the drought line a median 22 days before the
   Monitor first shows moderate drought (D1) at that place. FlashWatch is first in 86% of cases.
 - **Flash droughts cost crops** (county yields, above). Onsets the Monitor never flags cost no yield
@@ -128,12 +128,16 @@ ERA5-Land soil, rain, heat (as of each forecast date)     ECMWF extended-range e
   - A flash drought with a week's warning is worth about $21 an acre on irrigated corn (yield saved,
     less extra pumping; a typical Nebraska pivot) and about $28 an acre on rain-fed corn (the fungicide
     pass a dry spell makes pointless).
-  - Averaged over all years, including the many without a flash drought at a given farm, that's about
-    $19 million a year across the region's irrigated acres and $171 million across its rain-fed acres.
-    Rain-fed values rest on extension averages and are rougher.
+  - Averaged over all years, including the many without a flash drought at a given farm, and acting on
+    the real ECMWF forecasts, that's about $6 million a year across the region's irrigated acres (68 cents
+    an acre) and $94 million across its rain-fed acres. Irrigation value swings by year: +$49 million in
+    2012 and +$17 million in 2021, but -$14 million and -$16 million in 2006 and 2018 from false starts.
+    Against a fixed July 1 start instead of starting when stress shows, it's negative (-$5 million).
+    Rain-fed values rest on extension averages and are rougher. (An earlier figure of $19 million used
+    simulated forecasts, before the real ones were downloaded.)
   - Dry spells are set to 21 days, which matches USDA county yield losses (irrigated counties lost 1.5
-    to 3.6% of yield per flash drought). Higher crop prices raise the value: $1.29 an acre a year on
-    irrigated corn at $3.50, $4.80 at $7.50.
+    to 3.6% of yield per flash drought). Higher crop prices raise the value: 39 cents an acre a year on
+    irrigated corn at $3.50, $2.61 at $7.50.
 - **Pre-registered expectations**, written before any model run:
   1. M1 beats a simple soil-moisture baseline at weeks 1-2: **holds** on the development years (week 1
      +3.3 points of skill, week 2 +0.6); test years TODO.
@@ -144,8 +148,8 @@ ERA5-Land soil, rain, heat (as of each forecast date)     ECMWF extended-range e
      than the seasonal normal (Brier skill -166% at week 1). Recalibrated, it's 2% better than normal at week 1,
      against FlashWatch's 17%: the skill comes from combining today's observed soil with the forecast weather.
   4. More skill in the western Plains than the humid east: **holds** on the development years (week 1
-     6.3% west of 98 W against 3.3% east of 90 W; with the forecasts 19% against 13%, gap
-     +6.4 points, 90% range +1.4 to +11.1); test years TODO.
+     6.3% west of 98 W against 3.3% east of 90 W; with the forecasts 19.7% against 12.6%, 90% ranges
+     18.0-21.4 and 9.0-16.6); test years TODO.
 - **Null results we kept:**
   - Drought Monitor features: no gain.
   - Directional neighbourhood features: no gain.

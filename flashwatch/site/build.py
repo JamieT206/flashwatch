@@ -72,6 +72,8 @@ def build(oof: pd.DataFrame, model: str, out: Path = SITE / "data", note: str = 
                         if np.isfinite(row).all():
                             arr[t] = _r(row, 3 if k in ("mp1", "mp2") else (2 if k == "mr" else 0))
                     series[k] = arr
+            if g is not None and "fc" in g:               # dates where the ECMWF forecast model gave the numbers
+                series["fc"] = [int(t) for t in g.t.to_numpy()[g.fc.to_numpy()]]
             on = ons[(ons.iy == iy) & (ons.ix == ix)].date
             rec = {"iy": int(iy), "ix": int(ix),
                    **{k: (_r(v, 0 if k == "rz" else 3) if isinstance(v, np.ndarray) else v) for k, v in series.items()},
@@ -139,13 +141,32 @@ def counties() -> list:
     return [[f, n, s, round(a, 3), round(o, 3)] for f, n, s, a, o in c[["fips", "name", "state", "lat", "lon"]].itertuples(index=False, name=None)]
 
 
+def with_fill(oof: pd.DataFrame, model: str, fill: pd.DataFrame, fill_model: str) -> pd.DataFrame:
+    """`model` (M2: only dates with an ECMWF forecast) where it has a value, `fill_model` (the land-only E1) on
+    every other date, as one model "FW"; the fill file's rows, normals (B0) and soil moisture are kept. `fc`
+    marks the rows from `model`."""
+    key = ["year", "issue", "iy", "ix"]
+    cols = [f"{model}_week1", f"{model}_week2"]
+    df = fill.merge(oof[key + cols], on=key, how="left")
+    fc = df[cols].notna().all(axis=1).to_numpy()
+    for w in ("week1", "week2"):
+        df[f"FW_{w}"] = np.where(fc, df[f"{model}_{w}"], df[f"{fill_model}_{w}"])
+    return df.assign(fc=fc)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--oof", required=True)
     ap.add_argument("--model", default="M1")
+    ap.add_argument("--fill", help="OOF for dates the --model has no value for (M2 has none without an ECMWF forecast)")
+    ap.add_argument("--fill-model", default="E1")
     ap.add_argument("--note", default="")
     args = ap.parse_args()
-    meta = build(pd.read_parquet(args.oof), args.model, note=args.note)
+    oof, model = pd.read_parquet(args.oof), args.model
+    if args.fill:
+        oof, model = with_fill(oof, model, pd.read_parquet(args.fill), args.fill_model), "FW"
+        print(f"{model}: {args.model} on {oof.fc.mean():.0%} of rows, {args.fill_model} on the rest")
+    meta = build(oof, model, note=args.note)
     n = sum(1 for _ in (SITE / "data" / "tiles").rglob("*.json"))
     print(f"site data: {len(meta['cells'])} cells, years {meta['years']}, {len(meta['dates'])} dates, {n} tile files")
 

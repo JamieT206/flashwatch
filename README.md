@@ -30,16 +30,17 @@ Development years 2005-2021, each scored by a model that never saw that year. Th
 are scored once, after the model is frozen.
 
 - **Forecasts.** On the tenth of farm-days FlashWatch rates riskiest, a flash drought begins in the
-  next 7 days 6.2 times as often as normal (25% against 4.0%); those flags hold 62% of all flash
+  next 7 days 6.3 times as often as normal (24% against 3.8%); those flags hold 63% of all flash
   droughts. A farmer's rule of thumb ("hot and dry lately", fitted the same way) manages 1.7 times.
-  Days 8-14: 3.1 times. Scored on the 41 forecast dates downloaded so far (April to mid-July).
+  Days 8-14: 3.2 times. Scored on the 53 forecast dates downloaded so far (April to mid-August).
 - **Ahead of the Drought Monitor.** The soil crosses the drought line a median 22 days before the
   Monitor first marks moderate drought (D1) at that place, before the forecast adds its one to two weeks.
 - **Value.** A flash drought with a week's warning is worth about $21 an acre on irrigated corn (yield
   saved less extra pumping) and about $28 an acre on rain-fed corn (the fungicide pass a dry spell makes
-  pointless). Averaged over all years, including the many without a flash drought at a given farm:
-  about $19M a year across the region's irrigated acres and about $171M across its rain-fed acres
-  (rain-fed values are rougher). Dry spells are set to 21 days, matching USDA county yield losses.
+  pointless). Averaged over all years, including the many without a flash drought at a given farm,
+  and acting on the real ECMWF forecasts: about $6M a year across the region's irrigated acres (68
+  cents an acre; big gains in 2012 and 2021, losses to false starts in 2006 and 2018) and about $94M
+  across its rain-fed acres (rougher). Dry spells are set to 21 days, matching USDA county yield losses.
 - **Null results we kept:** Drought Monitor features, directional neighbourhood features, training on
   each forecast run separately (no gain); year-level climate indices (worse, removed).
 

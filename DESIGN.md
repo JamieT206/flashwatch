@@ -244,6 +244,14 @@ survives); M1 skill week 1 **4.3%**, week 2 **1.2%**, any-28 **4.6%** (before: 4
   (13.4-18.5), week 2 **3.7%** (1.7-5.2), any 28 days **10.3%** (5.7-13.8); M1 3.2 / 0.7 / 2.8; H1 0.6 / -0.5 /
   -1.0. Top tenth: M2 week 1 6.2x (25.0% against 4.0%, 62% of onsets), week 2 3.1x; H1 1.7x and 0.7x. Week 1
   holds, week 2 a little firmer. evidence.json rebuilt from it. Still no late-July or August dates.
+  **Re-run with 53 start dates (Oct 30, `m2fc53`; to Aug 11).** M2 week 1 **16.3%** (13.4-18.1), week 2 **3.6%** (1.7-5.0),
+  any 28 days **11.0%** (6.2-14.6); M1 3.9 / 1.1 / 4.2; H1 0.6 / -0.3 / -0.3. Top tenth: week 1 6.3x (24.1% against 3.8%, 63%
+  of onsets), week 2 3.2x. West of 98 W 19.7% (18.0-21.4) against east of 90 W 12.6% (9.0-16.6). The farm page now runs on
+  M2 on forecast dates and E1 on the rest (`site.build --fill`). **Roll-up on real forecasts** (`rollup_m2fc53_cal`, 21-day
+  spells): irrigated region **$5.8M a year** (68 cents an acre of corn; 2012 +$49M, 2021 +$17M, 2006 -$14M, 2018 -$16M;
+  against a July 1 start -$4.7M); rain-fed $94M (nitrogen $54M). The earlier $18.6M came from `blur07`, the perfect-weather
+  proxy blurred to forecast-like accuracy, before real summer forecasts existed. Irrigation "start" still rarely fires (Q22):
+  at the demo farm (Edmunds SD, sandy loam, 4.5 gpm) on 2012-07-03 M2 gives 12% against a start line of about 23%.
 - *Meaning.* The target is sound and the onset waves are not noise; they are what weather forecasts exist to see. The ceiling is about 15x M1's skill at week 2. The open question is how much of it the real ECMWF forecasts keep (good at week 1, weaker at week 2, weak beyond), so M2 on real forecasts is the decisive run. The `native` (0.25 degree) variant is the absolute upper bound.
 
 ---

@@ -217,6 +217,16 @@ The forecast model M2 reaches 30% on 1.7% of cell-days, and when it does a flash
 build: a few hours on this PC, no cloud cost), then re-check the value numbers. Separately, the 60% waste on a false start may
 be pessimistic (water put on early is partly stored in the soil); worth a look, but it's an economics assumption, so your call.
 **Default until you answer:** no change to the economics; M2 on the farm page at the post-download rebuild.
+**Update Oct 30 (after the rebuild on 53 forecast dates):** M2 is on the farm page. "Start" now fires on 0.2-0.3% of
+irrigation-season days in dry years (85 cells in 2006, 23 in 2012, against 7 and 2 before), but the value is still small: the
+region's irrigated roll-up on real forecasts is about $6M a year (68 cents an acre), not the $19M the simulated forecasts gave.
+At the demo farm the video's July 3 "start the pivot today" no longer happens (12% against a ~23% start line). The start line
+is set mostly by the cost of a false start: a week of full-time pumping, 60% of it wasted. That's fixed whatever the soil;
+if the root zone has room (the demo farm's was about half full), most water put on early is stored, not lost. Options:
+(a) keep the economics and lead the story with the warning itself and the rain-fed decisions; (b) make the false-start cost
+depend on the field's water account (water that fills an empty root zone isn't wasted), which is physically better and would
+lower the start line on dry fields; (c) both. **Recommendation:** (b), with the formula fixed before looking at the July 3 result
+again, then re-run the roll-up and report whatever it gives. **Default:** (a) until you answer.
 
 ### Q10. Pivot control: may the agent ever act without the farmer's YES? Which accounts to pursue?
 The operator agent (DESIGN.md O10) plans pivot starts and stops, and the guard checks them. Nothing
