@@ -18,27 +18,41 @@ function pivots(p) {
       to correct. *Acres estimated from the box (about 3/4 of the circle for a part circle, half for a half circle): the farmer confirms them.</p>`;
 }
 
-function operator(o) {
+// A WhatsApp-style phone. Messages: {day}, {in, btns, tag}, {out}, {voice: seconds} (from the farmer).
+function phone(msgs, sub = "") {
+  const t = m => m.time ? `<span class="ph-time">${m.time}</span>` : "";
+  const body = msgs.map(m => m.day ? `<div class="ph-day">${m.day}</div>`
+    : m.voice ? `<div class="ph-out ph-voice"><span class="ph-play">&#9654;</span><span class="ph-wave"></span>0:${String(m.voice).padStart(2, "0")}${t(m)}</div>`
+    : m.out ? `<div class="ph-out">${m.out}${t(m)}</div>`
+    : `<div class="ph-in">${m.in}${t(m)}${m.btns ? `<div class="ph-btns">${m.btns.map(b => `<span>${b}</span>`).join("")}</div>` : ""}</div>${m.tag || ""}`).join("");
+  return `<div class="phone"><div class="ph-top"><span class="ph-av"></span><div><b>FlashWatch</b><small>${sub || "business account"}</small></div></div>
+    <div class="ph-chat">${body}</div></div>`;
+}
+const day = d => new Date(d + "T12:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+
+function operator(o, ask, v) {
   if (!o) { $("aOperator").hidden = true; return; }
   const rows = Object.entries(o.pivots).map(([k, p]) => `<tr><td><strong>${k}</strong></td><td>${p.crop}, ${p.acres} ac</td>
     <td>${p.root_zone ? `${Math.round(100 * p.root_zone.share_full)}% full, ${p.root_zone.days_until_stress_if_no_rain} days to stress` : "-"}</td>
-    <td>${esc(p.verdict)}</td><td>${p.allocation_left_in ?? "-"}</td><td>${p.farmer ? `"${esc(p.farmer.slice(0, 60))}..."` : ""}</td></tr>`).join("");
+    <td>${esc(p.verdict)}</td><td>${p.allocation_left_in ?? "-"}</td></tr>`).join("");
   const step = (n, title, body) => `<div class="tstep"><div class="tn">${n}</div><div><div class="tt">${title}</div>${body}</div></div>`;
   $("opTrace").innerHTML =
-    step(1, `<code>farm_overview</code>: what the agent sees, ${o.date}`, `<div style="overflow-x:auto"><table><thead><tr><th>Pivot</th><th>Field</th>
-      <th>Root zone</th><th>FlashWatch advice</th><th>Allocation left (in)</th><th>Farmer's voice note</th></tr></thead><tbody>${rows}</tbody></table></div>
+    step(1, `What FlashWatch sees on the farm, ${day(o.date)}`, `<div style="overflow-x:auto"><table><thead><tr><th>Pivot</th><th>Field</th>
+      <th>Root zone</th><th>FlashWatch advice</th><th>Allocation left (in)</th></tr></thead><tbody>${rows}</tbody></table></div>
       <p class="note">Wells: ${Object.entries(o.wells || {}).map(([w, s]) => `${w} gives ${s.gives_gpm} gpm to ${s.pivots.join(" and ")}`).join("; ")}.</p>`) +
-    step(2, "<code>propose_commands</code>: the farm rules check each one", `<ul class="events">${o.accepted.map(c => `<li class="ok">Accepted: ${c.action} ${c.pivot}${c.action === "start" ? `, ${c.depth_in} in` : ""}</li>`).join("")}
+    step(2, "The farm's rules check the plan", `<ul class="events">${o.accepted.map(c => `<li class="ok">Accepted: ${c.action} ${c.pivot}${c.action === "start" ? `, ${c.depth_in} in` : ""}</li>`).join("")}
       ${o.refused.map(c => `<li class="no">Refused: ${c.action} ${c.pivot}: ${esc(c.why)}</li>`).join("")}</ul>`) +
-    step(3, "As a text message (140 characters)", `<div class="sms-ask">${esc(o.sms)}</div>
-      <p class="note">${o.drafts} draft${o.drafts === 1 ? "" : "s"}; ${o.cut_untraced && o.cut_untraced.length ? `figures the checker couldn't trace, removed: ${o.cut_untraced.join(", ")}` : "every figure traced to a tool result"}. Model: ${esc(o.model)}.</p>`) +
-    step(4, "On WhatsApp: the farmer taps YES, the connector sends it", `<div class="wa">
-        <div class="wa-in">${esc(o.note)} ${esc((o.sms.match(/Reply YES.*$/) || [""])[0])}<div class="wa-btns"><span>YES</span><span>NO</span></div></div>
-        <div class="wa-out">YES</div>
-        <div class="wa-in">Done. ${o.sent.map(c => `${c.pivot} ${c.action}${c.action === "start" ? ` ${c.depth_in} in` : ""}: ${c.state}`).join("; ")}.</div></div>
-      <p class="note">Two days later the as-applied water shows up in each pivot's root zone and the agent plans again. The same thread takes
-        questions and voice notes. WhatsApp Cloud API, tested on a real phone on Meta's test number: plan delivered,
-        YES tapped, commands sent and the confirmation back within about a minute.</p>`);
+    step(3, "The farmer approves on WhatsApp, and the pivot starts", `<p class="note">The pivots here are simulated.</p>`);
+  const q = (ask || []).find(a => /unusual/.test(a.q)) || (ask || [])[0];
+  $("opPhone").innerHTML = phone([
+    { day: day(o.date) },
+    ...(v ? [{ voice: 17, time: "6:12 AM" },
+             { in: `Heard: "${esc(v.transcript.slice(0, 140))}..." Saved as a field report; the morning plan takes it into account.`, time: "6:12 AM" }] : []),
+    { in: esc(o.sms), time: "6:30 AM", btns: ["YES", "NO"] },
+    { out: "YES", time: "6:41 AM" },
+    { in: `Done. ${o.sent.map(c => `${c.pivot} ${c.action}${c.action === "start" ? ` ${c.depth_in} in` : ""}: ${c.state}`).join("; ")}.`, time: "6:41 AM" },
+    ...(q ? [{ out: esc(q.q), time: "7:05 AM" }, { in: esc(q.answer).replace(/\n+/g, "<br>"), time: "7:05 AM" }] : []),
+  ]);
 }
 
 function voice(v) {
@@ -65,48 +79,38 @@ function glimmer(g) {
   $("glimmer").innerHTML = `<div class="kpis three">
       <div><div class="bignum">${s.train ?? "-"}</div><div class="note">weeks of real Drought Monitor narrative to learn from (2005-2019)</div></div>
       <div><div class="bignum">${s.val ?? "-"}</div><div class="note">held-out weeks to score against (2020-2021)</div></div>
-      <div><div class="bignum">17 GB</div><div class="note">Glimmer, 4-bit, running on one desktop graphics card (12 GB) with no API</div></div></div>
+      <div><div class="bignum">1 hour</div><div class="note">to fine-tune Glimmer (a LoRA adapter) on one cloud GPU</div></div></div>
     <div style="overflow-x:auto;margin-top:16px"><table><thead><tr><th>Writer, from the week's numbers</th><th>Wording shared with the real text</th>
       <th>States named right</th><th>Figures not in the input</th><th>Words</th></tr></thead><tbody>${rows}</tbody></table></div>
-    <p class="note">Scored on the ${g.weeks} held-out weeks every writer finished. "Shown 2 past weeks": two real narratives from earlier years
-      come first in the prompt as examples; no training.</p>
-    <div class="agrid" style="margin-top:16px"><div><div class="tt">The Drought Monitor, week of ${ex.date}</div><blockquote>${esc(ex.real)}</blockquote></div>
-      <div><div class="tt">${name({local: ex.model.includes("glimmer"), tuned: ex.model.includes("lora"), shots: ex.shots})}, same week</div><blockquote>${esc(ex.draft)}</blockquote></div></div>
-    <p class="note">On their own, both models write a long list of numbers. Shown two past weeks, Glimmer picks up the Monitor's way of
-      writing but starts borrowing details it wasn't given, such as a temperature range; the number checker catches these. Fine-tuned on
-      all ${s.train ?? 749} weeks (a LoRA adapter, about an hour on one cloud GPU), it writes the Monitor's kind of prose and shares the most
-      wording with the real text, but runs short (the real ones are about 290 words), names fewer of the right states, and still adds a
-      figure it wasn't given in 2 of 12 weeks.</p>`
-    + offline(g.offline);
-}
-
-function offline(o) {
-  if (!o) return "";
-  const gl = o.asks["muse-glimmer-30B"] || [], sp = o.asks["muse-spark-1.1"] || [];
-  const rows = gl.map((a, i) => `<tr><td>${esc(a.q)}</td><td>${esc(a.answer)}<div class="note">${a.seconds} s; tools: ${a.tools.join(", ")}${a.cut.length ? `; checker cut: ${a.cut.join(", ")}` : ""}</div></td>
-    <td>${sp[i] ? `${esc(sp[i].answer)}<div class="note">${sp[i].seconds} s; tools: ${sp[i].tools.join(", ")}${sp[i].cut.length ? `; checker cut: ${sp[i].cut.join(", ")}` : ""}</div>` : "-"}</td></tr>`).join("");
-  return `<h4 style="margin-top:24px">The same agents, offline</h4>
-    <p>Glimmer can also run FlashWatch's agents with no internet: the same tools, farm rules and number checker as Muse Spark.
-      For the demo farm on 3 July 2012 it planned the same morning as Spark (${o.operator.accepted.map(c => `start ${c.pivot} at ${c.depth_in} in`).join(", ")}),
-      with every figure in its first draft traced, in about 8 minutes on a 12 GB graphics card.</p>
-    <div class="sms-ask">${esc(o.operator.sms)}</div>
-    <div style="overflow-x:auto;margin-top:12px"><table class="asks"><thead><tr><th>Farmer asks</th><th>Muse Glimmer 30B, run locally</th><th>Muse Spark, API</th></tr></thead>
-      <tbody>${rows}</tbody></table></div>
-    <p class="note">Glimmer answers correctly but more slowly, and is less thorough: on the first question it didn't look at the field's water account,
-      and on the third it left out week 2. Spark stays the default; Glimmer is the fallback where there's no connection, or no data should leave the farm.</p>`;
+    <div class="tt" style="margin-top:20px">Both written about the week of ${day(ex.date)}</div>
+    <div class="agrid"><div><div class="tt">${name({local: ex.model.includes("glimmer"), tuned: ex.model.includes("lora"), shots: ex.shots})}</div><blockquote>${esc(ex.draft)}</blockquote></div>
+      <div><div class="tt">The Drought Monitor</div><blockquote>${esc(ex.real)}</blockquote></div></div>`;
 }
 
 function then(o, warn) {
   if (!o) return "";
-  const txt = o.flash_drought_within_14_days ? `a flash drought began within 2 weeks${warn ? "" : " anyway"}.` : "no flash drought in the next 2 weeks.";
-  return `<span class="then ${o.right ? "right" : "wrong"}">${o.right ? "Right" : "Wrong"}: ${txt}</span>`;
+  const txt = o.flash_drought_within_14_days ? `a flash drought began within 2 weeks${warn ? "" : " anyway"}` : "no flash drought in the next 2 weeks";
+  return `<div class="ph-tag ${o.right ? "right" : "wrong"}">${o.right ? "Right" : "Wrong"}: ${txt}</div>`;
+}
+
+// The value of a recommendation, for texts written before the watcher's templates carried it.
+function worth(a) {
+  const v = a.facts && a.facts.value_of_starting_today_dollars_per_acre;
+  if (v === undefined || v === null || /\$/.test(a.text)) return "";
+  return `<br><b>Starting today: ${v < 0 ? "-" : "+"}$${Math.abs(v).toFixed(1)} an acre on average.</b>`;
 }
 
 function watch(w) {
   if (!w) { $("aWatch").hidden = true; return; }
-  $("watch").innerHTML = w.farms.map(f => `<div><div class="tt">${esc(f.name)}: ${f.watering} ${f.crop}</div>
-    <div class="note">${f.alerts.length} texts from ${f.dates_checked} forecasts, June to August ${w.year}</div>
-    <ul class="texts">${f.alerts.map(a => `<li class="${a.level}"><span class="when">${new Date(a.date + "T12:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>${esc(a.text)}${a.by !== "template" ? ` <span class="by">${esc(a.by)}</span>` : ""}${then(a.outcome, a.level !== "info")}</li>`).join("")}</ul></div>`).join("");
+  const f = w.farms.reduce((a, b) => b.alerts.filter(x => x.outcome).length > a.alerts.filter(x => x.outcome).length ? b : a);
+  const msgs = [];
+  for (const a of f.alerts) {
+    const d = day(a.date);
+    if (!msgs.length || msgs[msgs.length - 1].d !== d) msgs.push({ day: d, d });
+    msgs.push({ in: esc(a.text) + worth(a), time: "6:30 AM", tag: then(a.outcome, a.level !== "info") });
+  }
+  $("watch").innerHTML = phone(msgs, `${esc(f.name)}: ${f.watering} ${f.crop}, ${w.year}`) +
+    `<p class="note">${f.alerts.length} messages from ${f.dates_checked} forecasts, June to August ${w.year}.</p>`;
 }
 
 const KIND = { "irrigated:start": "Start the pivot today", "irrigated:watch": "Risk rising: not yet", "irrigated:ease": "Risk has eased",
@@ -127,5 +131,5 @@ function scorecard(c) {
 }
 
 fetch("data/agents.json").then(r => r.json()).then(d => {
-  pivots(d.pivots); operator(d.operator); watch(d.alerts); scorecard(d.scorecard); voice(d.voice); brief(d.brief); glimmer(d.glimmer);
+  pivots(d.pivots); operator(d.operator, d.ask, d.voice); watch(d.alerts); scorecard(d.scorecard); voice(d.voice); brief(d.brief); glimmer(d.glimmer);
 }).catch(() => { document.querySelector(".intro").insertAdjacentHTML("afterend", "<p class='note'>Agent runs not built yet (python -m flashwatch.site.agents).</p>"); });

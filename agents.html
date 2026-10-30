@@ -24,24 +24,23 @@
   <section class="card agent" id="aPivots">
     <div class="ahead"><h3>Finds your pivots</h3><span class="badge">SAM 3.1</span></div>
     <p class="adoes">Setting up a farm shouldn't mean typing coordinates. Given the farm's location, FlashWatch fetches a USDA aerial photo,
-      asks SAM 3.1 to find every centre-pivot circle, and turns each one into a pivot: where it is, how wide, how many acres.</p>
+      uses SAM 3.1 to find the center-pivot fields, and maps and measures each one automatically.</p>
     <div class="agrid"><div id="pivImg"></div><div id="pivList"></div></div>
   </section>
 
   <section class="card agent" id="aOperator">
-    <div class="ahead"><h3>Plans the morning, runs the pivots</h3><span class="badge">Muse Spark</span></div>
-    <p class="adoes">For a farm with several pivots, the operator agent reads each pivot's advice, its water account and the farm's limits,
-      proposes which pivots to start, and asks the farmer on WhatsApp. Fixed farm rules check every command; nothing moves until the farmer replies YES.</p>
-    <div id="opTrace" class="trace"></div>
+    <div class="ahead"><h3>Connects to irrigation systems</h3><span class="badge">Muse Spark</span><span class="badge">WhatsApp</span></div>
+    <p class="adoes">FlashWatch works out the best watering plan for each pivot, adjusts it for the farm's own rules and setup, checks with the
+      farmer on WhatsApp, and then turns on the water. The water each pivot puts down is measured and fed back into the model to update its
+      root-zone moisture estimates. Farmers can also ask FlashWatch questions and send voice notes.</p>
+    <div class="opwrap"><div id="opTrace" class="trace"></div><div id="opPhone"></div></div>
   </section>
 
   <section class="card agent" id="aWatch">
-    <div class="ahead"><h3>Watches the forecast for you</h3><span class="badge">Muse Spark</span></div>
-    <p class="adoes">Most days need no message. The watcher checks each farm on every forecast and texts only when something changes:
-      the advice turns to start, a decision's window opens with the odds in favour, the pivot can't keep up with the crop, or drought sets in.
-      Here is the 2012 season for three farms, as the texts would have arrived.</p>
-    <div id="watch" class="agrid three"></div>
-    <div id="scorecard" class="scorecard"></div>
+    <div class="ahead"><h3>Monitors weather forecasts and updates moisture models</h3><span class="badge">Muse Spark</span><span class="badge">WhatsApp</span></div>
+    <p class="adoes">The watcher updates the model with each weather forecast and contacts the farmer when the drought chance or status changes,
+      or when a new action is recommended. Here is the 2012 season for one farm, as the messages would have arrived.</p>
+    <div class="opwrap rev"><div id="watch"></div><div id="scorecard" class="scorecard"></div></div>
   </section>
 
   <section class="card agent" id="aVoice">
@@ -64,18 +63,6 @@
       open-weights Muse Glimmer on 15 years of those narratives, paired with the week's numbers, so it can write the same kind of summary from
       FlashWatch's data, a week or more ahead of the Monitor.</p>
     <div id="glimmer"></div>
-  </section>
-
-  <section class="card agent">
-    <div class="ahead"><h3>The safeguards</h3></div>
-    <ul class="safe">
-      <li><strong>Numbers come from tools.</strong> Agents never make up a figure; a checker compares every number in a draft with the tool
-        results and sends it back if one doesn't match.</li>
-      <li><strong>Farm rules are code, not prompts.</strong> Well capacity, water allocation, season and the advice are checked by fixed rules
-        that the agent can't talk its way past. Refusals go back to the agent with the reason.</li>
-      <li><strong>The farmer approves.</strong> Commands reach a pivot only after a YES. Pivots connect through a signed webhook, Lindsay
-        FieldNET's data through Leaf, or a to-do in the maker's app.</li>
-    </ul>
   </section>
 
   <footer>Aerial imagery: USDA NAIP via the USGS National Map (public domain). Data: ERA5-Land (Copernicus Climate Change Service),
