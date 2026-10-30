@@ -57,7 +57,7 @@
 <script>
 // The contact form posts to a form service (e.g. Formspree), which filters spam and forwards to email.
 // Until an endpoint is set, the form says so instead of sending.
-const FORM_ENDPOINT = "";
+const FORM_ENDPOINT = "https://formspree.io/f/xwllnndv";
 const form = document.getElementById("contactForm"), note = document.getElementById("contactNote");
 if (!FORM_ENDPOINT) note.textContent = "The contact form isn't connected yet.";
 form.addEventListener("submit", async ev => {
