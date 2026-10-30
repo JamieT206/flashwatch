@@ -57,13 +57,9 @@
         "value": 2,
         "source": "PLACEHOLDER: days after stress begins that you'd normally start (sensor or crop symptoms)"
       },
-      "false_alarm_waste": {
-        "value": 0.6,
-        "source": "PLACEHOLDER: share of water pumped ahead of a dry spell that never comes that is wasted (rain refills the profile)"
-      },
       "review_days": {
         "value": 7,
-        "source": "days you'd keep the pivot on before re-deciding if no dry spell comes"
+        "source": "days you'd keep the pivot on before re-deciding if no dry spell comes. A false start costs the extra water it ends up pumping over the season, measured on real weather by month and soil deficit (config/falsestart.json, decide/falsestart.py)"
       },
       "dr0": {
         "value": 0.0,
@@ -128,13 +124,9 @@
         "value": 2,
         "source": "PLACEHOLDER: days after stress begins that you'd normally start (sensor or crop symptoms)"
       },
-      "false_alarm_waste": {
-        "value": 0.6,
-        "source": "PLACEHOLDER: share of water pumped ahead of a dry spell that never comes that is wasted (rain refills the profile)"
-      },
       "review_days": {
         "value": 7,
-        "source": "days you'd keep the pivot on before re-deciding if no dry spell comes"
+        "source": "days you'd keep the pivot on before re-deciding if no dry spell comes. A false start costs the extra water it ends up pumping over the season, measured on real weather by month and soil deficit (config/falsestart.json, decide/falsestart.py)"
       },
       "dr0": {
         "value": 0.0,

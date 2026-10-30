@@ -10,12 +10,28 @@ const FW = (() => {
   const DEFAULTS = {
     corn: { awc_in_per_ft: 2.0, root_ft: 3.0, p: 0.55, et_peak: 0.30, gpm_per_acre: 5.0, efficiency: 0.85,
             ky: 1.5, season_et: 24.0, yield_bu: 220, price: 4.5, pump_cost_per_in: 10, spell_days: 35,
-            reaction_days: 2, false_alarm_waste: 0.6, review_days: 7 },
+            reaction_days: 2, review_days: 7 },
     soybeans: { awc_in_per_ft: 2.0, root_ft: 3.0, p: 0.50, et_peak: 0.28, gpm_per_acre: 5.0, efficiency: 0.85,
                 ky: 0.85, season_et: 22.0, yield_bu: 70, price: 11.0, pump_cost_per_in: 10, spell_days: 35,
-                reaction_days: 2, false_alarm_waste: 0.6, review_days: 7 },
+                reaction_days: 2, review_days: 7 },
   };
   const SOILS = { "Sand": 1.0, "Sandy loam": 1.4, "Loam": 1.8, "Silt loam": 2.0, "Clay loam": 1.9 };
+
+  // What a false start costs: the extra water a week's early start ends up pumping over the season when
+  // no dry spell follows (rain on a fuller profile drains, water left at season end is lost), inches, by
+  // month and by the root-zone deficit that morning. Measured on 17 years of real weather by
+  // flashwatch/decide/falsestart.py; a copy of config/falsestart.json.
+  const FALSE_START = {"months":[6,7,8,9],"dr_in":[0.125,0.375,0.625,0.875,1.125,1.375,1.75,2.25,2.75,3.5],"extra_in":[[0.514,0.697,0.689,0.597,0.47,0.376,0.251,0.171,0.083,0.059],[0.501,0.524,0.465,0.396,0.297,0.25,0.159,0.092,0.062,0.022],[0.893,1.089,1.107,1.025,0.745,0.54,0.342,0.137,-0.004,-0.011],[0.765,1.119,1.335,1.472,1.416,1.338,1.237,1.092,0.85,0.366]],"month_in":{"6":0.51,"7":0.124,"8":0.291,"9":1.039},"all_in":0.411};
+
+  // $/acre: by month and deficit (inches) when the water account knows it, by month alone, or overall.
+  function falseStart(pump, md = null, dr = null) {
+    const t = FALSE_START, m = md === null ? -1 : t.months.indexOf(+md.slice(0, 2));
+    if (m < 0) return t.all_in * pump;
+    if (dr === null || dr === undefined) return t.month_in[t.months[m]] * pump;
+    return interp(dr, t.dr_in, t.extra_in[m]) * pump;
+  }
+  // The curve for one forecast date (and the field's deficit that morning, when known).
+  const on = (c, md, dr = null) => c.pump === undefined ? c : { ...c, costNoEvent: falseStart(c.pump, md, dr) };
 
   const taw = f => f.awc_in_per_ft * f.root_ft;
   const capacity = f => f.gpm_per_acre * GPM_TO_IN_DAY * f.efficiency;
@@ -62,7 +78,7 @@ const FW = (() => {
                   extraCost: r.pump - base.pump });
     }
     return { rows, stressDay: s0, reactiveLoss: base.loss, capacity: capacity(f), taw: taw(f),
-             costNoEvent: f.review_days * capacity(f) / f.efficiency * f.pump_cost_per_in * f.false_alarm_waste };
+             pump: f.pump_cost_per_in, costNoEvent: falseStart(f.pump_cost_per_in) };
   }
 
   function interp(x, xs, ys) {
@@ -136,7 +152,7 @@ const FW = (() => {
       if (md < first || md > last || p1[i] === null || p2[i] === null) return;
       const t = day(md);
       if (t < blocked || (cal !== null && t >= cal)) return;
-      const d = decide(c, daily(p1[i], p2[i]), twoWay(spread), 2);
+      const cd = on(c, md), d = decide(cd, daily(p1[i], p2[i]), twoWay(spread), 2);
       if (!d.actNow) return;
       const nxt = ons.find(o => o > t && o <= t + HORIZON);
       if (nxt !== undefined) {
@@ -145,8 +161,8 @@ const FW = (() => {
         events.push({ date: md, kind: "hit", notice: k, value: v });
         blocked = once ? Infinity : nxt + 30;
       } else {
-        value -= c.costNoEvent;
-        events.push({ date: md, kind: "false", value: -c.costNoEvent });
+        value -= cd.costNoEvent;
+        events.push({ date: md, kind: "false", value: -cd.costNoEvent });
         blocked = once ? Infinity : t + review;
       }
     });
@@ -217,6 +233,6 @@ const FW = (() => {
     return { deficit, use, raw, taw: tawIn };
   }
 
-  return { DEFAULTS, SOILS, simulate, stressDay, curve, netAt, daily, evAct, twoWay, decide, season, capacity,
+  return { DEFAULTS, SOILS, falseStart, on, simulate, stressDay, curve, netAt, daily, evAct, twoWay, decide, season, capacity,
            decideMembers, trigger, account, kc };
 })();

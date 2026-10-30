@@ -315,6 +315,12 @@ training while the design moves; heavy burst ~Nov 2 Sydney (DESIGN.md B).
      root-zone numbers until irrigation is added ("Add irrigation data": Leaf/FieldNET steps, manual entry, demo numbers);
      risk chart goes to an "in drought" level instead of breaking; soil chart has its own date axis; rain-fed wording. Q22:
      irrigated advice rarely fires on E1 (threshold ~30%); M2 on the farm page fixes it.
+   - Oct 31: Q22 resolved (Jamie: tie the false-start cost to soil water, net of real losses). `decide/falsestart.py`
+     measures it on 17 years of real weather (config/falsestart.json, month x deficit; engine.js mirrors it; the backtest
+     prices each row leaving out its year). $4.11 an acre on average instead of $11.14. Roll-ups re-run: `m2fc53_month`
+     (headline, $23.4M irrigated) and `m2fc53_water` ($28.8M), price variants too; region.js reads both. July 3 at the demo
+     farm says start again. About form connected to Formspree. After more forecast dates land, re-run falsestart only if
+     the cells change (it uses observed weather, not forecasts), then the roll-ups.
 
    - Pending, after Nov 4 unless time allows (Jamie, Oct 30): (a) **live feed**: ECMWF open data (free, CC BY 4.0, 15 days,
      50 members) covers weeks 1-2; retrain M2 on week 1-2 forecast inputs, check soil moisture is among the open fields,

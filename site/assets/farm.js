@@ -209,6 +209,7 @@ function adviceAt(i, c, full = false) {
   if (!irrigated()) return rainfedAdvice(i, full);
   if (!inSeason(md)) return { cls: "off", big: "Outside the irrigation season", sub: "",
     why: "Irrigation advice runs from June to mid-September. The risk numbers still apply." };
+  c = FW.on(c, md, i === S.i && S.water && S.water.useIt ? S.water.now : null);   // the false-start cost that morning
   // With ensemble members for this date, the next forecast's outcomes come from them, and the
   // trigger is named in weather; otherwise a placeholder spread and a risk threshold.
   const mem = r.mp1 && r.mp1[i] ? FW.trigger(c, r.mp1[i], r.mp2[i], { rain_in: r.mr[i], temp_f: r.mt[i] }) : null;
@@ -220,9 +221,12 @@ function adviceAt(i, c, full = false) {
   const nextLine = v => `if FlashWatch's next forecast (in 2 days) puts the chance of a flash drought in the next 7 days at
     <strong>${pct(Math.min(v, 1))}</strong> or more (today: ${pct(p1)})`;
   if (a.cls === "act") {
-    const k = 4, perDay = FW.netAt(c, k) - FW.netAt(c, k - 1);
-    return { ...a, big: "Start extra irrigation today", sub: "Flash-drought risk high",
-      why: `A flash drought is <strong>${(p1 / (r.n1[i] || 1e-9)).toFixed(1)} times</strong> as likely as normal this week.
+    const k = 4, perDay = FW.netAt(c, k) - FW.netAt(c, k - 1), ratio = p1 / (r.n1[i] || 1e-9), cheap = ratio < 1.5;
+    const known = S.water && S.water.useIt && i === S.i;
+    return { ...a, big: "Start extra irrigation today", sub: cheap ? "Pumping ahead costs little now" : "Flash-drought risk high",
+      why: `${cheap ? `The chance of a flash drought this week is ${pct(p1)}, about normal for the date, but the crop will use most water put on now.`
+                    : `A flash drought is <strong>${ratio.toFixed(1)} times</strong> as likely as normal this week.`}
+            If no dry spell comes, starting today costs about $${c.costNoEvent.toFixed(2)} an acre in water that drains away or isn't needed${known ? " (from your field's water account)" : ""}.
             Run the pivot full time: it puts down ${c.capacity.toFixed(2)} in a day, and the crop uses up to ${S.farm.et_peak.toFixed(2)} in a heat wave.
             ${S.water && S.water.useIt ? `Your root zone is ${S.water.now.toFixed(1)} in short of full: about ${Math.ceil(S.water.now / c.capacity)} days of full-time pumping fills it.`
               : "Keep going until about an inch of rain falls or the risk drops back to normal."} On average: ${total(d.evNow)}.`,

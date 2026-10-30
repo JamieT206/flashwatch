@@ -40,23 +40,29 @@ def onset_days(depth="0-40") -> pd.DataFrame:
     return onsets_table(depth)
 
 
-def ev_tables(c, p1, p2, scenarios, step):
-    """Vectorised engine: expected value of acting now and of deciding again `step` days later."""
+def ev_tables(c, p1, p2, scenarios, step, cost_noevent=None):
+    """Vectorised engine: expected value of acting now and of deciding again `step` days later.
+    cost_noevent: per row (the false-start cost known that morning), else the curve's."""
+    cne = c.cost_noevent if cost_noevent is None else np.asarray(cost_noevent)
     net = c.net(np.arange(1, HORIZON + 1))
     p = np.stack([daily({"week1": a, "week2": b}, HORIZON) for a, b in zip(p1, p2)])
-    now = p @ net - (1 - p.sum(1)) * c.cost_noevent
+    now = p @ net - (1 - p.sum(1)) * cne
     rest, net_r = p[:, step:], net[:HORIZON - step]
     wait = np.zeros(len(p))
     for w, m in scenarios:
         q = np.clip(rest * m, 0, 1)
-        wait += w * np.maximum(q @ net_r - (1 - q.sum(1)) * c.cost_noevent, 0)
+        wait += w * np.maximum(q @ net_r - (1 - q.sum(1)) * cne, 0)
     return now, wait
 
 
 def run(oof: pd.DataFrame, ons: pd.DataFrame, model: str, action: dict, baseline: str = "careful",
-        spread: float = 0.5, calendar: str = "07-01", late_reaction: int = 7, season=SEASON) -> pd.DataFrame:
+        spread: float = 0.5, calendar: str = "07-01", late_reaction: int = 7, season=SEASON,
+        false_starts: pd.DataFrame | None = None) -> pd.DataFrame:
     """One row per (cell, year): value ($/acre, net of pumping and false alarms), crop value saved
-    (gross, $/acre), starts, hits, false alarms, onsets in the window."""
+    (gross, $/acre), starts, hits, false alarms, onsets in the window.
+    false_starts: per forecast row (year, issue, iy, ix), the false-start cost the farmer expects that
+    morning (`expected`) and what it turned out to cost on the real weather (`actual`), $/acre
+    (decide/falsestart.py backtest_costs); without it, the curve's fixed cost for both."""
     a = {**action, "params": dict(action["params"])}
     cal = None
     if baseline == "calendar":
@@ -66,8 +72,15 @@ def run(oof: pd.DataFrame, ons: pd.DataFrame, model: str, action: dict, baseline
     once = bool(a.get("once"))          # a one-off decision (fungicide, side-dress): act at most once a season
     d = oof[pd.DatetimeIndex(oof.issue).strftime("%m-%d").to_series(index=oof.index).between(*season)]
     d = d[~d.year.isin(TEST_YEARS)].sort_values(["iy", "ix", "issue"])
+    if false_starts is not None:
+        d = d.merge(false_starts, on=["year", "issue", "iy", "ix"], how="left")
+        d["expected"] = d.expected.fillna(c.cost_noevent)
+        d["actual"] = d.actual.fillna(c.cost_noevent)
+    else:
+        d = d.assign(expected=c.cost_noevent, actual=c.cost_noevent)
     now, wait = ev_tables(c, d[f"{model}_week1"].to_numpy(), d[f"{model}_week2"].to_numpy(),
-                          two_way(spread), 2)
+                          two_way(spread), 2, d.expected.to_numpy())
+    actual = d.actual.to_numpy()
     act = (now > 0) & (now >= wait)
     last = (pd.Timestamp(f"2001-{season[1]}") + pd.Timedelta(days=HORIZON)).strftime("%m-%d")
     on = ons[ons.date.dt.strftime("%m-%d").between(season[0], last)]
@@ -98,7 +111,7 @@ def run(oof: pd.DataFrame, ons: pd.DataFrame, model: str, action: dict, baseline
                 hits += 1
                 blocked = nxt[0] + np.timedelta64(30, "D") if not once else np.datetime64("2100-01-01")
             else:
-                value -= c.cost_noevent
+                value -= actual[i]
                 false += 1
                 blocked = t + np.timedelta64(review, "D") if not once else np.datetime64("2100-01-01")
         n_on = len(onsets[onsets >= np.datetime64(f"{yr}-{season[0]}")])
@@ -127,9 +140,11 @@ def main():
     oof = pd.read_parquet(args.oof)
     ons = onset_days()
     action = load()[f"irrigation_{args.crop}" if f"irrigation_{args.crop}" in load() else "irrigation"]
+    from flashwatch.decide.falsestart import backtest_costs
+    fs = backtest_costs(action["params"]["pump_cost_per_in"])
     rows = []
     for base in ("careful", "calendar"):
-        bt = run(oof, ons, args.model, action, base)
+        bt = run(oof, ons, args.model, action, base, false_starts=fs)
         rows.append({"baseline": base, **summary(bt)})
         if args.out:
             bt.assign(baseline=base).to_parquet(args.out.replace(".parquet", f"_{base}.parquet"))

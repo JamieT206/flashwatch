@@ -47,10 +47,12 @@ function renderFarms() {
   $("farmTable").innerHTML = `<table class="farms"><thead><tr><th></th>${cols.map(c => `<th>${c.name}<br><span class="note">${c.acres} acres</span></th>`).join("")}</tr></thead>
     <tbody>${rows.map(([label, f]) => `<tr><td>${label}</td>${cols.map(f).join("")}</tr>`).join("")}</tbody></table>`;
   const tot = k => (s[k] && s[k].region ? s[k].region.dollars : 0);
+  const sw = R.rollWater && R.rollWater.scopes[base];
+  const irrW = sw ? sw.corn.region.dollars + sw.soybeans.region.dollars : null;
   const irr = tot("corn") + tot("soybeans"), rain = tot("rainfed_nitrogen") + tot("rainfed_fungicide_corn") + tot("rainfed_fungicide_soy");
   $("regionTotals").innerHTML = `
     <div><div class="bignum">$${(rain / 1e6).toFixed(0)}M</div><div class="note">a year across ${(R.defaults ? R.defaults.coverage.corn_rainfed + R.defaults.coverage.soybeans_rainfed : 130e6) / 1e6 | 0} million rain-fed acres in the coverage area (nitrogen and fungicide decisions)</div></div>
-    <div><div class="bignum">$${(irr / 1e6).toFixed(0)}M</div><div class="note">a year across ${(R.defaults ? R.defaults.coverage.corn_irrigated + R.defaults.coverage.soybeans_irrigated : 13e6) / 1e6 | 0} million irrigated acres (extra irrigation)</div></div>`;
+    <div><div class="bignum">$${(irr / 1e6).toFixed(0)}M</div><div class="note">a year across ${(R.defaults ? R.defaults.coverage.corn_irrigated + R.defaults.coverage.soybeans_irrigated : 13e6) / 1e6 | 0} million irrigated acres (extra irrigation)${irrW !== null ? `; $${(irrW / 1e6).toFixed(0)}M where each farm's irrigation data is connected` : ""}</div></div>`;
 }
 
 // ---------- forecast quality: how often a flagged farm gets a flash drought ----------
@@ -168,8 +170,9 @@ function renderMonitor() {
 
 async function init() {
   const get = (u, fallback = null) => fetch(u).then(r => r.ok ? r.json() : fallback).catch(() => fallback);
-  [R.meta, R.ev, R.roll, R.defaults] = await Promise.all([get("data/meta.json"), get("data/evidence.json"),
-    get("data/rollup_m2fc53_cal.json"), get("data/defaults.json")]);
+  // Headline: false starts priced by the month only (no irrigation data); R.rollWater: with each field's water account.
+  [R.meta, R.ev, R.roll, R.defaults, R.rollWater] = await Promise.all([get("data/meta.json"), get("data/evidence.json"),
+    get("data/rollup_m2fc53_month.json"), get("data/defaults.json"), get("data/rollup_m2fc53_water.json")]);
   R.prices = await Promise.all(PRICES.map(async p => {
     const r = await get(`data/rollup_price${String(p).replace(".", "")}.json`);
     const h = r && r.headline.find(x => x.baseline === "careful");

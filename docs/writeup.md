@@ -129,12 +129,20 @@ ERA5-Land soil, rain, heat (as of each forecast date)     ECMWF extended-range e
     less extra pumping; a typical Nebraska pivot) and about $28 an acre on rain-fed corn (the fungicide
     pass a dry spell makes pointless).
   - Averaged over all years, including the many without a flash drought at a given farm, and acting on
-    the real ECMWF forecasts, that's about $6 million a year across the region's irrigated acres (68 cents
-    an acre) and $94 million across its rain-fed acres. Irrigation value swings by year: +$49 million in
-    2012 and +$17 million in 2021, but -$14 million and -$16 million in 2006 and 2018 from false starts.
-    Against a fixed July 1 start instead of starting when stress shows, it's negative (-$5 million).
-    Rain-fed values rest on extension averages and are rougher. (An earlier figure of $19 million used
-    simulated forecasts, before the real ones were downloaded.)
+    the real ECMWF forecasts, that's about $23 million a year across the region's irrigated acres ($2.64
+    an acre of corn; $29 million where the farm's irrigation data tells FlashWatch how full the soil is)
+    and $94 million across its rain-fed acres. Irrigation value swings by year: +$52 million in 2006,
+    +$62 million in 2012 and +$56 million in 2021, but -$34 million in 2018 from false starts.
+    Against a fixed July 1 start instead of starting when stress shows, it's negative (-$4 million):
+    in July that farmer's pivot is already on. Rain-fed values rest on extension averages and are rougher.
+  - A false start isn't all wasted water. Water that fits in the root zone is used by the crop later, in
+    place of water the farmer would have pumped anyway; it's lost when rain drains through a profile the
+    early water filled, to extra evaporation from wet leaves and soil (0.6 mm a pumping day, from
+    lysimeter studies), and if it's still in the soil when the crop is done. We ran an irrigated field
+    through 17 years of real daily rain and crop water use at every grid point, with and without a week's
+    early start on every forecast date. A false start costs about $1 an acre in July, $3 in August, $5 in
+    June and $10 in September (at $10 an acre-inch), and much less on a field already short of water.
+    The earlier rule (a week of pumping, 60% wasted: $11 an acre) was too pessimistic.
   - Dry spells are set to 21 days, which matches USDA county yield losses (irrigated counties lost 1.5
     to 3.6% of yield per flash drought). Higher crop prices raise the value: 39 cents an acre a year on
     irrigated corn at $3.50, $2.61 at $7.50.

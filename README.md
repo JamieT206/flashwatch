@@ -38,9 +38,12 @@ are scored once, after the model is frozen.
 - **Value.** A flash drought with a week's warning is worth about $21 an acre on irrigated corn (yield
   saved less extra pumping) and about $28 an acre on rain-fed corn (the fungicide pass a dry spell makes
   pointless). Averaged over all years, including the many without a flash drought at a given farm,
-  and acting on the real ECMWF forecasts: about $6M a year across the region's irrigated acres (68
-  cents an acre; big gains in 2012 and 2021, losses to false starts in 2006 and 2018) and about $94M
-  across its rain-fed acres (rougher). Dry spells are set to 21 days, matching USDA county yield losses.
+  and acting on the real ECMWF forecasts: about $23M a year across the region's irrigated acres ($2.64
+  an acre of corn; big gains in 2006, 2012 and 2021, a loss to false starts in 2018; $29M where the farm's
+  irrigation data gives the field's water) and about $94M across its rain-fed acres (rougher). Dry spells
+  are set to 21 days, matching USDA county yield losses. A false start is charged the water it actually
+  wastes, measured on 17 years of real weather (`decide/falsestart.py`): about $1 an acre in July, $3 in
+  August, $5 in June, $10 in September.
 - **Null results we kept:** Drought Monitor features, directional neighbourhood features, training on
   each forecast run separately (no gain); year-level climate indices (worse, removed).
 

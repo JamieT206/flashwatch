@@ -227,6 +227,11 @@ if the root zone has room (the demo farm's was about half full), most water put 
 depend on the field's water account (water that fills an empty root zone isn't wasted), which is physically better and would
 lower the start line on dry fields; (c) both. **Recommendation:** (b), with the formula fixed before looking at the July 3 result
 again, then re-run the roll-up and report whatever it gives. **Default:** (a) until you answer.
+**RESOLVED Oct 31 (Jamie: tie it to soil water, after researching the real losses).** Built `decide/falsestart.py`: the
+false-start cost is now the water an early week really wastes, measured on 17 years of real weather by month and soil
+deficit (DESIGN.md G2 note). $4.11 an acre on average instead of $11.14; July $1.24. Irrigated roll-up $23.4M a year ($28.8M
+with the field's deficit); July 3 at the demo farm says start again. The FlashWatch value card is still hidden; at the demo
+farm it is now non-zero in 4 of 6 seasons (average about +$2 an acre).
 
 ### Q10. Pivot control: may the agent ever act without the farmer's YES? Which accounts to pursue?
 The operator agent (DESIGN.md O10) plans pivot starts and stops, and the guard checks them. Nothing

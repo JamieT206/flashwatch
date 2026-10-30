@@ -106,11 +106,6 @@ def curve(f: Field, max_notice: int = 21) -> pd.DataFrame:
     return out
 
 
-def false_alarm_cost(f: Field, days: int) -> float:
-    """Pumping for `days` when no dry spell comes (rain refills the profile, the water is lost)."""
-    return days * f.capacity / f.efficiency * f.pump_cost_per_in
-
-
 def field(**kw) -> Field:
     known = {k: v for k, v in kw.items() if k in {x.name for x in dataclasses.fields(Field)}}
     return Field(**known)

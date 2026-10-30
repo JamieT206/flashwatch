@@ -68,8 +68,9 @@ def test_backtest_credits_hits_and_charges_false_alarms():
 
 
 def test_trigger_names_the_weather_that_tips_it():
+    from dataclasses import replace
     from flashwatch.decide.trigger import trigger
-    c = curve(load()["irrigation"])
+    c = replace(curve(load()["irrigation"]), cost_noevent=11.0)     # a costly false start: the dry members tip it
     rain = np.array([0.1, 0.2, 0.3, 0.5, 0.9, 1.2, 1.5, 1.8, 2.0, 2.4, 3.0])
     p1 = np.where(rain < 0.4, 0.45, 0.03)                  # dry members carry the risk
     p2 = np.where(rain < 0.4, 0.30, 0.03)
@@ -92,3 +93,40 @@ def test_yield_shortfall_uses_trend_from_other_years():
     s = shortfall(d).set_index("year").dev_pct
     assert abs(s[2012] + 20) < 0.5                  # its own trend never sees the bad year
     assert (s.drop(2012).abs() < 5).all()          # the others are only nudged by it
+
+
+def _days():
+    import pandas as pd
+    return pd.date_range("2012-04-01", "2012-10-15").strftime("%m-%d").tolist()
+
+
+def test_false_start_water_is_used_when_the_dry_spell_comes_late_and_lost_when_rain_comes():
+    from flashwatch.decide import irrigation
+    from flashwatch.decide.falsestart import season_runs
+    days = _days()
+    f = irrigation.field(**load()["irrigation"]["params"])
+    start = days.index("07-01")
+    eto = np.full((len(days), 2), 0.25)
+    rain = np.zeros((len(days), 2))
+    rain[:start, :] = 0.3                                   # full profile on July 1 at both cells
+    rain[start + 7, 1] = 4.0                                # cell 1: a downpour the day after the early week
+    rain[start + 8:start + 40, 1] = 0.3                     # ... and a wet month after it
+    r = season_runs(rain, eto, days, f, np.array([start]), review=7, reaction=2)
+    stored = r["stored"][0]
+    assert np.allclose(r["dr"][0], 0) and (stored > 0.5).all()
+    used, lost = r["extra_pumped"][0] * f.efficiency / stored
+    assert used < 0.35                                      # dry weather follows: the crop uses most of it
+    assert lost > 0.9                                       # the downpour drains it all
+
+
+def test_backtest_costs_leave_out_the_year_they_score():
+    import pandas as pd
+    from flashwatch.decide.falsestart import backtest_costs
+    rows = pd.DataFrame({"year": [2012] * 2 + [2018] * 2, "issue": pd.to_datetime(["2012-07-01"] * 2 + ["2018-07-01"] * 2),
+                         "iy": 0, "ix": [0, 1, 0, 1], "dr": 0.1, "extra_pumped": [1.0, 1.0, 0.2, 0.2],
+                         "onset": False})
+    with_rows = pd.concat([rows] * 100, ignore_index=True)  # enough dates per month-and-deficit cell
+    out = backtest_costs(10.0, rows=with_rows)
+    assert np.allclose(out[out.year == 2012].expected, 2.0)   # 2012 is priced from 2018's weather
+    assert np.allclose(out[out.year == 2018].expected, 10.0)
+    assert np.allclose(out[out.year == 2012].actual, 10.0)

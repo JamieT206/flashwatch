@@ -37,7 +37,8 @@ def curve(action: dict, max_notice: int = 21) -> Curve:
     if kind == "irrigation":
         f = irrigation.field(**p)
         c = irrigation.curve(f, max_notice)
-        noevent = irrigation.false_alarm_cost(f, p["review_days"]) * p["false_alarm_waste"]
+        from flashwatch.decide import falsestart       # measured on real weather (decide/falsestart.py)
+        noevent = falsestart.cost(p["pump_cost_per_in"])
         return Curve(c.notice_days.to_numpy(float), c.avoided.to_numpy(), c.extra_cost.to_numpy(), noevent)
     k = np.array(action["notice_days"], float)
     if "tons" in p:                                       # hay / feed

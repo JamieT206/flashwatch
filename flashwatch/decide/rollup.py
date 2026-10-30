@@ -68,7 +68,9 @@ def yearly(bt: pd.DataFrame, acres: pd.DataFrame, cc: pd.DataFrame, price: float
     return pd.DataFrame(rows)
 
 
-def run(oof: pd.DataFrame, model: str, overrides: dict | None = None) -> dict:
+def run(oof: pd.DataFrame, model: str, overrides: dict | None = None, water: bool = True) -> dict:
+    """water: the farmer knows the field's deficit (a water account) when deciding; else only the month."""
+    from flashwatch.decide.falsestart import backtest_costs
     from flashwatch.ingest.nass import load as nass
     acres = nass(2022)
     cfg = load(overrides=overrides)
@@ -77,13 +79,14 @@ def run(oof: pd.DataFrame, model: str, overrides: dict | None = None) -> dict:
     cc = county_cells(cells)
     county = acres[acres.level == "county"]
     nat = acres[acres.level == "national"].set_index(["crop", "practice"]).acres
-    out = {"model": model, "overrides": overrides or {}, "years": sorted(int(y) for y in oof.year.unique()), "scopes": {}}
+    out = {"model": model, "overrides": overrides or {}, "water_account": water, "years": sorted(int(y) for y in oof.year.unique()), "scopes": {}}
     for base in ("careful", "calendar"):
         res = {}
         for crop, key in (("corn", "irrigation"), ("soybeans", "irrigation_soybeans")):
             act = cfg[key]
             price = act["params"]["price"]
-            bt = backtest.run(oof, ons, model, act, base)
+            bt = backtest.run(oof, ons, model, act, base,
+                              false_starts=backtest_costs(act["params"]["pump_cost_per_in"], water))
             a = county[(county.crop == crop) & (county.practice == "irrigated")][["fips", "acres"]]
             yr = yearly(bt, a, cc, price)
             yr["kcal"] = yr.bushels * KCAL_PER_BU[crop]
@@ -137,11 +140,12 @@ def main():
     ap.add_argument("--oof", required=True)
     ap.add_argument("--model", default="M1")
     ap.add_argument("--tag", default="")
+    ap.add_argument("--no-water", action="store_true", help="false-start cost by month only (no water account)")
     ap.add_argument("--set", nargs="+", default=[], metavar="NAME=VALUE",
                     help="override action settings, e.g. spell_days=21 (calibrated to county yields, eval/yields.py)")
     args = ap.parse_args()
     over = {k: json.loads(v) for k, v in (s.split("=", 1) for s in args.set)}
-    r = run(pd.read_parquet(args.oof), args.model, over)
+    r = run(pd.read_parquet(args.oof), args.model, over, water=not args.no_water)
     r["headline"] = [headline(r, b) for b in ("careful", "calendar")]
     r["tag"] = args.tag
     print(pd.DataFrame(r["headline"]).T.to_string())

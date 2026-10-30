@@ -252,6 +252,20 @@ survives); M1 skill week 1 **4.3%**, week 2 **1.2%**, any-28 **4.6%** (before: 4
   against a July 1 start -$4.7M); rain-fed $94M (nitrogen $54M). The earlier $18.6M came from `blur07`, the perfect-weather
   proxy blurred to forecast-like accuracy, before real summer forecasts existed. Irrigation "start" still rarely fires (Q22):
   at the demo farm (Edmunds SD, sandy loam, 4.5 gpm) on 2012-07-03 M2 gives 12% against a start line of about 23%.
+  **False starts priced on real weather (Oct 31, Jamie: tie it to soil water, net of real losses).** `decide/falsestart.py`
+  runs a pivot-irrigated field managed the usual way (on 2 days after stress, off at 1 inch short to leave room for rain)
+  through every development year's ERA5-Land rain and ET at all 1,183 cells, with and without a week's early start on each
+  forecast date, June 1 to Sep 15. The cost is the extra water pumped over the rest of the season (drainage when rain lands
+  on the fuller profile, extra evaporation 0.6 mm a pumping day from Bushland lysimeters, water left at season end; spray
+  losses are already in the 85% efficiency). With no onset after: $4.11 an acre on average (old rule $11.14); June $5.10,
+  July $1.24, August $2.91, September $10.39; about 44% of the water the early week stores is lost. By deficit: $5-7 with
+  the profile near full, under $2 from 2 inches short. Nearly the same on a sandy loam at 4.5 gpm ($3.62): what matters is the
+  room in inches. Table: `config/falsestart.json` (month x deficit), mirrored in engine.js; the backtest prices each row with
+  the table refitted without its year and charges the cost on the real weather that followed. **Roll-up** (`m2fc53_month`,
+  the deficit unknown): irrigated **$23.4M a year** ($2.64 an acre of corn; 2006 +$52M, 2009 +$4M, 2012 +$62M, 2015 -$3M,
+  2018 -$34M, 2021 +$56M); with the field's deficit (`m2fc53_water`) $28.8M; against a July 1 start -$4.1M / -$4.3M (in July
+  that farmer's pivot is already on). Rain-fed unchanged, $94M. The demo farm's July 3 says start again (4.1x normal; a
+  false start would cost $1.24). "Start" now fires on 1-7 days a season there; caught 2012 and 2021, false starts 2006 and 2018.
 - *Meaning.* The target is sound and the onset waves are not noise; they are what weather forecasts exist to see. The ceiling is about 15x M1's skill at week 2. The open question is how much of it the real ECMWF forecasts keep (good at week 1, weaker at week 2, weak beyond), so M2 on real forecasts is the decisive run. The `native` (0.25 degree) variant is the absolute upper bound.
 
 ---
@@ -839,7 +853,7 @@ The forecast-revision spread in the engine is 0.5, measured: M2's week-1 risk mo
 average between forecasts 2 days apart (M1: 30%).
 
 **Honest reading:**
-- the number is **about $100 million a year, not billions**;
+- the number is **about $120 million a year, not billions** ($94M rain-fed, $23M irrigated);
 - that is because irrigated corn is ~11M acres, flash-drought onsets hit a given field in roughly
   1 summer in 3, and a week's notice is worth about $80/acre per onset;
 - "people fed" counts the grain's calories (most corn goes to feed and ethanol);

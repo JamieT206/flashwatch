@@ -22,7 +22,7 @@ state you can reach from a URL or a click, so it can be recorded in one sitting.
 | (in 1:15-1:35) | Phone screen recording: the plan arrives on WhatsApp, tap YES, "Done" comes back | (no extra narration; the YES line above covers it) |
 | 1:35-1:45 | Voice note step on the Agents page (play the WAV under it) | And a farmer can just say what they see. Muse Voice Transcribe and Spark turn it into a report on the right pivot. |
 | 1:45-2:10 | Farm page, toggle Rain-fed; fungicide card; drag a slider | Most corn and soybeans aren't irrigated: 130 million acres in our region. For those farms the decisions are different: skip the fungicide pass when a dry spell means no disease, trim side-dress nitrogen, buy hay before prices rise. Each shows the chance today against the chance at which acting pays. |
-| 2:10-2:35 | Big picture: the 6x chart, the farm table, the Drought Monitor numbers | How good is it? On the farms FlashWatch flags, a flash drought follows six times as often as normal; a hot-and-dry rule of thumb manages under two. It sees drought three weeks before the Drought Monitor. Across the region, that's worth about $100 million a year, most of it on rain-fed farms. |
+| 2:10-2:35 | Big picture: the 6x chart, the farm table, the Drought Monitor numbers | How good is it? On the farms FlashWatch flags, a flash drought follows six times as often as normal; a hot-and-dry rule of thumb manages under two. It sees drought three weeks before the Drought Monitor. Across the region, that's worth about $120 million a year, most of it on rain-fed farms. |
 | 2:35-2:52 | README architecture diagram, then the Glimmer section | Under the hood: ERA5-Land soil data and ECMWF weather forecasts feed a machine-learning model; a water balance turns it into dollars; Meta's models carry it to the farm. The test years are scored once, after the model is frozen. |
 | 2:52-3:00 | End card: "FlashWatch, by Jamie Twiss", repo link, site link | FlashWatch. The code is on GitHub. |
 
@@ -43,7 +43,7 @@ state you can reach from a URL or a click, so it can be recorded in one sitting.
 ## To check before recording
 
 - Forecasts to mid-August are in ("six times" is current; 6.3x). The farm page now uses M2 on forecast dates: re-check
-  July 3's numbers before recording. "$100 million" = $94M rain-fed + $6M irrigated on real forecasts (was $190M on
-  simulated ones).
+  July 3's numbers before recording (Oct 31: July 3 says "start extra irrigation today" again, 4.1x normal, now that a false
+  start is priced on real weather). "About $120 million" = $94M rain-fed + $23M irrigated on real forecasts.
 - Test-year results (after the freeze) may change the "how good is it" line: use whatever they say.
 - End card names the only contributor, Jamie Twiss (rules).
