@@ -110,12 +110,14 @@ def main(epochs: int = 2, smoke: bool = False):
 def score(n: int = 12):
     """Scores the adapter like eval.glimmer_eval (same weeks and measures); writes eval_glimmer-lora.json."""
     import json
+    import re
     from flashwatch.eval.glimmer_eval import pick, report
     from flashwatch.eval.glimmer_eval import score as score_draft
     rows = pick(n)
     drafts = generate.remote([r["messages"][:2] for r in rows])
     out = []
     for r, d in zip(rows, drafts):
+        d = re.sub(r"^\s*to=\w+\s*", "", d)   # the chat template's recipient tag survives skip_special_tokens
         _, user, real = r["messages"]
         s = score_draft(d, real["content"], json.loads(user["content"]))
         out.append({"date": r["date"], **s, "draft": d, "real": real["content"]})

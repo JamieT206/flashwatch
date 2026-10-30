@@ -64,8 +64,12 @@ So the question an irrigator faces every summer morning is simple: *start the pi
     card, llama.cpp). On 7 held-out weeks from 2020-21, on its own it writes like Muse Spark does: correct
     states, no made-up figures, but a list of numbers (9% of wording shared with the real text). Shown two
     real past weeks first, it picks up the Monitor's style (15%) but borrows details it wasn't given, which
-    the number checker flags (7% of figures). Next: a LoRA fine-tune on 749 weeks of the real narratives
-    (TODO: results).
+    the number checker flags (7% of figures). Fine-tuned on 749 weeks of the real narratives (a LoRA
+    adapter, 4-bit, about an hour on one cloud GPU), it writes the Monitor's kind of short prose: 18% of
+    wording shared, the most of any writer, and the direction of change right in 8 of 12 weeks (base
+    model 6). But it names fewer of the right states (58% against 68%), runs short (about 160 words
+    against the real 290), and adds a figure it wasn't given in 2 of 12 weeks, so its drafts still go
+    through the number checker.
     The same model also runs FlashWatch's agents offline, with the same tools, rules and checker. For
     the demo farm's 3 July 2012 morning it made the same plan as Muse Spark, every figure traced on the
     first draft, in about 8 minutes. Asked three farmer questions, it answered all correctly but took 1-4

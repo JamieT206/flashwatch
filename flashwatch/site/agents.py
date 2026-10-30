@@ -26,7 +26,8 @@ def glimmer_table(evals: dict) -> dict:
     rows = []
     for k, e in evals.items():
         ws = [weeks[k][d] for d in common]
-        rows.append({"model": e["model"], "local": "glimmer" in e["model"], "shots": e.get("shots", 0),
+        rows.append({"model": e["model"], "local": "glimmer" in e["model"], "tuned": "lora" in e["model"],
+                     "shots": e.get("shots", 0),
                      **{m: round(sum(w[m] for w in ws) / len(ws), 3) for m in ("untraced", "states", "rouge_l")},
                      "words": round(sum(len(w["draft"].split()) for w in ws) / len(ws))})
     best = max(rows, key=lambda r: r["rouge_l"])

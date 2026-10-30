@@ -303,6 +303,12 @@ training while the design moves; heavy burst ~Nov 2 Sydney (DESIGN.md B).
      records models/options and the code's git tree hash; `score` refuses if the code changed or the test
      years were already scored, trains on 2005-2021 only and writes data/final/test_scores.json.
 
+   - Oct 30 (Jamie at work): Glimmer LoRA scored (`glimmer_train.py::score`, one A100, ~20 min): wording 0.16 vs 0.09,
+     direction 0.67 vs 0.50, but states 0.51 vs 0.67 and 2 of 12 weeks with an untraced figure (DESIGN G2 result); on the
+     Agents page and in the write-up. Modal: a vLLM web server tried earlier crashed and its polls started 10 GPUs (~$6
+     wasted); every Modal function is now capped at one GPU with a timeout. The agent server answers tunnelled requests on
+     /whatsapp only. Modal volume `flashwatch-glimmer` holds the model cache (~60 GB) and the adapter.
+
 **Priorities (James, Oct 28): (1) anything that meaningfully improves prediction, (2) the farmer tool,
 (3) modelling nice-to-haves. Nothing is cut; what misses Nov 4 continues after.**
 7. Burst (Nov 2), freeze, test years once, replay, video, write-up.

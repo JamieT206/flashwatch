@@ -181,7 +181,7 @@ we use is released 3 weeks late, so live forecasts need ECMWF's real-time produc
 substitute such as NOAA's GEFS (Q7).
 **Recommendation:** after the hackathon; the demo label stays until then. **Default:** demo.
 
-### Q20. Glimmer fine-tune: Modal account and the model licence (Oct 29)
+### Q20. Glimmer fine-tune: Modal account and the model licence (Oct 29) **RESOLVED Oct 30: run on Jamie's Modal account; trained and scored (DESIGN.md G2 result).**
 `flashwatch/agent/glimmer_train.py` is ready to run on Modal (QLoRA on Muse Glimmer 30B, ~1 hour on one
 80 GB GPU; this PC's 12 GB card is too small). It needs (a) your Modal account (`pip install modal`,
 `modal setup`), (b) a Hugging Face token stored in Modal as a secret named `huggingface`, and (c) the

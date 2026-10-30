@@ -476,6 +476,16 @@ Order: G1 first (core of the demo), G2 from Oct 30, G3 only if time allows.
   Wyoming ... that missed out on the heaviest rainfall"). Style and selection are what the Glimmer
   LoRA has to learn. The bar to beat: keep untraced at about 0 and raise ROUGE-L and states F1.
 
+**G2 result (Oct 30, LoRA on Modal, `glimmer_train.py`; scored with `::score` on the same 12 validation weeks).**
+QLoRA, rank 16 on the language model's attention and MLP layers, 2 epochs over 749 weeks; validation loss 1.79
+after epoch 1, 1.78 after epoch 2 (about an hour on one A100 80 GB). Against the base model on all 12 weeks:
+ROUGE-L 0.16 against 0.09, direction 0.67 against 0.50, states F1 0.51 against 0.67, untraced figures 4.9% against 0%
+(2 weeks: temperature ranges such as "5 to 15 degrees above normal", in the real text's style but not in the
+input). Drafts are about 160 words, against about 290 for the real narratives and about 990 for the base model. Against the
+bar set above: style and wording clearly better; states and untraced figures worse, so not a clean win. Its drafts still
+go through the number checker. Possible next steps (not planned before Nov 4): add temperature ranges to the inputs, and
+train on the regions' state lists so it names them.
+
 **G3 built (Oct 28 night, `agent/voice.py`).**
 - *Endpoint.* The Meta API lists `muse-voice-transcribe-1.0`; file transcription is `POST
   {base}/asr/transcribe` (multipart: a JSON `request` part with `model`, `audioEncoding: "WAV"`,
