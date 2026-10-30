@@ -485,6 +485,11 @@ input). Drafts are about 160 words, against about 290 for the real narratives an
 bar set above: style and wording clearly better; states and untraced figures worse, so not a clean win. Its drafts still
 go through the number checker. Possible next steps (not planned before Nov 4): add temperature ranges to the inputs, and
 train on the regions' state lists so it names them.
+Growing-season drafts are weaker than winter ones: most repeat one sentence pattern state by state, and several name states
+outside the region (Texas, Oklahoma), which the older narratives used to cover. The Agents page shows the best clean
+May-September week (2021-05-25). **Next (after Nov 4): retrain without the Drought Monitor's own map in the inputs** (FlashWatch's
+numbers only), so the summary can be written as soon as the week's data is in, at the same time as or before the Monitor's
+release; today one input is the Monitor's map for that week, so Glimmer can't run ahead of it.
 
 **G3 built (Oct 28 night, `agent/voice.py`).**
 - *Endpoint.* The Meta API lists `muse-voice-transcribe-1.0`; file transcription is `POST

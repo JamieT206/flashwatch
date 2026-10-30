@@ -316,6 +316,11 @@ training while the design moves; heavy burst ~Nov 2 Sydney (DESIGN.md B).
      risk chart goes to an "in drought" level instead of breaking; soil chart has its own date axis; rain-fed wording. Q22:
      irrigated advice rarely fires on E1 (threshold ~30%); M2 on the farm page fixes it.
 
+   - Pending, after Nov 4 unless time allows (Jamie, Oct 30): (a) **live feed**: ECMWF open data (free, CC BY 4.0, 15 days,
+     50 members) covers weeks 1-2; retrain M2 on week 1-2 forecast inputs, check soil moisture is among the open fields,
+     daily job (ERA5-Land from Earth Engine, forecast, model, `site.publish`); no switch to GEFS needed. (b) **Glimmer
+     without the Drought Monitor's map in its inputs**, so its summary arrives with or before the Monitor's (DESIGN G2).
+
 **Priorities (James, Oct 28): (1) anything that meaningfully improves prediction, (2) the farmer tool,
 (3) modelling nice-to-haves. Nothing is cut; what misses Nov 4 continues after.**
 7. Burst (Nov 2), freeze, test years once, replay, video, write-up.

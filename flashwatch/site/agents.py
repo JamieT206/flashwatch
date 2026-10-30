@@ -20,7 +20,7 @@ def _load(path):
 
 def glimmer_table(evals: dict) -> dict:
     """Each narrative writer scored on the held-out weeks every one of them finished (some API calls time
-    out), plus one week from the best-styled run next to the real text."""
+    out), plus one growing-season week from the best-styled run next to the real text."""
     weeks = {k: {w["date"]: w for w in e["weeks"]} for k, e in evals.items()}
     common = sorted(set.intersection(*[set(w) for w in weeks.values()]))
     rows = []
@@ -32,7 +32,8 @@ def glimmer_table(evals: dict) -> dict:
                      "words": round(sum(len(w["draft"].split()) for w in ws) / len(ws))})
     best = max(rows, key=lambda r: r["rouge_l"])
     key = next(k for k, e in evals.items() if e["model"] == best["model"] and e.get("shots", 0) == best["shots"])
-    clean = [w for w in weeks[key].values() if not w["untraced_figures"]] or list(weeks[key].values())
+    # The example: a growing-season week (May-September) with no untraced figure, the most wording shared.
+    clean = [w for w in weeks[key].values() if not w["untraced_figures"] and "05" <= w["date"][5:7] <= "09"]         or [w for w in weeks[key].values() if not w["untraced_figures"]] or list(weeks[key].values())
     wk = max(clean, key=lambda w: w["rouge_l"])
     return {"weeks": len(common), "rows": rows, "example": {"model": best["model"], "shots": best["shots"],
             **{k: wk[k] for k in ("date", "draft", "real")}}}
