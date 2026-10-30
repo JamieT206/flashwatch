@@ -168,7 +168,8 @@ td { border-bottom: 1px solid var(--line); padding: 6px 10px 6px 0; font-variant
 .strip { display: flex; height: 26px; gap: 1px; cursor: pointer; outline-offset: 3px; }
 .strip.locked { cursor: default; }
 .strip > div { flex: 1 1 0; min-width: 2px; position: relative; font-size: 11px; color: var(--muted); }
-.strip > div.end { flex: 0 0 76px; display: flex; align-items: center; justify-content: center; background: var(--off-bg); border: 1px solid var(--line); }
+.strip > div.end { flex: 0 0 104px; display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.05; font-size: 10.5px; cursor: default; background: var(--off-bg); border: 1px solid var(--line); }
+.strip .end .short { display: none; }
 .strip > div.on { outline: 3px solid var(--ink); outline-offset: 1px; z-index: 1; }
 .seg-act { background: var(--act); } .seg-wait { background: #e5a000; } .seg-calm { background: #8cbf8f; }
 .seg-drought { background: var(--drought); } .seg-frozen, .seg-none, .seg-off { background: var(--off-bg); }
@@ -207,6 +208,7 @@ button.linkish { border: 0; padding: 0; background: none; color: var(--accent); 
   .card.first { border-top: 1px solid var(--line); padding-top: 18px; }
   .strip-legend .keys { display: none; }
   .strip > div.end { flex-basis: 54px; font-size: 10px; }
+  .strip .end .long { display: none; } .strip .end .short { display: inline; }
 }
 
 /* Region page (Oct 29). */
@@ -281,6 +283,9 @@ table.farms td strong { font-size: 20px; }
 /* Water account (Oct 29). */
 .waterwrap { display: grid; grid-template-columns: 1fr 1.3fr; gap: 0 32px; align-items: start; }
 .waterwrap .tally.three { grid-template-columns: repeat(3, 1fr); }
+.waterwrap.one { grid-template-columns: 1fr; max-width: 760px; }
+.irrways ol { margin: 4px 0 8px; padding-left: 20px; }
+.irrways ol li { margin-bottom: 4px; }
 .waterwrap .tally .v { font-size: 22px; }
 .irrform { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; }
 .irrform label { display: flex; flex-direction: column; font-size: 13px; color: var(--muted); gap: 4px; }

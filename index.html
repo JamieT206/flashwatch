@@ -72,7 +72,7 @@
       </section>
       <section class="card">
         <div class="mapbar">
-          <form id="search" class="search"><input id="q" type="search" placeholder="Find your farm: address, town, or lat, lon" aria-label="Find your farm"><button class="primary">Find</button></form>
+          <form id="search" class="search"><input id="q" type="search" autocomplete="off" placeholder="Find your farm: address, town, or lat, lon" aria-label="Find your farm"><button class="primary">Find</button></form>
           <div class="seg small" role="group" aria-label="Map type">
             <button id="mapStreet" aria-pressed="true">Street map</button><button id="mapDrought" aria-pressed="false">Drought map</button>
           </div>
@@ -102,17 +102,34 @@
       <div>
         <div class="tally three" id="waterNow"></div>
         <p class="note" id="waterNote"></p>
-        <div class="chart-title">Irrigation you've put on</div>
-        <form id="irrForm" class="irrform">
-          <label>Date (MM-DD)<input id="irrDate" size="6"></label>
-          <label>Inches<input id="irrIn" type="number" step="0.05" min="0"></label>
-          <button class="primary">Add</button>
-        </form>
-        <ul class="events" id="irrList"></ul>
-        <p class="note"><button id="pivotImport">Read from your pivot</button> <button id="irrClear" class="linkish">clear</button><br>
-          Demo: fills in your usual schedule. On a real farm this comes from the pivot's own records (Lindsay FieldNET through Leaf) or the FlashWatch webhook.</p>
+        <p id="irrStart"><button class="primary" id="irrAdd">Add irrigation data</button></p>
+        <div id="irrWays" class="irrways" hidden>
+          <div>
+            <div class="chart-title">Connect your pivot</div>
+            <p class="note">FlashWatch reads the water your pivots put down from Lindsay FieldNET or Valley 365, through Leaf, a farm-data
+              service that already links to both:</p>
+            <ol class="note">
+              <li>Sign up at <a href="https://withleaf.io" target="_blank" rel="noopener">withleaf.io</a> and connect your FieldNET or Valley account there.</li>
+              <li>Give FlashWatch your Leaf user ID and API token (when running FlashWatch yourself: <code>LEAF_USER_ID</code> and
+                <code>LEAF_TOKEN</code> in <code>flashwatch.env</code>; see the README).</li>
+              <li>Each morning FlashWatch reads what every pivot applied. It only reads: nothing is sent to a pivot without your YES.</li>
+            </ol>
+            <p class="note">This demo site can't connect to accounts.</p>
+          </div>
+          <p><button id="irrManual">Enter it yourself</button> <button id="pivotImport">Fill in demo numbers</button></p>
+        </div>
+        <div id="irrManualBox" hidden>
+          <div class="chart-title">Irrigation you've put on</div>
+          <form id="irrForm" class="irrform">
+            <label>Date (MM-DD)<input id="irrDate" size="6"></label>
+            <label>Inches<input id="irrIn" type="number" step="0.05" min="0"></label>
+            <button class="primary">Add</button>
+          </form>
+          <ul class="events" id="irrList"></ul>
+          <p class="note"><button id="irrClear" class="linkish">Clear all</button></p>
+        </div>
       </div>
-      <div class="chart">
+      <div class="chart" id="waterChartBox">
         <div class="chart-title">Water the crop can use in the root zone (inches)</div>
         <div id="waterChart"></div>
         <div class="legend"><span><i style="background:var(--soil)"></i>Soil water (dashed: last 5 days estimated)</span>
@@ -182,7 +199,7 @@
     Every other day, FlashWatch forecasts the chance that the soil at your farm drops into drought in the next one and two weeks.
     A water-balance model of your field calculates the financial impact of supplemental irrigation.
     Data: ERA5-Land (Copernicus Climate Change Service), US Drought Monitor (NDMC, USDA, NOAA), USDA NASS, US Census Gazetteer.
-    Map: &copy; OpenStreetMap contributors. Search: Nominatim.<br>Built by Jamie Twiss. &copy; 2026 Jamie Twiss.
+    Map: &copy; OpenStreetMap contributors. Search: Nominatim.<br>&copy; 2026 Jamie Twiss.
   </footer>
 </main>
 
