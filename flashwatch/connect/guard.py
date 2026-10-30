@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from flashwatch.connect.base import Command, PivotStatus
 
-SEASON = ("06-01", "08-31")
+SEASON = ("06-01", "09-15")   # the irrigation season (Jamie, Oct 30: June to mid-September)
 DEPTH_RANGE = (0.3, 1.5)               # inches per pass
 STARTABLE = ("start the pivot today", "irrigate as usual")
 

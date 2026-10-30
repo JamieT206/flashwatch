@@ -31,7 +31,7 @@ from flashwatch.config import TEST_YEARS
 from flashwatch.decide import curve, load
 from flashwatch.decide.engine import daily, two_way
 
-SEASON = ("06-01", "08-31")
+SEASON = ("06-01", "09-15")   # the irrigation season (Jamie, Oct 30: June to mid-September)
 HORIZON = 14
 
 

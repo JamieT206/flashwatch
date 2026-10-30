@@ -309,6 +309,13 @@ training while the design moves; heavy burst ~Nov 2 Sydney (DESIGN.md B).
      wasted); every Modal function is now capped at one GPU with a timeout. The agent server answers tunnelled requests on
      /whatsapp only. Modal volume `flashwatch-glimmer` holds the model cache (~60 GB) and the adapter.
 
+   - Oct 30 afternoon: site live on GitHub Pages (`python -m flashwatch.site.publish`, gh-pages branch). Jamie's site review:
+     irrigation season widened to Jun 1 - Sep 15 (farm page, decide/backtest.py, connect/guard.py; the big-picture roll-up
+     still uses Jun-Aug until it is re-run at the post-download rebuild); date bar ends are fixed labels; water card hides the
+     root-zone numbers until irrigation is added ("Add irrigation data": Leaf/FieldNET steps, manual entry, demo numbers);
+     risk chart goes to an "in drought" level instead of breaking; soil chart has its own date axis; rain-fed wording. Q22:
+     irrigated advice rarely fires on E1 (threshold ~30%); M2 on the farm page fixes it.
+
 **Priorities (James, Oct 28): (1) anything that meaningfully improves prediction, (2) the farmer tool,
 (3) modelling nice-to-haves. Nothing is cut; what misses Nov 4 continues after.**
 7. Burst (Nov 2), freeze, test years once, replay, video, write-up.

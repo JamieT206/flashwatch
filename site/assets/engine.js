@@ -124,7 +124,7 @@ const FW = (() => {
 
   // The season played day by day for one cell (mirrors decide/backtest.py).
   function season(c, dates, p1, p2, onsets, opts = {}) {
-    const { baseline = "careful", calendar = "07-01", first = "06-01", last = "08-31", spread = 0.5,
+    const { baseline = "careful", calendar = "07-01", first = "06-01", last = "09-15", spread = 0.5,
             review = 7, year = 2012, once = false } = opts;   // once: a one-off decision, act at most once
     const day = s => Date.UTC(year, +s.slice(0, 2) - 1, +s.slice(3, 5)) / 864e5;
     let ons = onsets.map(day);

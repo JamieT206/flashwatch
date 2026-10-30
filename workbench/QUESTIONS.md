@@ -207,6 +207,17 @@ make a one-field template and set `WHATSAPP_TEMPLATE`.
 **Recommendation:** worth it for the video: a phone buzzing with "Start S2" and a tap on YES is the
 clearest demo moment we have. **Default until you answer:** dry run, and the Agents page says so.
 
+### Q22. Irrigated "start extra irrigation" almost never fires on the site (Oct 30)
+Jamie's review: the date bar goes from "as usual" straight to "in drought", and FlashWatch value is always $0. Cause: on the
+default farm (5 gpm/acre, silt loam) starting pays only once the 7-day chance reaches about 30% (a false start costs about $11
+an acre: a week of pumping, 60% wasted; a week's warning saves about $20). The site runs the land-only model (E1), which never
+gets near that: in June to mid-September it reaches 30% on 0.00% of cell-days (10 of 1,183 cells ever fire, over six seasons).
+The forecast model M2 reaches 30% on 1.7% of cell-days, and when it does a flash drought follows 35% of the time (normal 3%).
+**Recommendation:** put the farm page on M2 now that June-August forecasts are downloaded (fcst.zarr rebuild, M2 CV, site
+build: a few hours on this PC, no cloud cost), then re-check the value numbers. Separately, the 60% waste on a false start may
+be pessimistic (water put on early is partly stored in the soil); worth a look, but it's an economics assumption, so your call.
+**Default until you answer:** no change to the economics; M2 on the farm page at the post-download rebuild.
+
 ### Q10. Pivot control: may the agent ever act without the farmer's YES? Which accounts to pursue?
 The operator agent (DESIGN.md O10) plans pivot starts and stops, and the guard checks them. Nothing
 is sent without an approval. Two decisions:

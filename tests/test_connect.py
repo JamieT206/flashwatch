@@ -32,7 +32,7 @@ def test_guard_well_limit_takes_commands_in_order():
 def test_guard_refuses_without_advice_out_of_season_and_bad_depth():
     advice = {**GO, "A": {"verdict": "not yet: wait for the next forecast"}}
     assert "not a start" in check([cmd("A")], FARM, advice, OFF)[1][0][1]
-    assert "season" in check([cmd("B", date="2012-09-10")], FARM, GO, OFF)[1][0][1]
+    assert "season" in check([cmd("B", date="2012-09-20")], FARM, GO, OFF)[1][0][1]
     assert "outside" in check([cmd("B", depth=3)], FARM, GO, OFF)[1][0][1]
     assert "allocation" in check([cmd("C", depth=0.75)], FARM, GO, OFF)[1][0][1]
     assert check([cmd("C", depth=0.5)], FARM, GO, OFF)[0]

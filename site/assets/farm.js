@@ -13,7 +13,7 @@ const pct = (p, d = 0) => p === null || p === undefined || !isFinite(p) ? "-" : 
 const usd = (v, d = 0) => (v < 0 ? "-$" : "+$") + Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
 const USDM = { "-1": "None", 0: "D0 abnormally dry", 1: "D1 moderate drought", 2: "D2 severe drought",
                3: "D3 extreme drought", 4: "D4 exceptional drought" };
-const SEASON = ["06-01", "08-31"];
+const SEASON = ["06-01", "09-15"];   // the irrigation season (decide/backtest.py SEASON)
 const DEMO_TODAY = { year: 2012, date: "07-03", demo: true };
 
 // ---------- the farm: local starting values, the farmer's own changes on top ----------
@@ -208,7 +208,7 @@ function adviceAt(i, c, full = false) {
   }
   if (!irrigated()) return rainfedAdvice(i, full);
   if (!inSeason(md)) return { cls: "off", big: "Outside the irrigation season", sub: "",
-    why: "Irrigation advice runs June to August. The risk numbers still apply." };
+    why: "Irrigation advice runs from June to mid-September. The risk numbers still apply." };
   // With ensemble members for this date, the next forecast's outcomes come from them, and the
   // trigger is named in weather; otherwise a placeholder spread and a risk threshold.
   const mem = r.mp1 && r.mp1[i] ? FW.trigger(c, r.mp1[i], r.mp2[i], { rain_in: r.mr[i], temp_f: r.mt[i] }) : null;
@@ -253,11 +253,11 @@ function rainfedAdvice(i, full) {
   const r = S.rec, md = S.meta.dates[i];
   const next = all.filter(o => o.a.window[0] > md).sort((x, y) => x.a.window[0] < y.a.window[0] ? -1 : 1)[0];
   const risk = r.p1[i] === null ? "" : `The chance of a flash drought this week is ${pct(r.p1[i])} (normal for the date: ${pct(r.n1[i])}). `;
-  if (!live.length) return { cls: "off", big: "No drought decisions due", sub: next ? `Next: ${next.a.title.toLowerCase()}, from ${fmtShort(next.a.window[0])}` : "",
-    why: risk + "Each decision below shows when it's made and what it's worth.", trigger: "" };
-  return { cls, big: now.length ? now.map(o => o.a.act).join(" · ") : wait.length ? "Not yet: keep checking forecasts" : "Keep your plans",
+  if (!live.length) return { cls: "off", big: "Nothing to decide today", sub: next ? `Next decision: ${next.a.title.toLowerCase()}, from ${fmtShort(next.a.window[0])}` : "",
+    why: risk, trigger: "" };
+  return { cls, big: now.length ? now.map(o => o.a.act).join(" · ") : wait.length ? "Not yet: keep checking forecasts" : "Carry on as usual",
     sub: cls === "calm" ? "Flash-drought risk low" : cls === "act" ? (now.some(o => o.s.state === "drought") ? "Already in drought" : "Flash-drought risk high") : "Flash-drought risk rising",
-    why: risk + "Details and the numbers behind each decision are below.", trigger: "" };
+    why: risk, trigger: "" };
 }
 const fmtShort = md => new Date(Date.UTC(2001, +md.slice(0, 2) - 1, +md.slice(3, 5))).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 
@@ -306,7 +306,7 @@ function renderVerdict(c) {
   $("trigger").hidden = !a.trigger;
 }
 
-// The date bar: before June, each forecast date of the irrigation season, after August; coloured by
+// The date bar: each forecast date of the irrigation season between two fixed end labels; coloured by
 // the advice on that date. In Today mode it shows the season so far and can't be moved.
 function stops() {
   const d = S.meta.dates, out = [];
@@ -326,15 +326,17 @@ function renderStrip(c) {
   el.innerHTML = st.map((s, k) => {
     const future = live && s.i > S.i && !s.has(S.i);
     const cls = s.kind === "day" && !future ? adviceAt(s.i, c).cls : s.kind === "day" ? "future" : "off";
-    const label = s.kind === "pre" ? "Before June" : s.kind === "post" ? "After August" : fmtDate(S.meta.dates[s.i]);
+    const label = s.kind === "day" ? fmtDate(S.meta.dates[s.i]) : `${s.kind === "pre" ? "Before" : "After"} ${irrigated() ? "irrigation season" : "the season"}`;
     const md = S.meta.dates[s.i], prev = k > 0 ? S.meta.dates[st[k - 1].i] : "";
     const month = s.kind === "day" && (st[k - 1].kind !== "day" || md.slice(0, 2) !== prev.slice(0, 2))
       ? `<span class="mlab">${dateOf(md).toLocaleDateString("en-US", { month: "short", timeZone: "UTC" })}</span>` : "";
-    return `<div class="seg-${cls}${s.kind !== "day" ? " end" : ""}${k === cur ? " on" : ""}" data-s="${k}" title="${label}">${s.kind === "pre" ? "Before June" : s.kind === "post" ? "After Aug" : ""}${month}</div>`;
+    // The two ends are labels, not stops: nothing to decide outside the season.
+    return s.kind === "day" ? `<div class="seg-${cls}${k === cur ? " on" : ""}" data-s="${k}" title="${label}">${month}</div>`
+      : `<div class="seg-off end${k === cur ? " on" : ""}" title="${label}">${s.kind === "pre" ? "Before" : "After"}<br><span class="long">${irrigated() ? "irrigation season" : "the season"}</span><span class="short">season</span></div>`;
   }).join("");
   $("stripLegend").innerHTML = `<span class="d">${fmtDate(S.meta.dates[S.i])}</span>` +
     (irrigated() ? `<span class="keys"><b class="k-act"></b>Start extra irrigation <b class="k-wait"></b>Not yet <b class="k-calm"></b>As usual <b class="k-drought"></b>In drought</span>`
-                 : `<span class="keys"><b class="k-act"></b>Act <b class="k-wait"></b>Not yet <b class="k-calm"></b>Keep your plans <b class="k-drought"></b>In drought</span>`);
+                 : `<span class="keys"><b class="k-act"></b>Act <b class="k-wait"></b>Not yet <b class="k-calm"></b>As usual <b class="k-drought"></b>In drought</span>`);
   if (!live) el.querySelectorAll("[data-s]").forEach(div => { div.onclick = () => setDate(st[+div.dataset.s].i); });
 }
 
@@ -383,7 +385,8 @@ function renderSeason(c) {
   const x = d3.scaleUtc().domain(d3.extent(dates)).range([m.l, W - m.r]);
   S.x = x;
   const ymax = Math.max(0.08, d3.max(r.p1.concat(r.n1).filter(v => v !== null)) * 1.15);
-  const y = d3.scaleLinear().domain([0, ymax]).range([H - m.b, m.t]).nice();
+  const yD = m.t + 4;   // the "in drought" level, above the numbers: the line goes there instead of breaking
+  const y = d3.scaleLinear().domain([0, ymax]).range([H - m.b, m.t + 22]).nice();
   const svg = d3.select("#seasonChart").html("").append("svg").attr("viewBox", `0 0 ${W} ${H}`);
   const band = (a, b, fill, op, label, h0 = m.t, h1 = H - m.b, s = svg) => {
     const x0 = x(dates[a]) - (a > 0 ? (x(dates[a]) - x(dates[a - 1])) / 2 : 0);
@@ -398,14 +401,17 @@ function renderSeason(c) {
   const past = i => !r.future || i <= S.i;
   const dr = runs(n, i => past(i) && r.p1[i] === null && r.rz[i] === null && !fz.has(i));
   const fr = runs(n, i => r.p1[i] === null && fz.has(i));
-  for (const [a, b] of dr) band(a, b, css("--drought"), 0.16, "in drought");
+  for (const [a, b] of dr) band(a, b, css("--drought"), 0.16);
   for (const [a, b] of fr) band(a, b, css("--normal"), 0.2, "frozen");
   svg.append("g").attr("class", "axis").attr("transform", `translate(0,${H - m.b})`).call(d3.axisBottom(x).ticks(7).tickFormat(d3.utcFormat("%b %-d")));
   svg.append("g").attr("class", "axis").attr("transform", `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(4).tickFormat(d3.format(".0%")));
+  svg.append("text").attr("x", m.l - 9).attr("y", yD + 4).attr("text-anchor", "end").attr("font-size", 11).attr("fill", css("--drought")).text("in drought");
+  svg.append("line").attr("x1", m.l).attr("x2", W - m.r).attr("y1", yD).attr("y2", yD).attr("stroke", css("--drought")).attr("stroke-dasharray", "2 4").attr("opacity", .5);
   const line = key => d3.line().defined(d => r[key][d] !== null).x(d => x(dates[d])).y(d => y(r[key][d]));
-  const idx = d3.range(n);
+  const idx = d3.range(n), inDr = new Set(dr.flatMap(([a, b]) => d3.range(a, b + 1)));
   svg.append("path").attr("d", line("n1")(idx)).attr("fill", "none").attr("stroke", css("--normal")).attr("stroke-dasharray", "4 3").attr("stroke-width", 1.5);
-  svg.append("path").attr("d", line("p1")(idx)).attr("fill", "none").attr("stroke", css("--risk")).attr("stroke-width", 2.2);
+  svg.append("path").attr("d", d3.line().defined(d => r.p1[d] !== null || inDr.has(d)).x(d => x(dates[d]))
+    .y(d => r.p1[d] !== null ? y(r.p1[d]) : yD)(idx)).attr("fill", "none").attr("stroke", css("--risk")).attr("stroke-width", 2.2);
   const shown = r.onsets;
   for (const o of shown) svg.append("path").attr("d", `M${x(dateOf(o))},${H - m.b} l-6,-10 l12,0 z`).attr("fill", css("--drought"));
   const ss = seasonValue(c, r);
@@ -424,25 +430,26 @@ function renderSeason(c) {
     fr.length ? `<span><i style="background:var(--normal);opacity:.4;height:10px"></i>Frozen ground: no forecast</span>` : ""].join("");
 
   // Soil moisture: the drought zone shaded, the line turning purple inside it.
-  const H2 = 150, y2 = d3.scaleLinear().domain([0, 100]).range([H2 - 40, m.t]);
+  const H2 = 180, y2 = d3.scaleLinear().domain([0, 100]).range([H2 - 64, m.t]);
   const s2 = d3.select("#soilChart").html("").append("svg").attr("viewBox", `0 0 ${W} ${H2}`);
   s2.append("rect").attr("x", m.l).attr("width", W - m.l - m.r).attr("y", y2(20)).attr("height", y2(0) - y2(20)).attr("fill", css("--drought")).attr("opacity", 0.12);
   s2.append("text").attr("x", W - m.r - 4).attr("y", y2(0) - 4).attr("text-anchor", "end").attr("font-size", 11).attr("fill", css("--drought")).text("drought (below 20)");
   s2.append("g").attr("class", "axis").attr("transform", `translate(${m.l},0)`).call(d3.axisLeft(y2).tickValues([0, 20, 50, 80, 100]));
+  s2.append("g").attr("class", "axis").attr("transform", `translate(0,${y2(0)})`).call(d3.axisBottom(x).ticks(7).tickFormat(d3.utcFormat("%b %-d")));
   const rz = r.rz.map((v, k) => [dates[k], fz.has(k) || !past(k) ? null : v === null ? 12 : v]);   // no row = already below 20
   splitLine(s2, rz, x, y2, 20, m.t, y2(0), css("--soil"), css("--drought"), "sm");
   const anyDm = r.usdm.some(u => u >= 1);
   if (anyDm) {
     const bw = (W - m.l - m.r) / n + 1;
     r.usdm.forEach((u, k) => {
-      if (u >= 1) s2.append("rect").attr("x", x(dates[k])).attr("width", bw).attr("y", H2 - 30).attr("height", 10)
+      if (u >= 1) s2.append("rect").attr("x", x(dates[k])).attr("width", bw).attr("y", H2 - 34).attr("height", 10)
         .attr("fill", css("--drought")).attr("opacity", 0.35 + 0.15 * u);
     });
   }
   s2.append("text").attr("x", m.l).attr("y", H2 - 6).attr("fill", css("--muted")).attr("font-size", 11)
     .text(anyDm ? "Drought Monitor" : "No D1 or worse drought on the Drought Monitor this season");
-  cursor(s2, x(dates[S.i]), m.t, H2 - 18);
-  clicker(s2, x, dates, m, W, H2);
+  cursor(s2, x(dates[S.i]), m.t, y2(0));
+  clicker(s2, x, dates, { ...m, b: H2 - y2(0) }, W, H2);
   $("soilLegend").innerHTML = `<span><i style="background:var(--soil)"></i>Soil moisture (0-40 cm), percentile for the date</span>` +
     (anyDm ? `<span><i style="background:var(--drought);height:10px"></i>Drought Monitor D1 or worse</span>` : "");
   renderTally(ss, c);
@@ -465,13 +472,18 @@ function renderValue(c) {
   const r = S.rec, dates = S.meta.dates.map(dateOf), x = S.x;
   const W = 1100, H = 150, m = { l: 48, r: 12, t: 10, b: 24 };
   const last = S.mode === "today" ? S.i : dates.length - 1;
-  const pts = S.meta.dates.map((md, i) => {
-    if (!inSeason(md) || i > last || r.p1[i] === null || r.p2[i] === null) return [dates[i], null];
-    return [dates[i], adviceAt(i, c).d.evNow];
-  });
-  const vals = pts.map(p => p[1]).filter(v => v !== null);
+  // Already in drought: no "extra" irrigation to value, so the line runs along the bottom (shaded) rather than breaking.
+  const inDr = i => r.p1[i] === null && r.rz[i] === null && !(r.fz || []).includes(i);
+  const raw = S.meta.dates.map((md, i) => !inSeason(md) || i > last ? null : r.p1[i] !== null && r.p2[i] !== null ? adviceAt(i, c).d.evNow : inDr(i) ? -Infinity : null);
+  const vals = raw.filter(v => v !== null && isFinite(v));
   const y = d3.scaleLinear().domain([Math.min(-5, d3.min(vals) ?? -5), Math.max(5, d3.max(vals) ?? 5)]).range([H - m.b, m.t]).nice();
+  const pts = raw.map((v, i) => [dates[i], v === -Infinity ? y.domain()[0] : v]);
   const svg = d3.select("#valueChart").html("").append("svg").attr("viewBox", `0 0 ${W} ${H}`);
+  for (const [a, b] of runs(raw.length, i => raw[i] === -Infinity)) {
+    const x0 = x(dates[a]) - (a > 0 ? (x(dates[a]) - x(dates[a - 1])) / 2 : 0), x1 = x(dates[b]) + (b < raw.length - 1 ? (x(dates[b + 1]) - x(dates[b])) / 2 : 0);
+    svg.append("rect").attr("x", x0).attr("width", x1 - x0).attr("y", m.t).attr("height", H - m.t - m.b).attr("fill", css("--drought")).attr("opacity", 0.16);
+    if (x1 - x0 > 60) svg.append("text").attr("x", (x0 + x1) / 2).attr("y", H - m.b - 6).attr("text-anchor", "middle").attr("font-size", 11).attr("fill", css("--muted")).text("in drought");
+  }
   svg.append("rect").attr("x", m.l).attr("width", W - m.l - m.r).attr("y", m.t).attr("height", y(0) - m.t).attr("fill", css("--act-bg"));
   svg.append("g").attr("class", "axis").attr("transform", `translate(0,${H - m.b})`).call(d3.axisBottom(x).ticks(7).tickFormat(d3.utcFormat("%b %-d")));
   svg.append("g").attr("class", "axis").attr("transform", `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(4).tickFormat(v => (v < 0 ? "-$" : "$") + Math.abs(v)));
@@ -485,14 +497,14 @@ function seasonValue(c, r, year = S.year, upTo = S.mode === "today" ? S.i : null
   const d = S.meta.dates;
   const cut = (a) => upTo === null ? a : a.map((v, i) => i <= upTo ? v : null);
   const ons = upTo === null ? r.onsets : r.onsets.filter(o => o <= d[upTo]);
-  return FW.season(c, d, cut(r.p1), cut(r.p2), ons, { year, baseline: "careful" });
+  return FW.season(c, d, cut(r.p1), cut(r.p2), ons, { year, baseline: "careful", first: SEASON[0], last: SEASON[1] });
 }
 
 async function renderTally(ss, c) {
   const acres = S.farm.acres, today = S.mode === "today";
   if (!irrigated()) { await renderRainfedTally(); return; }
   const cal = FW.season(FW.curve({ ...params(), reaction_days: 7 }, 21), S.meta.dates, S.rec.p1, S.rec.p2, S.rec.onsets,
-                        { year: S.year, baseline: "calendar", calendar: S.farm.calendar });
+                        { year: S.year, baseline: "calendar", calendar: S.farm.calendar, first: SEASON[0], last: SEASON[1] });
   const row = (title, v, sub, big = true) => `<div class="row"><div class="note">${title}</div><div class="v ${v >= 0 ? "pos" : "neg"}${big ? "" : " small"}">${usd(v)} an acre</div><div class="note">${sub}</div></div>`;
   const many = await multiYear(c);
   $("seasonTally").innerHTML =
@@ -529,7 +541,7 @@ async function renderRainfedTally() {
 async function multiYear(c) {
   const ys = S.meta.years;
   const recs = await Promise.all(ys.map(y => loadTile(y, S.cell)));
-  const v = recs.map((r, k) => r ? FW.season(c, S.meta.dates, r.p1, r.p2, r.onsets, { year: ys[k], baseline: "careful" }).value : null);
+  const v = recs.map((r, k) => r ? FW.season(c, S.meta.dates, r.p1, r.p2, r.onsets, { year: ys[k], baseline: "careful", first: SEASON[0], last: SEASON[1] }).value : null);
   const ok = v.map((x, k) => [x, ys[k]]).filter(([x]) => x !== null);
   if (!ok.length) return null;
   const best = ok.reduce((a, b) => b[0] > a[0] ? b : a);
@@ -590,21 +602,28 @@ function renderWater(c) {
   const w = S.water, card = $("waterCard");
   card.hidden = !w;
   if (!w) return;
+  // Without the water put on, rain alone would make an irrigated field look far drier than it is: show nothing until there is some.
   const full = 1 - w.now / w.taw, toStress = w.now >= w.raw ? 0 : (w.raw - w.now) / w.useNow;
   const stat = (t, v, sub, cls = "") => `<div class="row"><div class="note">${t}</div><div class="v ${cls}">${v}</div><div class="note">${sub}</div></div>`;
-  $("waterNow").innerHTML =
+  $("waterNow").hidden = $("waterChartBox").hidden = !w.useIt;
+  card.querySelector(".waterwrap").classList.toggle("one", !w.useIt);
+  $("waterNow").innerHTML = !w.useIt ? "" :
     stat("Root zone", `${Math.round(100 * full)}% full`, `${w.now.toFixed(1)} in short of full (holds ${w.taw.toFixed(1)} in)`, w.now > w.raw ? "neg" : "") +
     stat("With no rain, stress in", toStress < 1 ? "now" : `${Math.floor(toStress)} day${Math.floor(toStress) === 1 ? "" : "s"}`, `the crop is using ${w.useNow.toFixed(2)} in a day`, toStress < 4 ? "neg" : "") +
     stat("Full-time pumping to fill", w.now < 0.05 ? "full" : `${(w.now / w.cap).toFixed(1)} days`, `your pivot puts down ${w.cap.toFixed(2)} in a day`);
   $("waterNote").innerHTML = w.useIt
-    ? `Counting the irrigation you've logged. FlashWatch's advice above now starts from this deficit.`
-    : `No irrigation logged yet, so this is the soil with rain alone, and the advice above assumes a full root zone. Add what you've put on, or read it from your pivot.`;
+    ? `Counting the irrigation you've added. FlashWatch's advice above now starts from this deficit.`
+    : `With the water you've put on, FlashWatch tracks how full your root zone is and how many days until the crop is short.
+       Until then, the advice above assumes the root zone is full.`;
+  $("irrStart").hidden = w.useIt || S.irrOpen;
+  $("irrWays").hidden = w.useIt || S.irrOpen !== "ways";
+  $("irrManualBox").hidden = !w.useIt && S.irrOpen !== "manual";
   const ev = Object.entries(w.irr).sort();
   $("irrList").innerHTML = ev.length ? ev.map(([md, v]) => `<li>${fmtShort(md)}: ${(+v).toFixed(2)} in <button class="linkish" data-del="${md}">remove</button></li>`).join("")
     : `<li class="note">Nothing logged for ${S.year}.</li>`;
   $("irrList").querySelectorAll("[data-del]").forEach(b => b.onclick = () => { const v = loadIrr(); delete v[b.dataset.del]; saveIrr(v); renderAll(); });
   if (!$("irrDate").value) { $("irrDate").value = S.meta.dates[S.i]; $("irrIn").value = w.cap.toFixed(2); }
-  waterChart(w);
+  if (w.useIt) waterChart(w);
 }
 
 function waterChart(w) {
@@ -785,8 +804,16 @@ function updateCard(a) {
   const acres = S.farm.acres;
   el.querySelector(".dseason").innerHTML = `<strong>${S.mode === "today" ? "This season so far" : `The ${S.year} season`}: ${usd(sv.value)}${farmWide ? "" : " an acre"}</strong>
     ${farmWide ? "" : `(${usd(sv.value * acres)} on ${acres} acres)`}. ${sv.events.length ? sv.events.map(e => `${fmtShort(e.date)}: ${e.kind === "hit" ? `acted, flash drought ${e.notice} days later` : "acted, no flash drought came"}`).join("; ") + "."
-      : "FlashWatch didn't call it this season."}`;
+      : noCall(a, s.be, upTo)}`;
   decisionChart(a, el.querySelector(".dchart"), s.be);
+}
+
+// Why there was no call: the highest 14-day chance while the decision was open, against the chance at which acting pays.
+function noCall(a, be, upTo) {
+  const r = S.rec, open = S.meta.dates.map((md, i) => RF.inWindow(a, md) && (upTo === null || i <= upTo) && r.p1[i] !== null && r.p2[i] !== null ? Math.min(1, r.p1[i] + r.p2[i]) : null)
+    .filter(v => v !== null);
+  if (!open.length) return S.mode === "today" && S.meta.dates[S.i] < a.window[0] ? "The decision isn't open yet." : "No forecast while the decision was open (already in drought).";
+  return `No call: while the decision was open, the chance peaked at ${pct(d3.max(open))}, below the ${pct(be)} at which acting pays.`;
 }
 
 function decisionChart(a, box, be) {
@@ -983,15 +1010,17 @@ async function init() {
     if (!/^\d\d-\d\d$/.test(md) || !(v > 0)) return;
     const irr = loadIrr(); irr[md] = +((irr[md] || 0) + v).toFixed(2); saveIrr(irr); renderAll();
   };
+  $("irrAdd").onclick = () => { S.irrOpen = "ways"; renderAll(); };
+  $("irrManual").onclick = () => { S.irrOpen = "manual"; renderAll(); };
   $("pivotImport").onclick = importFromPivot;
-  $("irrClear").onclick = () => { saveIrr({}); renderAll(); };
+  $("irrClear").onclick = () => { saveIrr({}); S.irrOpen = null; renderAll(); };
   $("modeToday").onclick = () => setMode("today");
   $("modeReplay").onclick = () => setMode("replay");
   $("year").onchange = async () => { S.year = +$("year").value; S.rec = await loadTile(S.year, S.cell); renderAll(); };
   $("strip").addEventListener("keydown", ev => {
     if (S.mode === "today" || !["ArrowLeft", "ArrowRight"].includes(ev.key)) return;
     const st = stops(), k = st.findIndex(s => s.has(S.i)) + (ev.key === "ArrowRight" ? 1 : -1);
-    if (k >= 0 && k < st.length) setDate(st[k].i);
+    if (k >= 0 && k < st.length && st[k].kind === "day") setDate(st[k].i);
     ev.preventDefault();
   });
   $("search").onsubmit = ev => { ev.preventDefault(); if ($("q").value.trim()) search($("q").value); };

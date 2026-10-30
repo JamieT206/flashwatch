@@ -16,7 +16,7 @@ state you can reach from a URL or a click, so it can be recorded in one sitting.
 | 0:00-0:08 | Title card: "FlashWatch. A week's warning of flash drought, and what to do about it." | Everything in this video was built during the hackathon, on public data and Meta's models. |
 | 0:08-0:25 | Aerial photo of pivots (docs/img/sam_pivots_holt_ne.png), then the July 2012 drought map on the big picture page | A flash drought can dry a field out in two or three weeks. In July 2012 one ran across the Corn Belt. By the time the Drought Monitor showed it, the damage was done. For a farmer the question is simple: water now, or wait? |
 | 0:25-0:45 | Farm page, Replay, 2012, Edmunds County SD (S1). Click the date bar from Jul 1 to Jul 3 | FlashWatch forecasts the chance of a flash drought at your farm one and two weeks ahead. July 1: irrigate as usual. July 3: the chance is five times normal, and starting extra irrigation today is worth this much an acre more than waiting. Two days later, the flash drought begins. |
-| 0:45-1:00 | Scroll to "Your field's water"; click "Read from your pivot" | It keeps a water account for the field: rain and irrigation in, crop water use out. Read from the pivot's own records, it knows how full the root zone is, and the advice starts from there. |
+| 0:45-1:00 | Scroll to "Your field's water"; click "Add irrigation data", then "Fill in demo numbers" | It keeps a water account for the field: rain and irrigation in, crop water use out. Read from the pivot's own records, it knows how full the root zone is, and the advice starts from there. |
 | 1:00-1:15 | Ask FlashWatch box: type "I put an inch on yesterday. Do I still need to start?" | Farmers can just ask. Muse Spark answers through FlashWatch's tools, logs the inch, and every number it says is checked against the tools before you see it. |
 | 1:15-1:35 | Agents page: SAM pivot image, then the operator trace | Setting up a farm takes one click. SAM 3.1 finds the pivots in a USDA aerial photo and measures each one. Each morning the operator agent plans which pivots to run. Fixed farm rules check every command: here the shared well can't run two pivots at once, so it starts the driest. Nothing moves until the farmer taps YES on WhatsApp. |
 | (in 1:15-1:35) | Phone screen recording: the plan arrives on WhatsApp, tap YES, "Done" comes back | (no extra narration; the YES line above covers it) |
@@ -33,7 +33,7 @@ state you can reach from a URL or a click, so it can be recorded in one sitting.
 | 1 | July 3 advice, demo farm | `index.html#lat=45.38&lon=-99.38&mode=replay&year=2012&date=07-03` |
 | 2 | July 1 for contrast | same, `date=07-01` |
 | 3 | 2012 risk map | `region.html`, season 2012, date Jul 3 |
-| 4 | Water account | shot 1, scroll to "Your field's water", click "Read from your pivot" |
+| 4 | Water account | shot 1, scroll to "Your field's water", click "Add irrigation data", then "Fill in demo numbers" |
 | 5 | Ask FlashWatch | shot 1 with the local server running |
 | 6 | SAM pivots, operator, voice | `agents.html` |
 | 6a | WhatsApp on the phone | server + tunnel running, then `python -m flashwatch.agent.whatsapp operator --to <phone> --year 2012 --date 07-03 --llm`; record the phone screen (the test number takes about a minute) |
