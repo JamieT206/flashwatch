@@ -352,6 +352,10 @@ function renderTiles() {
   $("t3").textContent = r.rz[i] === null ? "below 20" : `${r.rz[i].toFixed(0)}`;
   $("t3x").textContent = r.rz[i] === null ? "percentile: in drought" : "percentile for the date (below 20 is drought)";
   $("t4").textContent = USDM[r.usdm[i]] ?? "None";
+  // Which model gave today's numbers: with the ECMWF weather forecast where one exists for the date (site/build.py --fill).
+  $("tSrc").hidden = !r.fc || r.p1[i] === null;
+  $("tSrc").textContent = !r.fc ? "" : r.fc.includes(i) ? "Using ECMWF's weather forecast for the next two weeks."
+    : "No ECMWF forecast archived for this date: soil and recent weather only.";
 }
 
 // Contiguous runs of dates where test(i) holds, as [first, last] index pairs.
