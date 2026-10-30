@@ -145,9 +145,9 @@ META_API_BASE=http://127.0.0.1:8080/v1 META_MODEL=muse-glimmer-30B python -m fla
 | `flashwatch/agent` | The agents, the number checker, the LLM client |
 | `flashwatch/connect` | Pivot connectors (simulated, webhook, Leaf, manual) and the farm-rule guard |
 | `site` | The static site |
-| `docs` | Write-up, agents, video plan |
+| `docs` | Write-up, model card, video plan |
 
-Design record: `DESIGN.md` (decisions, tests and results, including the ones that didn't work).
+Model card: `docs/model_card.md` (what the forecasts are, how they were tested, their limits). Design record: `DESIGN.md` (decisions, tests and results, including the ones that didn't work).
 
 ## Data and licences
 
