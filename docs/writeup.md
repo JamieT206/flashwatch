@@ -151,8 +151,8 @@ ERA5-Land soil, rain, heat (as of each forecast date)     ECMWF extended-range e
     June and $10 in September (at $10 an acre-inch), and much less on a field already short of water.
     The earlier rule (a week of pumping, 60% wasted: $11 an acre) was too pessimistic.
   - Dry spells are set to 21 days, which matches USDA county yield losses (irrigated counties lost 1.5
-    to 3.6% of yield per flash drought). Higher crop prices raise the value: 39 cents an acre a year on
-    irrigated corn at $3.50, $2.61 at $7.50.
+    to 3.6% of yield per flash drought). Higher crop prices raise the value: $1.80 an acre a year on
+    irrigated corn at $3.50, $6.24 at $7.50 ($2.64 at $4.50).
 - **Pre-registered expectations**, written before any model run:
   1. M1 beats a simple soil-moisture baseline at weeks 1-2: **holds** on the development years (week 1
      +3.3 points of skill, week 2 +0.6); test years TODO.
