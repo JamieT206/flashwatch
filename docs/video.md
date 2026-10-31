@@ -15,9 +15,9 @@ state you can reach from a URL or a click, so it can be recorded in one sitting.
 | --- | --- | --- |
 | 0:00-0:08 | Title card: "FlashWatch. A week's warning of flash drought, and what to do about it." | Everything in this video was built during the hackathon, on public data and Meta's models. |
 | 0:08-0:25 | Aerial photo of pivots (docs/img/sam_pivots_holt_ne.png), then the July 2012 drought map on the big picture page | A flash drought can dry a field out in two or three weeks. In July 2012 one ran across the Corn Belt. By the time the Drought Monitor showed it, the damage was done. For a farmer the question is simple: water now, or wait? |
-| 0:25-0:45 | Farm page, Replay, 2012, Edmunds County SD (S1). Click the date bar from Jul 1 to Jul 3 | FlashWatch forecasts the chance of a flash drought at your farm one and two weeks ahead. July 1: irrigate as usual. July 3: the chance is four times normal, and starting extra irrigation today is worth this much an acre more than waiting. Two days later, the flash drought begins. |
-| 0:45-1:00 | Scroll to "Your field's water"; click "Add irrigation data", then "Fill in demo numbers" | It keeps a water account for the field: rain and irrigation in, crop water use out. Read from the pivot's own records, it knows how full the root zone is, and the advice starts from there. |
-| 1:00-1:15 | Ask FlashWatch box: type "I put an inch on yesterday. Do I still need to start?" | Farmers can just ask. Muse Spark answers through FlashWatch's tools, logs the inch, and every number it says is checked against the tools before you see it. |
+| 0:25-0:45 | Farm page, Replay, 2012, Edmunds County SD (S1). Click the date bar from Jul 1 to Jul 3 | FlashWatch forecasts the chance of a flash drought at your farm one and two weeks ahead. July 1: irrigate as usual. July 3: the chance is four times normal, and starting extra irrigation today is worth this much an acre more than waiting. Two weeks later, the flash drought hits (the cursor runs along the date bar to July 17, the first day in drought). |
+| 0:45-1:00 | Scroll to "Your field's water"; click "Add irrigation data", then "Fill in demo numbers" | FlashWatch keeps a water account for each field: rain and irrigation in, crop water use out. It's built to read the irrigation straight from the pivot's control system, so it knows how much water is left in the soil, and adjusts its advice. (The Leaf connector is written but untested: "built to", not "does".) |
+| 1:00-1:15 | Ask FlashWatch box: type "I put an inch on yesterday. Do I still need to start?" | Farmers can just ask FlashWatch. Muse Spark answers using FlashWatch's own data, and logs the extra irrigation. If it quotes a number that isn't in that data, the answer is sent back and rewritten. |
 | 1:15-1:35 | Agents page: SAM pivot image, then the operator trace | Setting up a farm takes one click. SAM 3.1 finds the pivots in a USDA aerial photo and measures each one. Each morning the operator agent plans which pivots to run. Fixed farm rules check every command: here one well can't run two pivots at once, so it pauses one and starts the field where the forecast says water is worth most. Nothing moves until the farmer taps YES on WhatsApp. |
 | (in 1:15-1:35) | Phone screen recording: the plan arrives on WhatsApp, tap YES, "Done" comes back | (no extra narration; the YES line above covers it) |
 | 1:35-1:45 | Voice note step on the Agents page (play the WAV under it) | And a farmer can just say what they see. Muse Voice Transcribe and Spark turn it into a report on the right pivot. |
@@ -37,7 +37,7 @@ state you can reach from a URL or a click, so it can be recorded in one sitting.
 | 5 | Ask FlashWatch | shot 1 with the local server running |
 | 6 | SAM pivots, operator, voice | `agents.html` |
 | 6a | WhatsApp on the phone | server + tunnel running, then `python -m flashwatch.agent.whatsapp operator --to <phone> --year 2012 --date 07-03 --llm`; record the phone screen (the test number takes about a minute) |
-| 7 | Rain-fed fungicide | shot 1, toggle Rain-fed, date Jul 19 |
+| 7 | Rain-fed fungicide | shot 1, toggle Rain-fed, date Jul 13 ("Skip the fungicide pass", risk high; the soil is in drought from Jul 17) |
 | 8 | Forecast quality, farm table | `region.html` top half |
 
 ## To check before recording

@@ -42,7 +42,7 @@ BEATS = [
     ("setup", [("fix1", 14.6, 21.6)], 0.6),               # re-recorded: "an aerial photo"
     ("operator", [(155.4, 163.8)], 0.6),
     ("example", [(164.9, 165.5), (166.2, 174.2)], 0.4),    # cut: "in this example,"
-    ("taps", [(175.0, 178.1)], 2.5),
+    ("taps", [(175.0, 178.1)], 3.5),                       # long enough for "Done" to come back on the phone
     ("voice", [("fix1", 24.8, 34.0)], 1.0),               # re-recorded: "the operator agent takes it into account"
     ("rainfed", [(197.9, 226.7)], 1.0),
     ("howgood", [(229.7, 251.9)], 1.0),
@@ -65,7 +65,11 @@ SHOTS = [
     ("shot:hood", "hood"),
     ("img:end", "outro"),
 ]
-PHONE = ("operator", 2.0, 12.5)   # the WhatsApp clip goes over the Agents shot: from this beat + seconds; source start
+# The WhatsApp screen recording (in/phone_orig.mov, 1206x2622) goes over the Agents shot. The plan arrives as the
+# operator beat starts; the clip holds on it until the narration says "taps", then the tap (drawn: screen recordings
+# show no finger), YES, and "Done" coming back. Times are seconds in the recording.
+PHONE = {"src": "phone_orig.mov", "from": 12.58, "hold": 16.75, "tap": 16.95, "yes": (500, 2158),
+         "start": ("operator", 2.0), "tap_at": ("taps", 1.55), "end": ("taps", 0.4), "height": 960}
 
 
 def ffmpeg() -> str:
@@ -144,11 +148,12 @@ CARD = """<!doctype html><html><head><meta charset="utf-8">
 .dot{width:72px;height:72px;background:#d83933}
 .sub{font-size:46px;margin-top:28px;color:#3d4551;max-width:1400px;line-height:1.25}
 .links{font-size:38px;margin-top:56px;color:#1a4480;line-height:1.6}
+.links b{display:inline-block;width:250px;font-weight:600;color:#3d4551}
 .rule{position:absolute;left:0;right:0;bottom:0;height:18px;background:#d83933}</style></head>
 <body><div class="wrap"><div class="brand"><span class="dot"></span>FlashWatch</div>__BODY__</div><div class="rule"></div></body></html>"""
 CARDS = {
     "title": '<div class="sub">A week\'s warning of flash drought, and what to do about it.</div>',
-    "end": '<div class="sub">Built by Jamie Twiss</div><div class="links">jamiet206.github.io/flashwatch<br>github.com/JamieT206/flashwatch</div>',
+    "end": '<div class="sub">Built by Jamie Twiss</div><div class="links"><b>Live demo</b>jamiet206.github.io/flashwatch<br><b>Code</b>github.com/JamieT206/flashwatch</div>',
 }
 STILLS = {"aerial": Path(__file__).resolve().parents[1] / "data" / "agent" / "pivots" / "42.450_-98.600.jpg"}
 
@@ -192,24 +197,63 @@ def shot(name: str, dur: float, dst: Path):
               f"[0:v]trim=start={b},setpts=PTS-STARTPTS,{pad}[b];[a][b]concat=n=2:v=1[v]")
         encode(["-i", src, "-filter_complex", vf, "-map", "[v]"], dst, dur)
         return
-    encode(["-ss", f"{marks['t0']:.3f}", "-i", src, "-vf", pad], dst, dur)
+    vf = pad
+    if "zoom" in marks:   # push in on part of the page once it has scrolled there (the README diagram)
+        vf += "," + push_in(marks["zoom"])
+    encode(["-ss", f"{marks['t0']:.3f}", "-i", src, "-vf", vf], dst, dur)
 
 
-def phone_over(base: Path, start: float, dst: Path):
-    """The WhatsApp screen recording over the Agents shot, from `start` seconds in."""
-    src_from = PHONE[2]
-    vf = (f"[1:v]trim=start={src_from},setpts=PTS-STARTPTS+{start}/TB,scale=-2:940,"
-          f"pad=iw+16:ih+16:8:8:color=0x1b1b1b[p];"
+def push_in(box: dict, ramp: float = 1.5, margin: float = 1.12) -> str:
+    """An eased zoom from the full frame to `box` (frame pixels), starting `box['at']` seconds in."""
+    z = min(W / (box["width"] * margin), H / (box["height"] * margin), 2.2)
+    cx, cy = 2 * (box["x"] + box["width"] / 2), 2 * (box["y"] + box["height"] / 2)   # drawn at 4K, as the stills
+    p = f"clip((it-{box['at']})/{ramp},0,1)"
+    e = f"({p}*{p}*(3-2*{p}))"
+    return (f"scale={2 * W}:{2 * H}:flags=lanczos,zoompan=z='1+{z - 1:.3f}*{e}'"
+            f":x='clip({W}+({cx - W:.1f})*{e}-iw/zoom/2,0,iw-iw/zoom)'"
+            f":y='clip({H}+({cy - H:.1f})*{e}-ih/zoom/2,0,ih-ih/zoom)':d=1:s={W}x{H}:fps={FPS}")
+
+
+def ripple(r: int) -> Path:
+    """A grey touch mark, as phones draw for taps."""
+    from PIL import Image, ImageDraw
+    im = Image.new("RGBA", (2 * r, 2 * r), (0, 0, 0, 0))
+    ImageDraw.Draw(im).ellipse((1, 1, 2 * r - 2, 2 * r - 2), fill=(90, 90, 90, 110), outline=(255, 255, 255, 200), width=2)
+    path = OUT / "ripple.png"
+    im.save(path)
+    return path
+
+
+def phone_over(base: Path, tl: dict, seg_t0: float, dst: Path):
+    """The WhatsApp screen recording over the Agents shot (see PHONE)."""
+    P = PHONE
+    at = lambda k: tl[P[k][0]]["start"] + P[k][1]
+    start, tap = at("start") - seg_t0, at("tap_at") - seg_t0
+    end = tl[P["end"][0]]["end"] + P["end"][1] - seg_t0
+    resume = tap - (P["tap"] - P["hold"])                     # the clip carries on from `hold` at this time
+    freeze = resume - start - (P["hold"] - P["from"])
+    src_end = P["hold"] + end - resume
+    k = P["height"] / 2622
+    r = 24
+    tx, ty = P["yes"][0] * k - r, P["yes"][1] * k - r
+    t = tap - start                                           # the tap, in the clip's own time
+    vf = (f"[1:v]fps={FPS},split[s1][s2];"
+          f"[s1]trim={P['from']}:{P['hold']},setpts=PTS-STARTPTS,tpad=stop_mode=clone:stop_duration={freeze:.3f}[a];"
+          f"[s2]trim={P['hold']}:{src_end:.3f},setpts=PTS-STARTPTS[b];"
+          f"[a][b]concat=n=2:v=1:a=0,scale=-2:{P['height']}:flags=lanczos[ph];"
+          f"[2:v]format=rgba,fade=in:st={t - 0.12:.3f}:d=0.06:alpha=1,fade=out:st={t + 0.02:.3f}:d=0.1:alpha=1[rp];"
+          f"[ph][rp]overlay=x={tx:.0f}:y={ty:.0f}:shortest=1,pad=iw+16:ih+16:8:8:color=0x1b1b1b,"
+          f"setpts=PTS-STARTPTS+{start:.3f}/TB[p];"
           f"[0:v][p]overlay=x=W-w-150:y=(H-h)/2:eof_action=pass[v]")
-    run("-i", base, "-i", IN / "phone.mp4", "-filter_complex", vf, "-map", "[v]", "-r", FPS, "-c:v", "libx264",
+    run("-i", base, "-i", IN / P["src"], "-loop", 1, "-framerate", FPS, "-t", f"{end - start + 1:.2f}", "-i", ripple(r),
+        "-filter_complex", vf, "-map", "[v]", "-r", FPS, "-c:v", "libx264",
         "-crf", "17", "-preset", "medium", "-pix_fmt", "yuv420p", "-an", dst)
 
 
 def video():
     tl = json.loads((OUT / "timeline.json").read_text())
     total = list(tl.values())[-1]["end"]
-    if not (OUT / "title.png").exists():
-        cards()
+    cards()
     segs = []
     for k, (src, first) in enumerate(SHOTS):
         t0 = tl[first]["start"]
@@ -222,7 +266,7 @@ def video():
             shot(name, t1 - t0, dst)
         if name == "agents":
             over = OUT / f"seg{k:02d}p.mp4"
-            phone_over(dst, tl[PHONE[0]]["start"] + PHONE[1] - t0, over)
+            phone_over(dst, tl, t0, over)
             dst = over
         segs.append(dst)
         print(f"{src:20s} {t0:6.1f}-{t1:6.1f}")

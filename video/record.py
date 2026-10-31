@@ -31,6 +31,7 @@ SITE = "http://127.0.0.1:8812/"
 HERE = Path(__file__).resolve().parent
 OUT = HERE / "out"
 W, H, ZOOM = 1920, 1080, 1.1
+ZOOMS = {"region2012": 1.35}   # shots recorded in a smaller window, so the page is bigger in the frame
 FARM = "index.html#lat=45.38&lon=-99.38&mode=replay&year=2012"
 REPO = "https://github.com/JamieT206/flashwatch"
 random.seed(7)
@@ -44,12 +45,15 @@ window.addEventListener('DOMContentLoaded', () => {
     <path d="M1 1 L1 25 L7 19.5 L11.2 29.5 L15 27.9 L10.9 18.2 L19 18.2 Z" fill="#111" stroke="#fff" stroke-width="1.6"
       stroke-linejoin="round"/></svg>`;
   Object.assign(c.style, {position: 'fixed', left: '0', top: '0', zIndex: 2147483647, pointerEvents: 'none',
-    transform: 'translate(-100px,-100px)', transition: 'scale 90ms ease-out', transformOrigin: '1px 1px',
+    transform: 'translate(-100px,-100px)', transformOrigin: '0 0',
     filter: 'drop-shadow(0 1px 1.5px rgba(0,0,0,.35))'});
   document.body.appendChild(c);
-  addEventListener('mousemove', e => { c.style.transform = `translate(${e.clientX}px,${e.clientY}px)`; }, true);
-  addEventListener('mousedown', () => { c.style.scale = '0.85'; }, true);
-  addEventListener('mouseup', () => { c.style.scale = '1'; }, true);
+  // the dip on a click goes in the same transform, after the move (a separate `scale` would scale the move too)
+  let x = -100, y = -100, s = 1;
+  const draw = () => { c.style.transform = `translate(${x}px,${y}px) scale(${s})`; };
+  addEventListener('mousemove', e => { x = e.clientX; y = e.clientY; draw(); }, true);
+  addEventListener('mousedown', () => { s = 0.85; draw(); }, true);
+  addEventListener('mouseup', () => { s = 1; draw(); }, true);
 });
 """
 
@@ -63,8 +67,9 @@ SCROLL = """([y, ms]) => new Promise(done => {
 class Hand:
     """Moves the mouse like a person: eased, slightly curved, a little off-centre on each target."""
 
-    def __init__(self, page, start=(W * 0.62 / ZOOM, H * 0.55 / ZOOM)):
-        self.page, self.x, self.y = page, *start
+    def __init__(self, page, start=None):
+        v = page.viewport_size
+        self.page, self.x, self.y = page, *(start or (v["width"] * 0.62, v["height"] * 0.55))
         page.mouse.move(self.x, self.y)
 
     def move(self, x, y, seconds=None):
@@ -94,8 +99,18 @@ class Hand:
         self.page.wait_for_timeout(90)
         self.page.mouse.up()
 
+    def tap(self, pause=60):
+        """A click where the cursor already is (a button clicked over and over)."""
+        self.page.mouse.down()
+        self.page.wait_for_timeout(pause)
+        self.page.mouse.up()
+
     def drag(self, target, dx, seconds=0.8):
-        self.to(target, jitter=0)
+        """Grab a range input's thumb and move it `dx` pixels."""
+        loc = self.page.locator(target).first
+        f = loc.evaluate("r => (r.value - r.min) / (r.max - r.min)")
+        b = loc.bounding_box()
+        self.move(b["x"] + 8 + (b["width"] - 16) * f, b["y"] + b["height"] / 2)
         self.page.mouse.down()
         self.move(self.x + dx, self.y, seconds)
         self.page.mouse.up()
@@ -176,20 +191,19 @@ def region2012(page, rec0):
     page.wait_for_timeout(1500)
     page.evaluate("""() => { const r = document.getElementById('date'); r.value = 37;
                              r.dispatchEvent(new Event('input', {bubbles: true})); r.dispatchEvent(new Event('change', {bubbles: true})); }""")
-    page.wait_for_timeout(1500)
-    jump_to(page, "#rmap", 150)
+    page.evaluate("scrollTo(0, document.querySelector('#rmap').closest('section').getBoundingClientRect().top + scrollY - 16)")
     page.wait_for_timeout(1200)
     hand = Hand(page)
     clk = Clock(page, "drydown", rec0)
     clk.go()
-    clk.at("drydown", 1.5)
+    clk.at("drydown", 2.0)            # the section's title first
     hand.to("#rmap", 1.2)
-    clk.at("drydown", 4.0)
+    clk.at("drydown", 4.6)
     hand.to("#next", 1.0)
     clk.at("july2012", -0.2)
     end = clk.tl["july2012"]["end"] - clk.base - 0.8
     while time.monotonic() - clk.t0 < end:
-        hand.click("#next", 0.12, pause=60)
+        hand.tap()
         page.wait_for_timeout(420)
     clk.until_end("july2012")
     return clk.marks
@@ -215,8 +229,9 @@ def farm(page, rec0):
     hand.to("#t1x", 0.8)
     clk.at("july3", 5.0)
     hand.to("#vBig", 0.8, fx=0.45)
-    clk.at("twodays", -1.0)
-    hand.click(strip_cell(page, "07-05"), 0.8)
+    clk.at("twodays", -0.6)
+    hand.to(strip_cell(page, "07-05"), 0.7, jitter=0)
+    hand.click(strip_cell(page, "07-17"), 1.3)
     clk.at("water", -0.6)
     scroll_to(page, "#waterCard", 1400)
     clk.at("water", 3.0)
@@ -263,10 +278,10 @@ def agents(page, rec0):
     hand = Hand(page)
     clk = Clock(page, "setup", rec0)
     clk.go()
+    clk.at("setup", 2.0)
     scroll_to(page, "#aPivots", 1300, top=40)
-    clk.at("setup", 1.6)
     hand.to("#pivImg img", 1.0, fx=0.45, fy=0.45)
-    clk.at("setup", 4.6)
+    clk.at("setup", 5.0)
     hand.to("#pivList", 1.0, fy=0.35)
     clk.at("operator", -0.6)
     scroll_to(page, "#aOperator", 1300, top=40)
@@ -286,7 +301,7 @@ def agents(page, rec0):
 
 def rainfed(page, rec0):
     """Rain-fed: the switch, then the decision cards; a slider moves and the card updates."""
-    farm_page(page, "07-19")
+    farm_page(page, "07-13")
     hand = Hand(page)
     clk = Clock(page, "rainfed", rec0)
     clk.go()
@@ -324,7 +339,7 @@ def bigpicture(page, rec0):
     hand = Hand(page)
     clk = Clock(page, "howgood", rec0)
     clk.go()
-    clk.at("howgood", 1.2)
+    clk.at("howgood", 2.2)
     scroll_to(page, "#flagKpis", 1400, top=140)
     clk.at("howgood", 3.4)
     hand.to("#flagKpis", 1.0, fx=0.2)
@@ -349,9 +364,13 @@ def hood(page, rec0):
     hand = Hand(page)
     clk = Clock(page, "hood", rec0)
     clk.go()
-    y = pre.evaluate("p => p.getBoundingClientRect().top + scrollY - 120")
-    page.evaluate(SCROLL, [y, 2200])
-    clk.at("hood", 1.6)
+    clk.at("hood", 1.5)
+    y = pre.evaluate("p => p.getBoundingClientRect().top + scrollY - 40")
+    page.evaluate(SCROLL, [y, 2000])
+    vw = page.viewport_size["width"]                 # where the diagram is, in the 1920x1080 frame (edit.py zooms in)
+    box = {**pre.bounding_box(), "y": 40}              # scrolled to 40 px from the top
+    clk.marks["zoom"] = {"at": round(time.monotonic() - clk.t0, 2),
+                         **{k: round(v * W / vw) for k, v in box.items()}}
     hand.to(pre, 1.0, fx=0.25, fy=0.15)
     clk.at("hood", 7.6)
     hand.to(pre, 1.0, fx=0.35, fy=0.45)
@@ -370,7 +389,8 @@ def record(name: str):
     raw = OUT / "raw"
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        size = {"width": round(W / ZOOM), "height": round(H / ZOOM)}
+        z = ZOOMS.get(name, ZOOM)
+        size = {"width": round(W / z), "height": round(H / z)}
         ctx = browser.new_context(viewport=size, color_scheme="light", record_video_dir=str(raw), record_video_size=size)
         ctx.add_init_script(CURSOR)
         page = ctx.new_page()
