@@ -45,5 +45,8 @@ state you can reach from a URL or a click, so it can be recorded in one sitting.
 - Forecasts to mid-August are in ("six times" is current; 6.3x). The farm page now uses M2 on forecast dates: re-check
   July 3's numbers before recording (Oct 31: July 3 says "start extra irrigation today" again, 4.1x normal, now that a false
   start is priced on real weather). "About $120 million" = $94M rain-fed + $23M irrigated on real forecasts.
+- July 3 margin is small: start today +$0.8 an acre against +$0.7 for waiting (Oct 31). Narrate "FlashWatch says start
+  extra irrigation today" rather than "worth this much more than waiting"; July 5 (9.1x, +$2.1 against +$1.4) is stronger.
+- Browser shots are scripted: `python video/record.py <shot>` (Playwright, drawn cursor), output in video/out/.
 - Test-year results (after the freeze) may change the "how good is it" line: use whatever they say.
 - End card names the only contributor, Jamie Twiss (rules).
