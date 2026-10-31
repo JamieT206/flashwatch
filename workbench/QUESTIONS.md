@@ -375,7 +375,7 @@ is now close to BSS vs a seasonal base rate, i.e. an honest (harder) reference.
 - **Hosting:** a static site in the repo (`site/`), previewed locally; James switches on GitHub Pages.
   Site data stays out of git until Q2 (ECMWF licence) is settled for anything forecast-derived.
 
-### Q23. Live feed on ECMWF open data: now or after Nov 4? (Oct 31)
+### Q23. Live feed on ECMWF open data: now or after Nov 4? (Oct 31) **RESOLVED Nov 1: after Nov 4 (Jamie).**
 Jamie offered to do it today. What it takes: M2 retrained on week 1-2 forecast inputs only (open data runs 15 days, no weeks 3-4)
 and re-scored by CV; forecast anomalies need a reforecast climatology, which open data doesn't carry (use the S2S reforecasts of
 the current model cycle); open fields regridded to 1.5 degrees, and soil moisture and dew point checked among them; ERA5-Land from

@@ -327,6 +327,12 @@ training while the design moves; heavy burst ~Nov 2 Sydney (DESIGN.md B).
      (`--nomap` in glimmer_data, glimmer_train, glimmer_eval; adapter /vol/glimmer-lora-nomap): a null result, drifts to
      Texas/Oklahoma, states F1 0.22 vs Spark 0.69, direction 5/10 for both (DESIGN G2). Q23: live feed after Nov 4
      (season over; the freeze refuses code changes before scoring). The Modal volume can now be deleted.
+   - Nov 1: both Glimmer adapters copied from the Modal volume to data/glimmer/adapters/ (the volume can go). Jamie
+     re-records all video lines at once after the final numbers. `workbench/burst.sh` (started detached) checks the
+     S2S downloads hourly, restarts a stopped downloader, starts at 101/101 dates or Nov 3 noon Sydney, waits for
+     12 GB free memory, then runs tests, forecast build, CV (tag m2full), evidence, site.build, falsestart (not
+     written), roll-ups (m2full_water, m2full_month, prices) and the agent re-runs; log in data/logs/burst.log.
+     After it: point region.js at the m2full roll-ups, check falsestart cells, docs numbers, then freeze and score.
    - Pending, after Nov 4 unless time allows (Jamie, Oct 30): (a) **live feed**: ECMWF open data (free, CC BY 4.0, 15 days,
      50 members) covers weeks 1-2; retrain M2 on week 1-2 forecast inputs, check soil moisture is among the open fields,
      daily job (ERA5-Land from Earth Engine, forecast, model, `site.publish`); no switch to GEFS needed. (b) **Glimmer
