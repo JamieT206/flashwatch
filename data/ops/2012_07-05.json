@@ -12,29 +12,28 @@
     "soil": "Sandy loam",
     "pivot_capacity_gpm_per_acre": 4.5,
     "pumps_gpm": 585,
-    "running": true,
-    "water_put_down_last_7_days_in": 0.81,
+    "running": false,
+    "water_put_down_last_7_days_in": 0.41,
     "water_allocation_left_in": null,
     "root_zone": {
-     "share_full": 0.43,
-     "inches_to_fill": 2.41,
+     "share_full": 0.35,
+     "inches_to_fill": 2.73,
      "days_until_stress_if_no_rain": 0.0,
-     "full_time_pumping_days_to_fill": 11.9
+     "full_time_pumping_days_to_fill": 13.5
     },
     "advice": {
      "soil_moisture_percentile": 34.0,
      "drought_monitor": "D1 moderate drought",
-     "chance_flash_drought_next_7_days_pct": 12.5,
+     "chance_flash_drought_next_7_days_pct": 26.5,
      "normal_chance_next_7_days_pct": 2.9,
-     "times_normal_next_7_days": 4.3,
-     "chance_days_8_to_14_pct": 8.3,
-     "verdict": "no need to start early",
-     "value_of_starting_today_dollars_per_acre": -3.7,
-     "value_of_deciding_at_next_forecast_dollars_per_acre": 0.0,
+     "times_normal_next_7_days": 9.1,
+     "chance_days_8_to_14_pct": 8.5,
+     "verdict": "start the pivot today",
+     "value_of_starting_today_dollars_per_acre": 4.4,
+     "value_of_deciding_at_next_forecast_dollars_per_acre": 3.0,
      "next_forecast_in_days": 2,
      "loss_avoided_with_7_days_warning_dollars_per_acre": 25,
-     "what_would_change_it": "next forecast shows a 7-day chance of at least 20%",
-     "value_of_starting_today_dollars_whole_pivot": -481,
+     "value_of_starting_today_dollars_whole_pivot": 572,
      "root_zone_at_stress_line": true,
      "farmer_reports_stress": true
     },
@@ -53,30 +52,28 @@
     "soil": "Silt loam",
     "pivot_capacity_gpm_per_acre": 5.0,
     "pumps_gpm": 625,
-    "running": false,
-    "water_put_down_last_7_days_in": 0,
+    "running": true,
+    "water_put_down_last_7_days_in": 0.45,
     "water_allocation_left_in": null,
     "root_zone": {
-     "share_full": 0.48,
-     "inches_to_fill": 3.1,
-     "days_until_stress_if_no_rain": 0.7,
-     "full_time_pumping_days_to_fill": 13.8
+     "share_full": 0.55,
+     "inches_to_fill": 2.72,
+     "days_until_stress_if_no_rain": 2.1,
+     "full_time_pumping_days_to_fill": 12.1
     },
     "advice": {
      "soil_moisture_percentile": 34.0,
      "drought_monitor": "D1 moderate drought",
-     "chance_flash_drought_next_7_days_pct": 12.5,
+     "chance_flash_drought_next_7_days_pct": 26.5,
      "normal_chance_next_7_days_pct": 2.9,
-     "times_normal_next_7_days": 4.3,
-     "chance_days_8_to_14_pct": 8.3,
-     "verdict": "no need to start early",
-     "value_of_starting_today_dollars_per_acre": -4.2,
-     "value_of_deciding_at_next_forecast_dollars_per_acre": 0.0,
+     "times_normal_next_7_days": 9.1,
+     "chance_days_8_to_14_pct": 8.5,
+     "verdict": "start the pivot today",
+     "value_of_starting_today_dollars_per_acre": 8.7,
+     "value_of_deciding_at_next_forecast_dollars_per_acre": 6.0,
      "next_forecast_in_days": 2,
-     "loss_avoided_with_7_days_warning_dollars_per_acre": 27,
-     "what_would_change_it": "next forecast shows a 7-day chance of at least 20%",
-     "value_of_starting_today_dollars_whole_pivot": -525,
-     "root_zone_at_stress_line": true
+     "loss_avoided_with_7_days_warning_dollars_per_acre": 40,
+     "value_of_starting_today_dollars_whole_pivot": 1088
     }
    },
    "S1": {
@@ -97,17 +94,16 @@
     "advice": {
      "soil_moisture_percentile": 34.0,
      "drought_monitor": "D1 moderate drought",
-     "chance_flash_drought_next_7_days_pct": 12.5,
+     "chance_flash_drought_next_7_days_pct": 26.5,
      "normal_chance_next_7_days_pct": 2.9,
-     "times_normal_next_7_days": 4.3,
-     "chance_days_8_to_14_pct": 8.3,
-     "verdict": "no need to start early",
-     "value_of_starting_today_dollars_per_acre": -7.1,
-     "value_of_deciding_at_next_forecast_dollars_per_acre": 0.0,
+     "times_normal_next_7_days": 9.1,
+     "chance_days_8_to_14_pct": 8.5,
+     "verdict": "start the pivot today",
+     "value_of_starting_today_dollars_per_acre": 1.7,
+     "value_of_deciding_at_next_forecast_dollars_per_acre": 1.3,
      "next_forecast_in_days": 2,
      "loss_avoided_with_7_days_warning_dollars_per_acre": 21,
-     "what_would_change_it": "next forecast shows a 7-day chance of at least 30%",
-     "value_of_starting_today_dollars_whole_pivot": -923,
+     "value_of_starting_today_dollars_whole_pivot": 221,
      "farmer_reports_stress": false
     },
     "field_report": {
@@ -135,17 +131,16 @@
     "advice": {
      "soil_moisture_percentile": 34.0,
      "drought_monitor": "D1 moderate drought",
-     "chance_flash_drought_next_7_days_pct": 12.5,
+     "chance_flash_drought_next_7_days_pct": 26.5,
      "normal_chance_next_7_days_pct": 2.9,
-     "times_normal_next_7_days": 4.3,
-     "chance_days_8_to_14_pct": 8.3,
-     "verdict": "no need to start early",
-     "value_of_starting_today_dollars_per_acre": -3.3,
-     "value_of_deciding_at_next_forecast_dollars_per_acre": 0.0,
+     "times_normal_next_7_days": 9.1,
+     "chance_days_8_to_14_pct": 8.5,
+     "verdict": "start the pivot today",
+     "value_of_starting_today_dollars_per_acre": 3.6,
+     "value_of_deciding_at_next_forecast_dollars_per_acre": 2.5,
      "next_forecast_in_days": 2,
      "loss_avoided_with_7_days_warning_dollars_per_acre": 22,
-     "what_would_change_it": "next forecast shows a 7-day chance of at least 20%",
-     "value_of_starting_today_dollars_whole_pivot": -198,
+     "value_of_starting_today_dollars_whole_pivot": 216,
      "root_zone_at_stress_line": true
     }
    }
@@ -162,7 +157,8 @@
   "connection": "simulated",
   "connection_can_start_pivots": true,
   "suggested_order": [
-   "N2"
+   "N1",
+   "S1"
   ]
  },
  "accepted": [
@@ -178,12 +174,25 @@
    "log": [
     "simulated pivot S2: stop"
    ]
+  },
+  {
+   "id": "fd25ac23",
+   "pivot": "S1",
+   "action": "start",
+   "depth_in": 1.5,
+   "reason": "advice says start today",
+   "date": "2012-07-05",
+   "state": "sent",
+   "approved_by": "demo farmer",
+   "log": [
+    "simulated pivot S1: start"
+   ]
   }
  ],
  "refused": [
   {
-   "id": "5973d1a4",
-   "pivot": "N2",
+   "id": "2c4a91e5",
+   "pivot": "N1",
    "action": "start",
    "depth_in": 1.5,
    "reason": "advice says start today",
@@ -191,11 +200,11 @@
    "state": "rejected",
    "approved_by": "",
    "log": [],
-   "why": "well North well gives 1100 gpm; running N2 with the pivots already on it needs 1210 gpm"
+   "why": "well North well gives 1100 gpm; running N1 with the pivots already on it needs 1210 gpm"
   }
  ],
- "sms": "FlashWatch: stop S2 today. Reply YES to stop S2.",
- "note": "Stop S2. Held back: N2: well North well gives 1100 gpm; running N2 with the pivots already on it needs 1210 gpm.",
+ "sms": "FlashWatch: start S1 and stop S2 today. Reply YES to start S1 and stop S2.",
+ "note": "Start S1 and stop S2. Held back: N1: well North well gives 1100 gpm; running N1 with the pivots already on it needs 1210 gpm.",
  "approved_by": "demo farmer",
  "sent": [
   {
@@ -209,6 +218,19 @@
    "approved_by": "demo farmer",
    "log": [
     "simulated pivot S2: stop"
+   ]
+  },
+  {
+   "id": "fd25ac23",
+   "pivot": "S1",
+   "action": "start",
+   "depth_in": 1.5,
+   "reason": "advice says start today",
+   "date": "2012-07-05",
+   "state": "sent",
+   "approved_by": "demo farmer",
+   "log": [
+    "simulated pivot S1: start"
    ]
   }
  ],

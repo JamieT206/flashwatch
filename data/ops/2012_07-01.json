@@ -24,17 +24,17 @@
     "advice": {
      "soil_moisture_percentile": 37.0,
      "drought_monitor": "D0 abnormally dry",
-     "chance_flash_drought_next_7_days_pct": 4.1,
+     "chance_flash_drought_next_7_days_pct": 2.8,
      "normal_chance_next_7_days_pct": 2.9,
-     "times_normal_next_7_days": 1.4,
-     "chance_days_8_to_14_pct": 4.5,
+     "times_normal_next_7_days": 1.0,
+     "chance_days_8_to_14_pct": 2.1,
      "verdict": "no need to start early",
-     "value_of_starting_today_dollars_per_acre": -6.6,
+     "value_of_starting_today_dollars_per_acre": -2.4,
      "value_of_deciding_at_next_forecast_dollars_per_acre": 0.0,
      "next_forecast_in_days": 2,
      "loss_avoided_with_7_days_warning_dollars_per_acre": 37,
-     "what_would_change_it": "next forecast shows a 7-day chance of at least 12%",
-     "value_of_starting_today_dollars_whole_pivot": -858,
+     "what_would_change_it": "next forecast shows a 7-day chance of at least 7%",
+     "value_of_starting_today_dollars_whole_pivot": -312,
      "root_zone_at_stress_line": true
     }
    },
@@ -56,17 +56,17 @@
     "advice": {
      "soil_moisture_percentile": 37.0,
      "drought_monitor": "D0 abnormally dry",
-     "chance_flash_drought_next_7_days_pct": 4.1,
+     "chance_flash_drought_next_7_days_pct": 2.8,
      "normal_chance_next_7_days_pct": 2.9,
-     "times_normal_next_7_days": 1.4,
-     "chance_days_8_to_14_pct": 4.5,
+     "times_normal_next_7_days": 1.0,
+     "chance_days_8_to_14_pct": 2.1,
      "verdict": "no need to start early",
-     "value_of_starting_today_dollars_per_acre": -5.2,
+     "value_of_starting_today_dollars_per_acre": -1.1,
      "value_of_deciding_at_next_forecast_dollars_per_acre": 0.0,
      "next_forecast_in_days": 2,
      "loss_avoided_with_7_days_warning_dollars_per_acre": 76,
-     "what_would_change_it": "next forecast shows a 7-day chance of at least 8%",
-     "value_of_starting_today_dollars_whole_pivot": -650
+     "what_would_change_it": "next forecast shows a 7-day chance of at least 4%",
+     "value_of_starting_today_dollars_whole_pivot": -138
     }
    },
    "S1": {
@@ -87,17 +87,17 @@
     "advice": {
      "soil_moisture_percentile": 37.0,
      "drought_monitor": "D0 abnormally dry",
-     "chance_flash_drought_next_7_days_pct": 4.1,
+     "chance_flash_drought_next_7_days_pct": 2.8,
      "normal_chance_next_7_days_pct": 2.9,
-     "times_normal_next_7_days": 1.4,
-     "chance_days_8_to_14_pct": 4.5,
+     "times_normal_next_7_days": 1.0,
+     "chance_days_8_to_14_pct": 2.1,
      "verdict": "no need to start early",
-     "value_of_starting_today_dollars_per_acre": -10.2,
+     "value_of_starting_today_dollars_per_acre": -3.4,
      "value_of_deciding_at_next_forecast_dollars_per_acre": 0.0,
      "next_forecast_in_days": 2,
      "loss_avoided_with_7_days_warning_dollars_per_acre": 19,
-     "what_would_change_it": "next forecast shows a 7-day chance of at least 25%",
-     "value_of_starting_today_dollars_whole_pivot": -1326
+     "what_would_change_it": "next forecast shows a 7-day chance of at least 15%",
+     "value_of_starting_today_dollars_whole_pivot": -442
     }
    },
    "S2": {
@@ -118,17 +118,17 @@
     "advice": {
      "soil_moisture_percentile": 37.0,
      "drought_monitor": "D0 abnormally dry",
-     "chance_flash_drought_next_7_days_pct": 4.1,
+     "chance_flash_drought_next_7_days_pct": 2.8,
      "normal_chance_next_7_days_pct": 2.9,
-     "times_normal_next_7_days": 1.4,
-     "chance_days_8_to_14_pct": 4.5,
+     "times_normal_next_7_days": 1.0,
+     "chance_days_8_to_14_pct": 2.1,
      "verdict": "no need to start early",
-     "value_of_starting_today_dollars_per_acre": -4.5,
+     "value_of_starting_today_dollars_per_acre": -1.9,
      "value_of_deciding_at_next_forecast_dollars_per_acre": 0.0,
      "next_forecast_in_days": 2,
      "loss_avoided_with_7_days_warning_dollars_per_acre": 54,
-     "what_would_change_it": "next forecast shows a 7-day chance of at least 8%",
-     "value_of_starting_today_dollars_whole_pivot": -270
+     "what_would_change_it": "next forecast shows a 7-day chance of at least 5%",
+     "value_of_starting_today_dollars_whole_pivot": -114
     }
    }
   },

@@ -15,32 +15,32 @@
   {
    "watering": "irrigated",
    "kind": "ease",
-   "sent": 528,
-   "followed_by_flash_drought_pct": 10.4,
-   "times_normal": 1.9
+   "sent": 1153,
+   "followed_by_flash_drought_pct": 2.3,
+   "times_normal": 0.4
   },
   {
    "watering": "irrigated",
    "kind": "start",
-   "sent": 195,
-   "followed_by_flash_drought_pct": 26.2,
-   "times_normal": 4.8
+   "sent": 1213,
+   "followed_by_flash_drought_pct": 14.4,
+   "times_normal": 2.7
   },
   {
    "watering": "irrigated",
    "kind": "watch",
-   "sent": 716,
-   "followed_by_flash_drought_pct": 17.9,
-   "times_normal": 3.3
+   "sent": 1451,
+   "followed_by_flash_drought_pct": 4.2,
+   "times_normal": 0.8
   },
   {
    "watering": "rain-fed",
    "kind": "act",
-   "sent": 408,
-   "followed_by_flash_drought_pct": 19.9,
-   "times_normal": 3.7
+   "sent": 1011,
+   "followed_by_flash_drought_pct": 27.4,
+   "times_normal": 5.1
   }
  ],
  "onsets": 325,
- "onsets_warned_pct": 34.9
+ "onsets_warned_pct": 53.5
 }

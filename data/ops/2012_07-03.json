@@ -24,17 +24,17 @@
     "advice": {
      "soil_moisture_percentile": 39.0,
      "drought_monitor": "D0 abnormally dry",
-     "chance_flash_drought_next_7_days_pct": 14.4,
+     "chance_flash_drought_next_7_days_pct": 12.0,
      "normal_chance_next_7_days_pct": 2.9,
-     "times_normal_next_7_days": 5.0,
-     "chance_days_8_to_14_pct": 8.3,
-     "verdict": "no need to start early",
-     "value_of_starting_today_dollars_per_acre": -3.1,
-     "value_of_deciding_at_next_forecast_dollars_per_acre": 0.0,
+     "times_normal_next_7_days": 4.1,
+     "chance_days_8_to_14_pct": 9.6,
+     "verdict": "not yet: wait for the next forecast",
+     "value_of_starting_today_dollars_per_acre": 1.2,
+     "value_of_deciding_at_next_forecast_dollars_per_acre": 1.3,
      "next_forecast_in_days": 2,
      "loss_avoided_with_7_days_warning_dollars_per_acre": 25,
-     "what_would_change_it": "next forecast shows a 7-day chance of at least 21%",
-     "value_of_starting_today_dollars_whole_pivot": -403,
+     "what_would_change_it": "next forecast shows a 7-day chance of at least 9%",
+     "value_of_starting_today_dollars_whole_pivot": 156,
      "root_zone_at_stress_line": true,
      "farmer_reports_stress": true
     },
@@ -65,17 +65,16 @@
     "advice": {
      "soil_moisture_percentile": 39.0,
      "drought_monitor": "D0 abnormally dry",
-     "chance_flash_drought_next_7_days_pct": 14.4,
+     "chance_flash_drought_next_7_days_pct": 12.0,
      "normal_chance_next_7_days_pct": 2.9,
-     "times_normal_next_7_days": 5.0,
-     "chance_days_8_to_14_pct": 8.3,
-     "verdict": "not yet: wait for the next forecast",
-     "value_of_starting_today_dollars_per_acre": 1.0,
-     "value_of_deciding_at_next_forecast_dollars_per_acre": 1.8,
+     "times_normal_next_7_days": 4.1,
+     "chance_days_8_to_14_pct": 9.6,
+     "verdict": "start the pivot today",
+     "value_of_starting_today_dollars_per_acre": 5.9,
+     "value_of_deciding_at_next_forecast_dollars_per_acre": 4.3,
      "next_forecast_in_days": 2,
      "loss_avoided_with_7_days_warning_dollars_per_acre": 53,
-     "what_would_change_it": "next forecast shows a 7-day chance of at least 13%",
-     "value_of_starting_today_dollars_whole_pivot": 125
+     "value_of_starting_today_dollars_whole_pivot": 738
     }
    },
    "S1": {
@@ -96,17 +95,17 @@
     "advice": {
      "soil_moisture_percentile": 39.0,
      "drought_monitor": "D0 abnormally dry",
-     "chance_flash_drought_next_7_days_pct": 14.4,
+     "chance_flash_drought_next_7_days_pct": 12.0,
      "normal_chance_next_7_days_pct": 2.9,
-     "times_normal_next_7_days": 5.0,
-     "chance_days_8_to_14_pct": 8.3,
-     "verdict": "no need to start early",
-     "value_of_starting_today_dollars_per_acre": -6.3,
-     "value_of_deciding_at_next_forecast_dollars_per_acre": 0.0,
+     "times_normal_next_7_days": 4.1,
+     "chance_days_8_to_14_pct": 9.6,
+     "verdict": "not yet: wait for the next forecast",
+     "value_of_starting_today_dollars_per_acre": -0.2,
+     "value_of_deciding_at_next_forecast_dollars_per_acre": 0.4,
      "next_forecast_in_days": 2,
      "loss_avoided_with_7_days_warning_dollars_per_acre": 24,
-     "what_would_change_it": "next forecast shows a 7-day chance of at least 29%",
-     "value_of_starting_today_dollars_whole_pivot": -819,
+     "what_would_change_it": "next forecast shows a 7-day chance of at least 12%",
+     "value_of_starting_today_dollars_whole_pivot": -26,
      "farmer_reports_stress": false
     },
     "field_report": {
@@ -134,17 +133,16 @@
     "advice": {
      "soil_moisture_percentile": 39.0,
      "drought_monitor": "D0 abnormally dry",
-     "chance_flash_drought_next_7_days_pct": 14.4,
+     "chance_flash_drought_next_7_days_pct": 12.0,
      "normal_chance_next_7_days_pct": 2.9,
-     "times_normal_next_7_days": 5.0,
-     "chance_days_8_to_14_pct": 8.3,
-     "verdict": "not yet: wait for the next forecast",
-     "value_of_starting_today_dollars_per_acre": -0.8,
-     "value_of_deciding_at_next_forecast_dollars_per_acre": 0.5,
+     "times_normal_next_7_days": 4.1,
+     "chance_days_8_to_14_pct": 9.6,
+     "verdict": "start the pivot today",
+     "value_of_starting_today_dollars_per_acre": 2.5,
+     "value_of_deciding_at_next_forecast_dollars_per_acre": 2.1,
      "next_forecast_in_days": 2,
      "loss_avoided_with_7_days_warning_dollars_per_acre": 33,
-     "what_would_change_it": "next forecast shows a 7-day chance of at least 16%",
-     "value_of_starting_today_dollars_whole_pivot": -48,
+     "value_of_starting_today_dollars_whole_pivot": 150,
      "root_zone_at_stress_line": true
     }
    }
@@ -161,16 +159,43 @@
   "connection": "simulated",
   "connection_can_start_pivots": true,
   "suggested_order": [
+   "N2",
    "S2"
   ]
  },
  "accepted": [
   {
+   "id": "2c1f77a4",
+   "pivot": "N1",
+   "action": "stop",
+   "depth_in": 0.75,
+   "reason": "well North well cannot run N1 and N2 together, N2 worth $738 vs N1 $156, switch to higher value pivot",
+   "date": "2012-07-03",
+   "state": "sent",
+   "approved_by": "demo farmer",
+   "log": [
+    "simulated pivot N1: stop"
+   ]
+  },
+  {
+   "id": "e0942185",
+   "pivot": "N2",
+   "action": "start",
+   "depth_in": 1.5,
+   "reason": "advice says start, value $738 whole pivot, 4.1x normal flash drought risk",
+   "date": "2012-07-03",
+   "state": "sent",
+   "approved_by": "demo farmer",
+   "log": [
+    "simulated pivot N2: start"
+   ]
+  },
+  {
    "id": "1a7cd4c1",
    "pivot": "S2",
    "action": "start",
    "depth_in": 0.5,
-   "reason": "root zone at stress line, 1.7 days until stress, allocation 0.5 in left",
+   "reason": "advice says start and root zone at stress line, allocation 0.5 in left, value $150",
    "date": "2012-07-03",
    "state": "sent",
    "approved_by": "demo farmer",
@@ -180,16 +205,42 @@
   }
  ],
  "refused": [],
- "sms": "Start S2: root zone at stress line, 2 days to stress, 0.5in alloc left. N1 already on for curling corn. Reply YES to start S2.",
- "note": "Start S2 at 0.5in - its root zone is at stress line, 53% full, 2 days to stress and only 0.5in allocation left of 2.55in needed. N1 is already running and should keep running - you reported 'Corn on the sandy pivot, and one, one, is curling by noon on the ridges' and it is at stress line with 0 days to stress, 48% full. Holding N2 (58% full, 3 days to stress) and S1 beans (74% full, 9 days) - both advice says wait, no stress report. Money: starting N2 now worth $125, S2 -$48, N1 -$403, S1 -$819; waiting 2 days for next forecast is better.",
+ "sms": "Start N2 $738 and S2 $150 - both advice says start, S2 at stress line 0.5in left. Stop N1 to free well for higher value N2. Reply YES to start N2, S2 and stop N1.",
+ "note": "Start N2 corn: advice says start, worth $738, 58% full, 3 days to stress, flash risk 12% is 4x normal. Start S2 corn: advice says start and at stress line, 53% full, 1.7 days to stress, only 0.5 in allocation left, worth $150. Stop N1 to free North well (1100 gpm can't run 585+625=1210 gpm) for higher value N2, even though N1 is at stress line, 48% full, 0.4 days to stress and you said 'Corn on the sandy pivot, and one, one, is curling by noon on the ridges.' Hold S1 beans: advice says wait, 74% full, 8.5 days to stress, worth -$26, you said beans look fine.",
  "approved_by": "demo farmer",
  "sent": [
+  {
+   "id": "2c1f77a4",
+   "pivot": "N1",
+   "action": "stop",
+   "depth_in": 0.75,
+   "reason": "well North well cannot run N1 and N2 together, N2 worth $738 vs N1 $156, switch to higher value pivot",
+   "date": "2012-07-03",
+   "state": "sent",
+   "approved_by": "demo farmer",
+   "log": [
+    "simulated pivot N1: stop"
+   ]
+  },
+  {
+   "id": "e0942185",
+   "pivot": "N2",
+   "action": "start",
+   "depth_in": 1.5,
+   "reason": "advice says start, value $738 whole pivot, 4.1x normal flash drought risk",
+   "date": "2012-07-03",
+   "state": "sent",
+   "approved_by": "demo farmer",
+   "log": [
+    "simulated pivot N2: start"
+   ]
+  },
   {
    "id": "1a7cd4c1",
    "pivot": "S2",
    "action": "start",
    "depth_in": 0.5,
-   "reason": "root zone at stress line, 1.7 days until stress, allocation 0.5 in left",
+   "reason": "advice says start and root zone at stress line, allocation 0.5 in left, value $150",
    "date": "2012-07-03",
    "state": "sent",
    "approved_by": "demo farmer",
@@ -203,11 +254,12 @@
   "farm_overview",
   "propose_commands",
   "propose_commands",
+  "propose_commands",
   "propose_commands"
  ],
  "drafts": [
   {
-   "draft": "{\"sms\": \"Start S2: root zone at stress line, 2 days to stress, 0.5in alloc left. N1 already on for curling corn.\", \"note\": \"Start S2 at 0.5in - its root zone is at stress line, 53% full, 2 days to stress and only 0.5in allocation left of 2.55in needed. N1 is already running and should keep running - you reported 'Corn on the sandy pivot, and one, one, is curling by noon on the ridges' and it is at stress line with 0 days to stress, 48% full. Holding N2 (58% full, 3 days to stress) and S1 beans (74% full, 9 days) - both advice says wait, no stress report. Money: starting N2 now worth $125, S2 -$48, N1 -$403, S1 -$819; waiting 2 days for next forecast is better.\"}",
+   "draft": "{\"sms\": \"Start N2 $738 and S2 $150 - both advice says start, S2 at stress line 0.5in left. Stop N1 to free well for higher value N2.\", \"note\": \"Start N2 corn: advice says start, worth $738, 58% full, 3 days to stress, flash risk 12% is 4x normal. Start S2 corn: advice says start and at stress line, 53% full, 1.7 days to stress, only 0.5 in allocation left, worth $150. Stop N1 to free North well (1100 gpm can't run 585+625=1210 gpm) for higher value N2, even though N1 is at stress line, 48% full, 0.4 days to stress and you said 'Corn on the sandy pivot, and one, one, is curling by noon on the ridges.' Hold S1 beans: advice says wait, 74% full, 8.5 days to stress, worth -$26, you said beans look fine.\"}",
    "untraced": []
   }
  ],
