@@ -221,7 +221,7 @@ function adviceAt(i, c, full = false) {
   const nextLine = v => `if FlashWatch's next forecast (in 2 days) puts the chance of a flash drought in the next 7 days at
     <strong>${pct(Math.min(v, 1))}</strong> or more (today: ${pct(p1)})`;
   if (a.cls === "act") {
-    const k = 4, perDay = FW.netAt(c, k) - FW.netAt(c, k - 1), ratio = p1 / (r.n1[i] || 1e-9), cheap = ratio < 1.5;
+    const lost = FW.netAt(c, 2) - FW.netAt(c, 0), ratio = p1 / (r.n1[i] || 1e-9), cheap = ratio < 1.5;
     const known = S.water && S.water.useIt && i === S.i;
     return { ...a, big: "Start extra irrigation today", sub: cheap ? "Pumping ahead costs little now" : "Flash-drought risk high",
       why: `${cheap ? `The chance of a flash drought this week is ${pct(p1)}, about normal for the date, but the crop will use most water put on now.`
@@ -230,7 +230,7 @@ function adviceAt(i, c, full = false) {
             Run the pivot full time: it puts down ${c.capacity.toFixed(2)} in a day, and the crop uses up to ${S.farm.et_peak.toFixed(2)} in a heat wave.
             ${S.water && S.water.useIt ? `Your root zone is ${S.water.now.toFixed(1)} in short of full: about ${Math.ceil(S.water.now / c.capacity)} days of full-time pumping fills it.`
               : "Keep going until about an inch of rain falls or the risk drops back to normal."} On average: ${total(d.evNow)}.`,
-      trigger: `<strong>Why not wait?</strong> Each day of warning is worth about $${perDay.toFixed(0)} an acre on your field right now.` };
+      trigger: `<strong>Why not wait?</strong> If a dry spell starts in the next few days, the two days you'd lose waiting for the next forecast are worth about $${lost.toFixed(1)} an acre on your field.` };
   }
   if (a.cls === "wait") {
     return { ...a, big: "Not yet: keep checking forecasts", sub: "Flash-drought risk rising",
