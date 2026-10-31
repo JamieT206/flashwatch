@@ -513,6 +513,15 @@ May-September week (2021-05-25). **Next (after Nov 4): retrain without the Droug
 numbers only), so the summary can be written as soon as the week's data is in, at the same time as or before the Monitor's
 release; today one input is the Monitor's map for that week, so Glimmer can't run ahead of it.
 
+**G2 without the map (Oct 31, `glimmer_data --nomap`, `glimmer_train.py --nomap`, `::score --nomap`).** Same weeks and
+settings; the input has last week's Monitor shares instead of this week's and their change (the real change is kept
+only for scoring). Validation loss 1.80 after epoch 1, 1.78 after epoch 2 (same as with the map). On the 10 held-out weeks
+both writers finished: direction right 5 of 10 for both the LoRA and Muse Spark (given the same no-map input); states F1
+0.22 against 0.69; ROUGE-L 0.13 against 0.09; untraced figures 0% for both. The LoRA drifts to the southern Plains
+(Texas or Oklahoma in 10 of 12 drafts, against 3 of 12 with the map): without this week's map it falls back on what the
+older narratives usually said. A null result: the summary can't yet be written ahead of the Monitor. Possible next steps
+(not planned): drop out-of-region sentences from the training targets, give the region's state list, add rain amounts.
+
 **G3 built (Oct 28 night, `agent/voice.py`).**
 - *Endpoint.* The Meta API lists `muse-voice-transcribe-1.0`; file transcription is `POST
   {base}/asr/transcribe` (multipart: a JSON `request` part with `model`, `audioEncoding: "WAV"`,

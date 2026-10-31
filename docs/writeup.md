@@ -71,6 +71,12 @@ So the question an irrigator faces every summer morning is simple: *start the pi
     model 6). But it names fewer of the right states (58% against 68%), runs short (about 160 words
     against the real 290), and adds a figure it wasn't given in 2 of 12 weeks, so its drafts still go
     through the number checker.
+    One input is the Monitor's own map for that week, so it can't run ahead of the Monitor. Retrained with
+    last week's map instead (a second LoRA, same settings), it no longer holds up: it keeps the style (13%
+    of wording shared against Muse Spark's 9%) but writes about Texas and Oklahoma, which aren't in its
+    input, on 10 of 12 weeks, names the right states far less often (22% against 69%), and calls whether
+    drought spread or eased no better than Muse Spark (5 of 10 weeks each). A writer that runs ahead of
+    the Monitor needs more than this; for now the Monitor's map stays an input.
     The same model also runs FlashWatch's agents offline, with the same tools, rules and checker. For
     the demo farm's 3 July 2012 morning it made the same plan as Muse Spark, every figure traced on the
     first draft, in about 8 minutes. Asked three farmer questions, it answered all correctly but took 1-4

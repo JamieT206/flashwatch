@@ -322,6 +322,11 @@ training while the design moves; heavy burst ~Nov 2 Sydney (DESIGN.md B).
      farm says start again. About form connected to Formspree. After more forecast dates land, re-run falsestart only if
      the cells change (it uses observed weather, not forecasts), then the roll-ups.
 
+   - Oct 31, later: Agents page re-run on M2 and the measured cost (operator July 3 by Spark, watcher 2012, Ask answers,
+     scorecard: start texts 2.7x normal, 54% of onsets warned). Glimmer retrained without this week's Monitor map
+     (`--nomap` in glimmer_data, glimmer_train, glimmer_eval; adapter /vol/glimmer-lora-nomap): a null result, drifts to
+     Texas/Oklahoma, states F1 0.22 vs Spark 0.69, direction 5/10 for both (DESIGN G2). Q23: live feed after Nov 4
+     (season over; the freeze refuses code changes before scoring). The Modal volume can now be deleted.
    - Pending, after Nov 4 unless time allows (Jamie, Oct 30): (a) **live feed**: ECMWF open data (free, CC BY 4.0, 15 days,
      50 members) covers weeks 1-2; retrain M2 on week 1-2 forecast inputs, check soil moisture is among the open fields,
      daily job (ERA5-Land from Earth Engine, forecast, model, `site.publish`); no switch to GEFS needed. (b) **Glimmer

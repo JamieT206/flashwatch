@@ -95,6 +95,9 @@ function nomap(n, name) {
   return `<div class="tt" style="margin-top:24px">Before the Monitor's map is out</div>
     <p class="note">The same task with last week's Drought Monitor map instead of this week's, so the summary can be written as soon as the
       week's weather data is in. The writer now has to judge whether drought spread or eased. ${n.weeks} held-out weeks.</p>
+    <p class="note">Glimmer, fine-tuned again on these inputs, keeps the Monitor's style but drifts to places it wasn't given (Texas and
+      Oklahoma, which older narratives often covered), and neither writer calls the direction better than half the time.
+      So FlashWatch's summary still waits for the Monitor's map.</p>
     <div style="overflow-x:auto"><table><thead><tr><th>Writer, from the week's numbers and last week's map</th><th>Got right whether drought spread or eased</th>
       <th>Wording shared with the real text</th><th>States named right</th><th>Figures not in the input</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
