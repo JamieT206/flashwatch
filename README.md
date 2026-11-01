@@ -26,8 +26,11 @@ and open http://localhost:8812. `python -m flashwatch.site.publish` pushes it to
 
 ## Results so far
 
-Development years 2005-2021, each scored by a model that never saw that year. The test years 2022-2024
-are scored once, after the model is frozen.
+**Test years 2022-2024, scored once after the model was frozen (Nov 2):** on the riskiest tenth of farm-days a flash
+drought began in the next 7 days 5.6 times as often as normal (31% against 5.7%), against 1.9 times for the rule of
+thumb; week-1 skill 18.5% against the seasonal normal. The numbers below are the development years.
+
+Development years 2005-2021, each scored by a model that never saw that year.
 
 - **Forecasts.** On the tenth of farm-days FlashWatch rates riskiest, a flash drought begins in the
   next 7 days 6.3 times as often as normal (24% against 3.8%); those flags hold 63% of all flash

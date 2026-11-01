@@ -1,7 +1,6 @@
 # Submission form: draft answers (Oct 31)
 
-Numbers are from the development years (2005-2021). After the test years are scored (Nov 2), swap in the test-year
-figures where marked [test].
+Development years 2005-2021; test years 2022-2024 scored once on Nov 2.
 
 ---
 
@@ -21,7 +20,7 @@ chance into dollars: what starting extra irrigation today is worth per acre, aga
 The advice is one of three plain answers: start extra irrigation today, not yet, or irrigate as usual.
 
 On the tenth of farm-days FlashWatch rates riskiest, a flash drought begins in the next 7 days 6.3 times as often as
-normal [test], and the soil crosses the drought line a median 22 days before the Drought Monitor first shows drought
+normal in development (5.6 times in the test years 2022-2024, scored once after the model was frozen), and the soil crosses the drought line a median 22 days before the Drought Monitor first shows drought
 at that place. Across the High Plains and Midwest that's worth about $140 million a year: about $28 million on irrigated
 corn and $109 million on rain-fed farms, where the decisions are different (skip a fungicide pass, trim side-dress
 nitrogen, buy hay before prices rise).

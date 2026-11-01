@@ -1,7 +1,7 @@
 # FlashWatch: a week's warning of flash drought, and what to do about it
 
-*Draft for the Meta Global AI Developer Hackathon submission (Push the Frontier). Numbers marked
-TODO are filled in after the model freeze, when the test years 2022-2024 are scored once.*
+*Written for the Meta Global AI Developer Hackathon submission (Push the Frontier). The test years 2022-2024
+were scored once, after the model freeze on Nov 2.*
 
 ## The problem
 
@@ -114,7 +114,15 @@ ERA5-Land soil, rain, heat (as of each forecast date)     ECMWF extended-range e
   Glimmer 30B, open weights, run locally (narrative writer, and an offline fallback for the operator
   and Ask FlashWatch); WhatsApp Cloud API (texts, YES/NO approval, questions).
 
-## Results (development years 2005-2021; test years TODO)
+## Results (development years 2005-2021, then the test years 2022-2024)
+
+- **Test years 2022-2024, scored once after the freeze (Nov 2).** Models trained on 2005-2021 only, frozen
+  before 2022-2024 were opened (`eval.final`). Week-1 skill **18.5%** (90% range 16.8-20.5), week 2 **5.5%**
+  (5.1-6.2): better than on the development years (16.2%, 3.9%). On the riskiest tenth of farm-days a flash
+  drought began in the next 7 days **5.6 times** as often as normal (31% against 5.7%), and those flags held 56%
+  of onsets; the rule of thumb 1.9 times; days 8-14 3.2 times. By year: 2022 5.5x, 2023 4.8x, 2024 6.5x. Flash
+  droughts were commoner in these years (5.7% of farm-days against 3.8%), so more flagged days turned dry while
+  the multiple of normal fell. The dollar roll-up is a development-years figure; it hasn't been run on the test years.
 
 - **A week ahead is where the forecasts pay.** With ECMWF weather forecasts:
   - on the tenth of farm-days FlashWatch rates riskiest, a flash drought begins in the next 7 days
@@ -155,16 +163,17 @@ ERA5-Land soil, rain, heat (as of each forecast date)     ECMWF extended-range e
     irrigated corn at $3.50, $6.24 at $7.50 ($2.64 at $4.50).
 - **Pre-registered expectations**, written before any model run:
   1. M1 beats a simple soil-moisture baseline at weeks 1-2: **holds** on the development years (week 1
-     +3.3 points of skill, week 2 +0.6); test years TODO.
+     +3.3 points of skill, week 2 +0.6); **holds** on the test years (week 1 +3.3, 90% range 2.6-4.1; week 2 +1.0, 0.4-1.4).
   2. "M2 beats M1 at weeks 3-4 but not at week 1": **wrong, in the opposite direction.** The gain
      is largest at week 1.
   3. Raw ECMWF badly calibrated before recalibration: **holds, strongly.** Reading a flash drought straight
      off the forecast's own soil moisture (the share of the 11 runs that go dry) is far too confident: worse
      than the seasonal normal (Brier skill -166% at week 1). Recalibrated, it's 2% better than normal at week 1,
-     against FlashWatch's 17%: the skill comes from combining today's observed soil with the forecast weather.
+     against FlashWatch's 16%: the skill comes from combining today's observed soil with the forecast weather.
   4. More skill in the western Plains than the humid east: **holds** on the development years (week 1
-     6.3% west of 98 W against 3.3% east of 90 W; with the forecasts 19.7% against 12.6%, 90% ranges
-     18.0-21.4 and 9.0-16.6); test years TODO.
+     6.3% west of 98 W against 3.3% east of 90 W; with the forecasts 19.0% against 14.1%, 90% ranges
+     15.7-21.5 and 10.2-18.1). Test years: **holds for the land model** (6.1% against 2.4%), **only weakly with
+     the forecasts** (16.7% against 15.8%, ranges 12.9-18.5 and 13.6-16.9): the ECMWF forecasts close most of the gap.
 - **Null results we kept:**
   - Drought Monitor features: no gain.
   - Directional neighbourhood features: no gain.

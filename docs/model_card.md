@@ -1,7 +1,6 @@
 # Model card: FlashWatch flash-drought onset forecasts
 
-Development results (2005-2021). The test years 2022-2024 are scored once, after the model is frozen
-(TODO: test-year results).
+Development results (2005-2021), then the test years 2022-2024, scored once after the model was frozen (Nov 2).
 
 ## What it predicts
 
@@ -63,9 +62,23 @@ dry are forecast. Places under snow or frozen ground are left out.
   3. The raw ECMWF forecast is badly calibrated: holds; Brier skill -166% before recalibration.
   4. More skill in the western Plains than the humid east: holds; week 1 19.0% against 14.1% (M2).
 
+## Results (test years 2022-2024, scored once)
+
+| | Week 1 | Week 2 |
+| --- | --- | --- |
+| M2, Brier skill against the seasonal normal | 18.5% (16.8 to 20.5) | 5.5% (5.1 to 6.2) |
+| M2, riskiest tenth of farm-days: onsets against normal | 5.6 times (31% against 5.7%) | 3.2 times |
+| Rule of thumb (H1), riskiest tenth | 1.9 times | 1.0 times |
+| Land only (M1), Brier skill | 4.3% | 1.1% |
+
+- Of all onsets, 56% fall in M2's riskiest tenth at week 1. By year: 2022 5.5 times, 2023 4.8, 2024 6.5.
+- Flash droughts were commoner than in the development years (5.7% of farm-days against 3.8%).
+- Expectation 1 holds (M1 against the soil-moisture baseline: week 1 +3.3 points, week 2 +1.0). Expectation 4
+  holds for the land model (6.1% west against 2.4% east) but only weakly with the forecasts (16.7% against 15.8%).
+
 ## Limits and known problems
 
-- **The test years are not scored yet.** Development numbers may not hold in the test years 2022-2024.
+- **Three test years.** 2022-2024 is a short test; the dollar values are estimated on the development years only.
 - **Many onsets don't cost anything.** About half the onsets warned about break before they hurt yields. A
   "damaging drought" label is the first change planned after the hackathon.
 - **Calibration:** M2 is slightly too cautious at the extremes. Straightening it scored no better, so it was

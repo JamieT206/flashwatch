@@ -333,6 +333,12 @@ training while the design moves; heavy burst ~Nov 2 Sydney (DESIGN.md B).
      12 GB free memory, then runs tests, forecast build, CV (tag m2full), evidence, site.build, falsestart (not
      written), roll-ups (m2full_water, m2full_month, prices) and the agent re-runs; log in data/logs/burst.log.
      After it: point region.js at the m2full roll-ups, check falsestart cells, docs numbers, then freeze and score.
+   - Nov 2: downloads complete 03:57 (101/101); burst.sh rebuilt 04:28-05:55. Dev run `m2full` (DESIGN M2 section);
+     docs and site updated. **Frozen 06:05** (B0 B1 H1 M1 M2, week1/week2/any28, forecast dates, every other cell, full
+     GBMs; data/final/freeze.json) and **test years scored once** (data/final/test_scores.json, test_oof.parquet):
+     M2 week 1 18.5% (16.8-20.5), week 2 5.5%; top tenth 5.6x (31% vs 5.7%), 56% of onsets; H1 1.9x; by year 5.5/4.8/6.5x.
+     Expectation 1 holds; 4 holds for M1, weakly for M2. Dollar roll-up not run on test years (backtest excludes
+     TEST_YEARS by design). Full narration script for Jamie's re-record in docs/video.md.
    - Pending, after Nov 4 unless time allows (Jamie, Oct 30): (a) **live feed**: ECMWF open data (free, CC BY 4.0, 15 days,
      50 members) covers weeks 1-2; retrain M2 on week 1-2 forecast inputs, check soil moisture is among the open fields,
      daily job (ERA5-Land from Earth Engine, forecast, model, `site.publish`); no switch to GEFS needed. (b) **Glimmer
