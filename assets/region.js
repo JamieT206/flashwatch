@@ -62,7 +62,8 @@ function renderFlags() {
   if (!f) { $("flagKpis").textContent = "Not computed yet."; return; }
   const w1 = f.M2.week1;
   $("flagKpis").innerHTML = `
-    <div><div class="bignum">${w1.lift.toFixed(1)}x</div><div class="note">the normal chance of a flash drought in the next 7 days, on the farms FlashWatch flags</div></div>
+    <div><div class="bignum">${w1.lift.toFixed(1)}x</div><div class="note">the normal chance of a flash drought in the next 7 days, on the farms FlashWatch flags, 2006-2021</div></div>
+    <div><div class="bignum">5.6x</div><div class="note">in the test years 2022-2024, scored once after the model was frozen (31% against a normal 5.7%)</div></div>
     <div><div class="bignum">${Math.round(100 * w1.caught)}%</div><div class="note">of the flash droughts that begin in the next 7 days are on flagged farms</div></div>`;
   const W = 520, H = 220, m = { l: 40, r: 10, t: 16, b: 40 };
   const leads = ["week1", "week2"], names = { week1: "Next 7 days", week2: "Days 8-14" };
@@ -81,7 +82,8 @@ function renderFlags() {
   }
   $("flagNote").innerHTML = groups.map(([, label, col]) => `<span style="display:inline-block;width:10px;height:10px;background:${col}"></span> ${label}`).join(" &nbsp; ") +
     `<br>Chance that a flash drought begins, on all farm-days and on the riskiest tenth by each method. Scored on ${R.ev.m2_dates} ECMWF forecast dates
-     (April to mid-August) in six past seasons; late August to October are still downloading.`;
+     (every other day, April 1 to October 15) in six past seasons.
+     In the test years 2022-2024, scored once after the model was frozen: 5.6 times normal (31% against 5.7%); rule of thumb 1.9 times.`;
 }
 
 // ---------- value by corn price ----------
@@ -172,7 +174,7 @@ async function init() {
   const get = (u, fallback = null) => fetch(u).then(r => r.ok ? r.json() : fallback).catch(() => fallback);
   // Headline: false starts priced by the month only (no irrigation data); R.rollWater: with each field's water account.
   [R.meta, R.ev, R.roll, R.defaults, R.rollWater] = await Promise.all([get("data/meta.json"), get("data/evidence.json"),
-    get("data/rollup_m2fc53_month.json"), get("data/defaults.json"), get("data/rollup_m2fc53_water.json")]);
+    get("data/rollup_m2full_month.json"), get("data/defaults.json"), get("data/rollup_m2full_water.json")]);
   R.prices = await Promise.all(PRICES.map(async p => {
     const r = await get(`data/rollup_price${String(p).replace(".", "")}.json`);
     const h = r && r.headline.find(x => x.baseline === "careful");
