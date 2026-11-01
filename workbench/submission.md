@@ -22,8 +22,8 @@ The advice is one of three plain answers: start extra irrigation today, not yet,
 
 On the tenth of farm-days FlashWatch rates riskiest, a flash drought begins in the next 7 days 6.3 times as often as
 normal [test], and the soil crosses the drought line a median 22 days before the Drought Monitor first shows drought
-at that place. Across the High Plains and Midwest that's worth about $120 million a year: about $23 million on irrigated
-corn and $94 million on rain-fed farms, where the decisions are different (skip a fungicide pass, trim side-dress
+at that place. Across the High Plains and Midwest that's worth about $140 million a year: about $28 million on irrigated
+corn and $109 million on rain-fed farms, where the decisions are different (skip a fungicide pass, trim side-dress
 nitrogen, buy hay before prices rise).
 
 Agents built on Meta's models carry the advice to the farm. SAM 3.1 finds a farm's pivots in an aerial photo. Muse

@@ -81,7 +81,7 @@ function renderFlags() {
   }
   $("flagNote").innerHTML = groups.map(([, label, col]) => `<span style="display:inline-block;width:10px;height:10px;background:${col}"></span> ${label}`).join(" &nbsp; ") +
     `<br>Chance that a flash drought begins, on all farm-days and on the riskiest tenth by each method. Scored on ${R.ev.m2_dates} ECMWF forecast dates
-     (April to mid-August) in six past seasons; late August to October are still downloading.`;
+     (every other day, April 1 to October 15) in six past seasons.`;
 }
 
 // ---------- value by corn price ----------
@@ -172,7 +172,7 @@ async function init() {
   const get = (u, fallback = null) => fetch(u).then(r => r.ok ? r.json() : fallback).catch(() => fallback);
   // Headline: false starts priced by the month only (no irrigation data); R.rollWater: with each field's water account.
   [R.meta, R.ev, R.roll, R.defaults, R.rollWater] = await Promise.all([get("data/meta.json"), get("data/evidence.json"),
-    get("data/rollup_m2fc53_month.json"), get("data/defaults.json"), get("data/rollup_m2fc53_water.json")]);
+    get("data/rollup_m2full_month.json"), get("data/defaults.json"), get("data/rollup_m2full_water.json")]);
   R.prices = await Promise.all(PRICES.map(async p => {
     const r = await get(`data/rollup_price${String(p).replace(".", "")}.json`);
     const h = r && r.headline.find(x => x.baseline === "careful");

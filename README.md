@@ -31,16 +31,17 @@ are scored once, after the model is frozen.
 
 - **Forecasts.** On the tenth of farm-days FlashWatch rates riskiest, a flash drought begins in the
   next 7 days 6.3 times as often as normal (24% against 3.8%); those flags hold 63% of all flash
-  droughts. A farmer's rule of thumb ("hot and dry lately", fitted the same way) manages 1.7 times.
-  Days 8-14: 3.2 times. Scored on the 53 forecast dates downloaded so far (April to mid-August).
+  droughts. A farmer's rule of thumb ("hot and dry lately", fitted the same way) manages 1.6 times.
+  Days 8-14: 3.5 times. Scored on all 101 ECMWF forecast dates in the season (every other day, April 1 to
+  October 15).
 - **Ahead of the Drought Monitor.** The soil crosses the drought line a median 22 days before the
   Monitor first marks moderate drought (D1) at that place, before the forecast adds its one to two weeks.
 - **Value.** A flash drought with a week's warning is worth about $21 an acre on irrigated corn (yield
   saved less extra pumping) and about $28 an acre on rain-fed corn (the fungicide pass a dry spell makes
   pointless). Averaged over all years, including the many without a flash drought at a given farm,
-  and acting on the real ECMWF forecasts: about $23M a year across the region's irrigated acres ($2.64
-  an acre of corn; big gains in 2006, 2012 and 2021, a loss to false starts in 2018; $29M where the farm's
-  irrigation data gives the field's water) and about $94M across its rain-fed acres (rougher). Dry spells
+  and acting on the real ECMWF forecasts: about $28M a year across the region's irrigated acres ($3.17
+  an acre of corn; big gains in 2006, 2012 and 2021, a loss to false starts in 2018; $38M where the farm's
+  irrigation data gives the field's water) and about $109M across its rain-fed acres (rougher). Dry spells
   are set to 21 days, matching USDA county yield losses. A false start is charged the water it actually
   wastes, measured on 17 years of real weather (`decide/falsestart.py`): about $1 an acre in July, $3 in
   August, $5 in June, $10 in September.

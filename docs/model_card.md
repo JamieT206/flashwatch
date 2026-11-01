@@ -41,17 +41,16 @@ dry are forecast. Places under snow or frozen ground are left out.
 - Cross-validation by year, 2005-2021: each year is predicted by models that never saw it. Normals and
   percentile thresholds come from the training years only.
 - Ranges are 90% ranges from resampling whole years.
-- M2 is scored on the 53 ECMWF forecast start dates downloaded so far (April 1 to August 11); the rest of the
-  season is still downloading.
+- M2 is scored on all 101 ECMWF forecast start dates in the season (every other day, April 1 to October 15).
 - Four expectations were written down before any model ran (results below).
 
 ## Results (development years)
 
 | | Week 1 | Week 2 |
 | --- | --- | --- |
-| M2, Brier skill against the seasonal normal | 16.3% (13.4 to 18.1) | 3.6% (1.7 to 5.0) |
-| M2, riskiest tenth of farm-days: onsets against normal | 6.3 times (24% against 3.8%) | 3.2 times |
-| Rule of thumb (H1), riskiest tenth | 1.7 times | 0.7 times |
+| M2, Brier skill against the seasonal normal | 16.2% (13.3 to 18.9) | 3.9% (3.1 to 4.6) |
+| M2, riskiest tenth of farm-days: onsets against normal | 6.3 times (24% against 3.8%) | 3.5 times |
+| Rule of thumb (H1), riskiest tenth | 1.6 times | 1.0 times |
 | Raw ECMWF, recalibrated (B2), Brier skill | 2.2% | 0.3% |
 | Land only (E1), all dates, Brier skill | 6.1% | 1.7% |
 
@@ -62,12 +61,11 @@ dry are forecast. Places under snow or frozen ground are left out.
   1. The land model beats a simple soil-moisture baseline at weeks 1-2: holds.
   2. Forecasts help only at weeks 3-4: wrong; they help most at week 1.
   3. The raw ECMWF forecast is badly calibrated: holds; Brier skill -166% before recalibration.
-  4. More skill in the western Plains than the humid east: holds; week 1 19.7% against 12.6%.
+  4. More skill in the western Plains than the humid east: holds; week 1 19.0% against 14.1% (M2).
 
 ## Limits and known problems
 
-- **The test years are not scored yet.** Development numbers on 53 dates from April to mid-August may not hold
-  for late summer.
+- **The test years are not scored yet.** Development numbers may not hold in the test years 2022-2024.
 - **Many onsets don't cost anything.** About half the onsets warned about break before they hurt yields. A
   "damaging drought" label is the first change planned after the hackathon.
 - **Calibration:** M2 is slightly too cautious at the extremes. Straightening it scored no better, so it was

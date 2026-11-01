@@ -55,8 +55,8 @@ So the question an irrigator faces every summer morning is simple: *start the pi
     something changes: the advice turns to start, a rain-fed decision's moment comes, the pivot can't
     keep up. It keeps score of itself: every forecast text is checked against what happened in the
     next two weeks. Over six past seasons on 148 farms, a flash drought followed its "start the pivot"
-    texts 14% of the time, 2.7 times the normal 5.4%; rain-fed "act now" texts 27% (5.1 times); after
-    "risk eased" texts 2.3%, under half the normal rate. Just over half of onsets (54%) had a warning
+    texts 16% of the time, 2.9 times the normal 5.4%; rain-fed "act now" texts 28% (5.1 times); after
+    "risk eased" texts 2.7%, half the normal rate. About three in five onsets (62%) had a warning
     text in the two weeks before. Now that a false start is priced on the water it really wastes, "start"
     is sent more often: more onsets get a warning, and a smaller share of starts are followed by one.
   - *Weekly briefing (Muse Spark)* for a county or extension office.
@@ -119,10 +119,10 @@ ERA5-Land soil, rain, heat (as of each forecast date)     ECMWF extended-range e
 - **A week ahead is where the forecasts pay.** With ECMWF weather forecasts:
   - on the tenth of farm-days FlashWatch rates riskiest, a flash drought begins in the next 7 days
     **6.3 times** as often as normal (24% against 3.8%), and those flags hold 63% of all onsets;
-  - a farmer's rule of thumb ("hot and dry lately", fitted the same way) manages 1.7 times;
-  - week-1 skill is about 17% better than the seasonal normal (Brier skill score);
-  - beyond the first week the edge fades (week 2: about 4%, 3.2 times normal on the top tenth);
-  - scored on the 53 ECMWF forecast dates downloaded so far, April to mid-August.
+  - a farmer's rule of thumb ("hot and dry lately", fitted the same way) manages 1.6 times;
+  - week-1 skill is about 16% better than the seasonal normal (Brier skill score);
+  - beyond the first week the edge fades (week 2: about 4%, 3.5 times normal on the top tenth);
+  - scored on all 101 ECMWF forecast dates in the season, every other day from April 1 to October 15.
 - **Seeing the map helps.** Without the weather forecasts, a small convolutional network that sees
   the whole map at once (where a drying patch is, and what surrounds it) adds to the per-cell model:
   week-1 skill 6.1% against 4.3% when the two are averaged (paired gain 1.8 points, 90% range 1.3-2.4).
@@ -136,10 +136,10 @@ ERA5-Land soil, rain, heat (as of each forecast date)     ECMWF extended-range e
     less extra pumping; a typical Nebraska pivot) and about $28 an acre on rain-fed corn (the fungicide
     pass a dry spell makes pointless).
   - Averaged over all years, including the many without a flash drought at a given farm, and acting on
-    the real ECMWF forecasts, that's about $23 million a year across the region's irrigated acres ($2.64
-    an acre of corn; $29 million where the farm's irrigation data tells FlashWatch how full the soil is)
-    and $94 million across its rain-fed acres. Irrigation value swings by year: +$52 million in 2006,
-    +$62 million in 2012 and +$56 million in 2021, but -$34 million in 2018 from false starts.
+    the real ECMWF forecasts, that's about $28 million a year across the region's irrigated acres ($3.17
+    an acre of corn; $38 million where the farm's irrigation data tells FlashWatch how full the soil is)
+    and $109 million across its rain-fed acres. Irrigation value swings by year: +$50 million in 2006,
+    +$71 million in 2012 and +$76 million in 2021, but -$36 million in 2018 from false starts.
     Against a fixed July 1 start instead of starting when stress shows, it's negative (-$4 million):
     in July that farmer's pivot is already on. Rain-fed values rest on extension averages and are rougher.
   - A false start isn't all wasted water. Water that fits in the root zone is used by the crop later, in

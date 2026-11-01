@@ -266,6 +266,16 @@ survives); M1 skill week 1 **4.3%**, week 2 **1.2%**, any-28 **4.6%** (before: 4
   2018 -$34M, 2021 +$56M); with the field's deficit (`m2fc53_water`) $28.8M; against a July 1 start -$4.1M / -$4.3M (in July
   that farmer's pivot is already on). Rain-fed unchanged, $94M. The demo farm's July 3 says start again (4.1x normal; a
   false start would cost $1.24). "Start" now fires on 1-7 days a season there; caught 2012 and 2021, false starts 2006 and 2018.
+  **Final development run on all 101 start dates (Nov 2, `m2full`; Apr 1 - Oct 15; `workbench/burst.sh`).** M2 week 1
+  **16.2%** (13.3-18.9), week 2 **3.9%** (3.1-4.6), any 28 days 11.7% (8.5-14.5); M1 4.3 / 1.2 / 4.6; H1 0.5 / -0.2 / -0.1.
+  Top tenth: week 1 6.3x (23.8% against 3.8%, 63% of onsets), week 2 3.5x; H1 1.6x / 1.0x. West of 98 W 19.0% (15.7-21.5)
+  against east of 90 W 14.1% (10.2-18.1): expectation 4 holds. Skill barely moves with the late dates; value rises because
+  the irrigation season (to Sep 15) and the soybean fungicide window (August) now have forecasts. False-start table
+  unchanged (same cells). Roll-up `m2full_month`: irrigated **$28.5M a year** ($3.17 an acre of corn; 2006 +$50M, 2009 +$0.3M,
+  2012 +$71M, 2015 +$4M, 2018 -$36M, 2021 +$76M); with the field's deficit (`m2full_water`) $38.2M; against a July 1 start
+  -$4.2M. Rain-fed **$109M** (nitrogen $53M, corn fungicide $26M, soybean fungicide $31M, was $17M). Headline about $140M
+  a year. Watcher scorecard: start texts 15.6% followed by an onset (2.9x), rain-fed act 27.7% (5.1x), eased 2.7% (0.5x);
+  62% of onsets warned (was 54%).
 - *Meaning.* The target is sound and the onset waves are not noise; they are what weather forecasts exist to see. The ceiling is about 15x M1's skill at week 2. The open question is how much of it the real ECMWF forecasts keep (good at week 1, weaker at week 2, weak beyond), so M2 on real forecasts is the decisive run. The `native` (0.25 degree) variant is the absolute upper bound.
 
 ---
