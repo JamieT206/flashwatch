@@ -1,19 +1,25 @@
-"""Cuts the narration into the script's beats and assembles the demo video (docs/video.md).
+"""Cuts the narration into the script's beats and assembles the demo video (docs/video.md), in two cuts:
+`hack` (the hackathon entry) and `general` (FlashWatch the product: no hackathon, no Meta model names).
 
-    python video/edit.py audio        # video/out/narration.wav + timeline.json (the beats on the final clock)
+    $env:CUT = "general"              # PowerShell; default "hack". Each cut has its own folder, video/out/<cut>/
+    python video/edit.py audio        # narration.wav + timeline.json (the beats on the final clock)
     python video/record.py all        # the browser shots, paced to timeline.json
-    python video/edit.py video        # video/out/flashwatch_demo.mp4
+    python video/edit.py video        # flashwatch_<cut>.mp4
 
-The narration is one long take (video/in/narration.m4a) plus re-recorded lines (fix1, fix2); each beat is one
-or more (take, start, end) ranges in seconds, from word-timed transcripts (faster-whisper). Each take is
-scaled to the main take's speech loudness. Cut points move to the quietest 20 ms nearby so no
-word is clipped. Beats are joined with short pauses; shots are recorded against the same clock, so each
-shot is laid under its beats from the moment its first beat starts.
+The narration is two takes: video/in/hack.m4a (every line, hackathon wording) and general.m4a (the lines that
+differ, plus a re-recorded "farmers" line used in both cuts). Each beat is one or more (take, start, end) ranges in
+seconds, from word-timed transcripts (faster-whisper, video/in/<take>.json). Each take is scaled to the hack take's
+speech loudness. Cut points move to the quietest 20 ms nearby so no word is clipped, except ends marked exact
+(a 4th element "lo", "hi" or "both": cuts inside a sentence, placed by hand and checked by transcribing the join).
+Beats are joined with pauses; a pause given as ("min", s) holds the beat to at least s seconds, for shots that
+need longer than the line. Shots are recorded against the same clock, so each shot is laid under its beats from
+the moment its first beat starts.
 """
 
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -22,33 +28,43 @@ from pathlib import Path
 import numpy as np
 
 HERE = Path(__file__).resolve().parent
-IN, OUT = HERE / "in", HERE / "out"
+CUT = os.environ.get("CUT", "hack")
+IN, OUT = HERE / "in", HERE / "out" / CUT
 FPS, W, H, SR = 30, 1920, 1080, 48000
 
-# (beat id, source ranges in the narration take, pause after in seconds)
-BEATS = [
+# (beat id, source ranges, pause after in seconds or ("min", beat length))
+HACK = [
     ("lead", None, 1.5),
-    ("hello", [(3.8, 12.6)], 0.8),
-    ("farmers", [("fix2", 0.6, 11.6), ("fix1", 37.9, 40.8)], 1.0),   # re-recorded; "redress that balance"
-    ("drydown", [(34.5, 40.3)], 0.5),
-    ("july2012", [(40.9, 49.8)], 0.8),
-    ("mitigate", [(51.5, 64.6)], 1.0),
-    ("predicts", [(68.0, 71.75), (73.3, 75.5)], 0.6),     # cut: "based on its exact location"
-    ("july1", [(76.4, 78.9)], 0.6),
-    ("july3", [("fix1", 3.0, 11.4)], 0.6),                # re-recorded: "says to start extra irrigation today"
-    ("twodays", [(105.6, 108.0)], 1.0),                   # second take
-    ("water", [(110.0, 123.3)], 1.0),
-    ("ask", [(132.1, 134.7), (135.3, 145.1)], 1.0),        # third take of the first sentence
-    ("setup", [("fix1", 14.6, 21.6)], 0.6),               # re-recorded: "an aerial photo"
-    ("operator", [(155.4, 163.8)], 0.6),
-    ("example", [(164.9, 165.5), (166.2, 174.2)], 0.4),    # cut: "in this example,"
-    ("taps", [(175.0, 178.1)], 3.5),                       # long enough for "Done" to come back on the phone
-    ("voice", [("fix1", 24.8, 34.0)], 1.0),               # re-recorded: "the operator agent takes it into account"
-    ("rainfed", [(197.9, 226.7)], 1.0),
-    ("howgood", [(229.7, 251.9)], 1.0),
-    ("hood", [(255.8, 274.0)], 1.0),
-    ("outro", [(294.9, 297.0), (300.35, 304.9)], 2.0),   # "My name is Jamie Twiss" from the take before (no "ah")
+    ("hello", [("hack", 1.8, 10.5)], 0.8),
+    ("farmers", [("general", 72.3, 80.1)], 1.0),          # "we should be building more tools" (Nov 2 re-record)
+    ("drydown", [("hack", 22.5, 25.95)], 0.5),
+    ("monitor", [("hack", 26.45, 32.4)], 0.8),
+    ("mitigate", [("hack", 42.5, 46.0)], 0.8),             # second take
+    ("predicts", [("hack", 47.2, 48.65, "hi"), ("hack", 49.13, 57.9, "lo")], 0.8),   # cut: "satellite"
+    ("july1", [("hack", 59.8, 62.7)], 0.6),
+    ("july3", [("hack", 63.55, 70.5)], 0.6),
+    ("twodays", [("hack", 71.05, 73.8)], 1.0),
+    ("water", [("hack", 77.2, 80.25, "hi"), ("hack", 82.85, 85.1, "lo")], ("min", 9.5)),   # cut: "reading ... pivot"
+    ("ask", [("hack", 87.1, 91.5)], ("min", 10.5)),
+    ("setup", [("hack", 93.0, 99.6)], 0.6),
+    ("operator", [("hack", 111.4, 118.95)], 0.6),         # second take
+    ("taps", [("hack", 121.1, 124.6)], 3.5),               # long enough for "Done" to come back on the phone
+    ("voice", [("hack", 127.55, 132.4)], 1.0),
+    ("rainfed", [("hack", 145.4, 155.9)], ("min", 14.5)),  # second take
+    ("howgood", [("hack", 168.4, 183.4)], 1.0),            # second take
+    ("hood", [("hack", 185.8, 195.7)], 1.0),               # first take ("carry it to the farmer")
+    ("outro", [("hack", 214.0, 219.5)], 2.0),
 ]
+GENERAL_LINES = {
+    "hello": [("general", 2.2, 11.0)],
+    "ask": [("general", 13.7, 16.5)],
+    "setup": [("general", 19.3, 25.4)],
+    "voice": [("general", 35.4, 40.8)],                    # second take
+    "hood": [("general", 49.2, 61.4)],                     # second take
+    "outro": [("general", 63.1, 69.6)],
+}
+BEATS = {"hack": HACK,
+         "general": [(b, GENERAL_LINES.get(b, r), p) for b, r, p in HACK]}[CUT]
 
 # Which picture runs under which beats: (source, first beat). A source runs until the next one starts.
 #   shot:<name>  video/out/<name>.mp4 from record.py (its .json says where the first beat starts in it)
@@ -69,7 +85,7 @@ SHOTS = [
 # operator beat starts; the clip holds on it until the narration says "taps", then the tap (drawn: screen recordings
 # show no finger), YES, and "Done" coming back. Times are seconds in the recording.
 PHONE = {"src": "phone_orig.mov", "from": 12.58, "hold": 16.75, "tap": 16.95, "yes": (500, 2158),
-         "start": ("operator", 2.0), "tap_at": ("taps", 1.55), "end": ("taps", 0.4), "height": 960}
+         "start": ("operator", 2.0), "tap_at": ("taps", 1.9), "end": ("taps", 0.4), "height": 960}
 
 
 def ffmpeg() -> str:
@@ -106,31 +122,35 @@ def quiet(a: np.ndarray, t: float, span: float = 0.2) -> float:
 
 
 def audio():
-    OUT.mkdir(exist_ok=True)
-    takes = {n: load_take(n) for n in ("narration", "fix1", "fix2")}
-    ref = speech_level(takes["narration"])
+    OUT.mkdir(parents=True, exist_ok=True)
+    names = sorted({r[0] for _, ranges, _ in BEATS for r in ranges or []})
+    takes = {n: load_take(n) for n in names}
+    ref = speech_level(load_take("hack"))
     takes = {n: a * ref / speech_level(a) for n, a in takes.items()}
     fade = int(0.01 * SR)
     parts, timeline, t = [], {}, 0.0
     for beat, ranges, pause in BEATS:
         start = t
-        ranges = [r if len(r) == 3 else ("narration", *r) for r in ranges or []]
-        for j, (take, lo, hi) in enumerate(ranges):
-            a = takes[take]
-            lo, hi = quiet(a, lo), quiet(a, hi)
+        for j, (take, lo, hi, *exact) in enumerate(ranges or []):
+            a, exact = takes[take], exact[0] if exact else ""
+            lo = lo if exact in ("lo", "both") else quiet(a, lo)
+            hi = hi if exact in ("hi", "both") else quiet(a, hi)
             seg = a[int(lo * SR):int(hi * SR)].copy()
             seg[:fade] *= np.linspace(0, 1, fade)
             seg[-fade:] *= np.linspace(1, 0, fade)
             parts.append(seg)
             t += len(seg) / SR
-            if j < len(ranges) - 1:
-                parts.append(np.zeros(int(0.12 * SR), np.float32))   # a breath where words were cut
-                t += 0.12
+            if j < len(ranges) - 1:   # a breath where words were cut; next to nothing inside a sentence
+                gap = 0.03 if exact in ("hi", "both") else 0.12
+                parts.append(np.zeros(int(gap * SR), np.float32))
+                t += gap
         speech_end = t
+        if isinstance(pause, tuple):
+            pause = max(0.6, pause[1] - (t - start))
         parts.append(np.zeros(int(pause * SR), np.float32))
         t += pause
         timeline[beat] = {"start": round(start, 3), "speech_end": round(speech_end, 3), "end": round(t, 3),
-                          "source": list(ranges[0]) if ranges else None}
+                          "source": list(ranges[0][:3]) if ranges else None}
     track = np.concatenate(parts)
     track /= max(1e-6, float(np.abs(track).max())) / 0.89          # peak at about -1 dBFS
     track.astype(np.float32).tofile(OUT / "narration.f32")
@@ -272,7 +292,7 @@ def video():
         print(f"{src:20s} {t0:6.1f}-{t1:6.1f}")
     lst = OUT / "segs.txt"
     lst.write_text("".join(f"file '{p.name}'\n" for p in segs))
-    final = OUT / "flashwatch_demo.mp4"
+    final = OUT / f"flashwatch_{CUT}.mp4"
     run("-f", "concat", "-safe", 0, "-i", lst, "-i", OUT / "narration.wav", "-map", "0:v", "-map", "1:a",
         "-vf", f"fade=out:st={total - 1.2:.2f}:d=1.2:color=white", "-c:v", "libx264", "-crf", "18", "-preset", "medium",
         "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k", "-shortest", "-movflags", "+faststart", final)

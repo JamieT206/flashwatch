@@ -9,70 +9,62 @@ state you can reach from a URL or a click, so it can be recorded in one sitting.
   `localStorage.clear()`.
 - Record with OBS (or the Windows Game Bar). Record the narration separately and lay it over.
 
-## Narration to record (3-minute cut, Nov 2)
+## Narration as recorded (Nov 2): two cuts
 
-The last cut ran 3:51. This version comes to about 2:50 at your pace from that take (about 2.5 words a second),
-which leaves room under 3:00. Read lines 1-20 straight through as one take, with about two seconds of silence between
-lines. Then, in the same take, read the six general-purpose lines (G1-G20) at the end. One recording builds both videos;
-the editor matches the lines by their words, so you don't need to say the numbers.
+Two takes: `video/in/hack.m4a` (every line) and `video/in/general.m4a` (the general-purpose lines and a new
+"farmers" line, used in both cuts). The hackathon cut runs 2:40, the general one 2:43 (`video/edit.py`, CUT=hack or
+general). Where a line was read twice, the second take is used unless noted.
 
-**Hackathon version**
+**Hackathon cut**
 
-1. Welcome to FlashWatch. Everything in this video was built during the hackathon, on public data and Meta's models.
-2. Farmers are the backbone of America, but few startups build for them. FlashWatch does. *(Your intro: anything
-   about 15 words keeps the timing.)*
+1. Welcome to FlashWatch. Everything in this video is built during the hackathon, using public data and Meta's models
+   and agents.
+2. Farmers are the backbone of America, and we should be building more tools to support them. I built FlashWatch to do
+   exactly that. *(general take, both cuts)*
 3. A flash drought can dry out a field in two or three weeks.
-4. In July 2012, one ran across the Corn Belt. By the time the Drought Monitor showed it, the damage was done.
-5. Watering early softens the blow, but it costs money. So should I water now, or wait?
-6. FlashWatch predicts the chance of a flash drought at your farm, one and two weeks ahead.
-7. July 1st: irrigate as usual.
-8. July 3rd: five times the normal risk. Start extra irrigation today.
+4. The government's Drought Monitor tracks these, but by the time the drought is actually happening, it's often too
+   late.
+5. Watering early reduces the damage, but it costs money.
+6. FlashWatch uses soil moisture data and weather forecasts to predict flash droughts and to advise farmers on whether
+   and when to start extra irrigation. *("satellite" cut from the take: ERA5-Land soil moisture is modelled, not
+   satellite-measured)*
+7. July 1st, irrigate as usual.
+8. July 3rd, we're now at five times the normal risk. FlashWatch recommends starting extra irrigation.
 9. Two weeks later, the flash drought hits.
-10. FlashWatch keeps a water account for each field, built to read irrigation straight from the pivot, and adjusts
-    its advice.
-11. Or just ask. Muse Spark answers from FlashWatch's own data, and logs the irrigation. Any number it can't back up
-    is sent back and rewritten.
+10. FlashWatch calculates the water balance for each field and adjusts its advice accordingly. *("reading irrigation
+    data straight from the pivot" cut: the pivot connector is written but untested)*
+11. Farmers can also query FlashWatch directly, powered by Muse Spark.
 12. To set up a farm, SAM 3.1 finds the pivots in an aerial photo and measures each one.
-13. Each morning, the operator agent plans which pivots to run, within the farm's rules.
-14. Here one well can't run two pivots at once, so it pauses one and starts the field where water is worth most.
-15. Nothing happens until the farmer taps YES on WhatsApp.
-16. Farmers can send a voice note too. Muse Voice Transcribe and Spark turn it into a report on the right pivot.
-17. Most corn and soybeans aren't irrigated: 130 million acres. For those farms, FlashWatch prices the other moves:
-    skip a fungicide pass, trim side-dress nitrogen, buy hay early. And it says whether to act now.
-18. How good is it? On 2022 to 2024, years the model never saw, a flash drought followed more than five times as
-    often as normal on the farms it flagged. A hot-and-dry rule of thumb manages less than twice. It sees droughts
-    three weeks before the Drought Monitor, worth about 140 million dollars a year.
-19. Under the hood: ERA5-Land soil data and ECMWF forecasts feed a machine-learning model, and Meta's models and
-    agents carry it to the farmer.
-20. I'm Jamie Twiss, and I built FlashWatch to help American farmers. Thank you.
+13. Each morning, the operator agent plans which irrigation pivots to run and checks them against the farm's configured
+    rules.
+14. Nothing happens until the farmer taps YES on WhatsApp.
+15. Farmers can send a voice note transcribed by Muse and incorporated into the model.
+16. For rain-fed farms, FlashWatch recommends other drought mitigation actions. Skip a fungicide pass, trim side-dress
+    nitrogen, or buy hay early.
+17. In our test sample, farms flagged as higher risk saw more than five times as many droughts as the baseline. This
+    is more than twice as good as weather-based rules of thumb. The total savings potential is about $140 million a
+    year.
+18. Under the hood, ERA5-Land soil data and ECMWF forecasts feed a machine-learning model, and Meta's models and agents
+    carry it to the farmer. *(first take; the second says the agents interact with the farm equipment directly)*
+19. I'm Jamie Twiss, and I built FlashWatch to help American farmers. Thank you.
 
-**General-purpose version** (FlashWatch the product): the same lines, with these six swapped in. They drop the
-hackathon and the Meta model names; the screens still show them, which is fine for a product demo.
+**General-purpose cut**: the same, with these swapped in.
 
-- G1. Welcome to FlashWatch: a week or two's warning of flash drought, and what to do about it.
-- G11. Or just ask. The answer comes from FlashWatch's own data, and it logs the irrigation. Any number it can't back
-  up is sent back and rewritten.
-- G12. To set up a farm, FlashWatch finds the pivots in an aerial photo and measures each one.
-- G16. Farmers can send a voice note too, and FlashWatch turns it into a report on the right pivot.
-- G19. Under the hood: ERA5-Land soil data and ECMWF weather forecasts feed a machine-learning model, and a water
-  balance turns that into actions and dollars for each field.
-- G20. I'm Jamie Twiss, and I'm building FlashWatch to help American farmers. See how it works at the link below.
+- 1. Welcome to FlashWatch, software that provides one to two weeks' warning of flash drought for farmers and advises
+  them on what to do about it.
+- 11. Farmers can also query FlashWatch directly.
+- 12. To set up a farm, FlashWatch finds the pivots in an aerial photo and measures each field.
+- 15. Farmers can also send a voice note, and FlashWatch turns it into a report based on the right pivot.
+- 18. Under the hood, ERA5-Land soil data and ECMWF weather forecasts feed a proprietary machine-learning model and
+  calculate a water balance that in turn is used to power the recommendations.
+- 19. I'm Jamie Twiss, and I'm building FlashWatch to help American farmers. See how it works at the link below.
 
-One caution for the general version: the archived ECMWF forecasts it was tested on are licensed for non-commercial
-use only, and so is the free Earth Engine tier that serves the soil data. Showing the video is fine; selling the
-product would need data feeds licensed for commercial use.
+Numbers: line 8, farm page 2012-07-03 (5.3x normal, start today); line 17, test years 2022-2024 scored once on Nov 2
+(5.6x normal against 1.9x for the rule of thumb); about $140M a year = $28M irrigated + $109M rain-fed (2006-2021,
+real ECMWF forecasts).
 
-**If it still runs long**, cut in this order (the shots get retimed to whatever you record):
-
-- Line 16, the voice note: about 9 s. The Agents shot then ends on the WhatsApp YES.
-- Line 18: drop "It sees droughts three weeks before the Drought Monitor," and end "...less than twice. In past
-  seasons, that was worth about 140 million dollars a year." About 3 s.
-- Line 2: drop it. About 6 s.
-- General version only: drop G19. About 10 s.
-
-Sources for the numbers: line 8, farm page 2012-07-03 (5.3x normal, start today); line 18, test years 2022-2024
-scored once on Nov 2 (5.6x normal against 1.9x for the rule of thumb), Drought Monitor lead median 22 days
-(2006-2021), value $28M irrigated + $109M rain-fed a year (2006-2021, real ECMWF forecasts).
+The archived ECMWF forecasts (and the free Earth Engine tier for the soil data) are licensed for non-commercial use
+only: showing the general cut is fine; selling the product would need data feeds licensed for commercial use.
 
 ## Full-length narration (3:51, Nov 2)
 

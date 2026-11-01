@@ -1,6 +1,7 @@
 """Scripted screen recordings of the site for the demo video (docs/video.md).
 
     python video/record.py all              # every paced shot; or name some: farm ask agents ...
+                                            # (for the cut in $env:CUT, default "hack": see edit.py)
     python video/record.py july3            # the July 3 test clip (not paced to the narration)
     python video/record.py --list
 
@@ -9,7 +10,7 @@ Needs the site served on 127.0.0.1:8812 (`python -m http.server 8812 --directory
 page at 110%, as in the shot list); a drawn cursor glides between targets on eased, slightly curved paths and
 dips on each click, as in a live demo. ffmpeg (winget Gyan.FFmpeg) turns the recording into H.264.
 
-Shots are paced to the narration: video/out/timeline.json (from `video/edit.py audio`) gives each beat's start,
+Shots are paced to the narration: video/out/<cut>/timeline.json (from `video/edit.py audio`) gives each beat's start,
 and a shot waits for a beat's time before acting. Each shot writes <name>.json with `t0`, the point in its video
 where its first beat starts, plus any marks the edit needs (the Ask shot's question and answer).
 """
@@ -18,6 +19,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import random
 import shutil
 import subprocess
@@ -29,7 +31,7 @@ from playwright.sync_api import sync_playwright
 
 SITE = "http://127.0.0.1:8812/"
 HERE = Path(__file__).resolve().parent
-OUT = HERE / "out"
+OUT = HERE / "out" / os.environ.get("CUT", "hack")
 W, H, ZOOM = 1920, 1080, 1.1
 ZOOMS = {"region2012": 1.35}   # shots recorded in a smaller window, so the page is bigger in the frame
 FARM = "index.html#lat=45.38&lon=-99.38&mode=replay&year=2012"
@@ -184,7 +186,7 @@ def july3(page, rec0):
 
 
 def region2012(page, rec0):
-    """The 2012 risk map stepping through late June and July (beats drydown, july2012)."""
+    """The 2012 risk map stepping through late June and July (beats drydown, monitor)."""
     page.goto(SITE + "region.html")
     page.wait_for_selector("#year option", state="attached", timeout=20000)
     page.select_option("#year", "2012")
@@ -196,16 +198,16 @@ def region2012(page, rec0):
     hand = Hand(page)
     clk = Clock(page, "drydown", rec0)
     clk.go()
-    clk.at("drydown", 2.0)            # the section's title first
-    hand.to("#rmap", 1.2)
-    clk.at("drydown", 4.6)
+    clk.at("drydown", 0.6)            # the section's title first
+    hand.to("#rmap", 1.0)
+    clk.at("drydown", 2.4)
     hand.to("#next", 1.0)
-    clk.at("july2012", -0.2)
-    end = clk.tl["july2012"]["end"] - clk.base - 0.8
+    clk.at("monitor", 0.0)
+    end = clk.tl["monitor"]["end"] - clk.base - 0.8
     while time.monotonic() - clk.t0 < end:
         hand.tap()
         page.wait_for_timeout(420)
-    clk.until_end("july2012")
+    clk.until_end("monitor")
     return clk.marks
 
 
@@ -215,32 +217,32 @@ def farm(page, rec0):
     hand = Hand(page)
     clk = Clock(page, "mitigate", rec0)
     clk.go()
-    clk.at("mitigate", 7.0)
+    clk.at("mitigate", 0.6)
     hand.to("#vQ", 1.0, fx=0.3)
-    clk.at("predicts", 0.2)
+    clk.at("predicts", 1.6)
     hand.to("#t1")
-    clk.at("predicts", 3.9)
+    clk.at("predicts", 4.0)
     hand.to("#t2")
-    clk.at("july1", 0.0)
+    clk.at("predicts", 6.6)
     hand.to("#vBig", fx=0.4)
     clk.at("july3", -0.4)
     hand.click(strip_cell(page, "07-03"), 0.8)
-    clk.at("july3", 2.9)
+    clk.at("july3", 1.9)
     hand.to("#t1x", 0.8)
-    clk.at("july3", 5.0)
+    clk.at("july3", 4.0)
     hand.to("#vBig", 0.8, fx=0.45)
     clk.at("twodays", -0.6)
     hand.to(strip_cell(page, "07-05"), 0.7, jitter=0)
     hand.click(strip_cell(page, "07-17"), 1.3)
     clk.at("water", -0.6)
     scroll_to(page, "#waterCard", 1400)
-    clk.at("water", 3.0)
+    clk.at("water", 1.8)
     hand.click("#irrAdd", 0.9)
-    clk.at("water", 6.6)
+    clk.at("water", 3.8)
     hand.click("#pivotImport", 0.8)
-    clk.at("water", 9.4)
+    clk.at("water", 5.8)
     hand.to("#waterChart", 0.9, fx=0.75, fy=0.45)
-    clk.at("water", 11.6)
+    clk.at("water", 7.6)
     hand.to("#waterNow", 0.8)
     clk.until_end("water")
     return clk.marks
@@ -255,10 +257,10 @@ def ask(page, rec0):
     hand = Hand(page)
     clk = Clock(page, "ask", rec0)
     clk.go()
-    scroll_to(page, "#askCard", 1200, top=160)
-    page.wait_for_timeout(1300)
-    hand.click("#askQ", 0.8, pause=150)
-    page.keyboard.type("I put an inch on yesterday. Do I still need to start?", delay=42)
+    scroll_to(page, "#askCard", 1000, top=160)
+    page.wait_for_timeout(500)
+    hand.click("#askQ", 0.7, pause=120)
+    page.keyboard.type("I put an inch on yesterday. Do I still need to start?", delay=32)
     page.wait_for_timeout(350)
     hand.click("#askForm button", 0.5)
     clk.mark("asked")
@@ -293,7 +295,7 @@ def agents(page, rec0):
     scroll_to(page, "#aVoice", 1300, top=40)
     clk.at("voice", 2.4)
     hand.to("#voice blockquote", 1.0, fx=0.4)
-    clk.at("voice", 5.6)
+    clk.at("voice", 3.8)
     hand.to("#voice table", 1.0, fx=0.4)
     clk.until_end("voice")
     return clk.marks
@@ -306,50 +308,47 @@ def rainfed(page, rec0):
     clk = Clock(page, "rainfed", rec0)
     clk.go()
     hand.click("#wRain", 0.9)
-    clk.at("rainfed", 4.0)
-    hand.to("#vBig", 1.0, fx=0.4)
-    clk.at("rainfed", 6.8)
-    scroll_to(page, "#decisions", 1500, top=40)
-    clk.at("rainfed", 10.4)
-    hand.to("#dc-fungicide_corn h4", 0.9)
-    clk.at("rainfed", 12.0)
-    hand.to("#dc-fungicide_corn .dout", 0.8)
-    clk.at("rainfed", 14.4)
-    scroll_to(page, "#dc-nitrogen", 1200, top=60)
-    hand.to("#dc-nitrogen h4", 0.9)
-    clk.at("rainfed", 16.6)
-    hand.to("#dc-nitrogen .dout", 0.9)
-    clk.at("rainfed", 19.4)
-    scroll_to(page, "#dc-fungicide_corn", 1300, top=40)
-    clk.at("rainfed", 21.2)
+    clk.at("rainfed", 1.6)
+    hand.to("#vBig", 0.9, fx=0.4)
+    clk.at("rainfed", 3.0)
+    scroll_to(page, "#decisions", 1300, top=40)
+    clk.at("rainfed", 4.9)
+    hand.to("#dc-fungicide_corn h4", 0.8)
+    clk.at("rainfed", 5.9)
+    hand.to("#dc-fungicide_corn .dout", 0.7)
+    clk.at("rainfed", 7.0)
+    scroll_to(page, "#dc-nitrogen", 1000, top=60)
+    hand.to("#dc-nitrogen h4", 0.8)
+    clk.at("rainfed", 8.4)
+    hand.to("#dc-nitrogen .dout", 0.8)
+    clk.at("rainfed", 10.0)
+    scroll_to(page, "#dc-fungicide_corn", 1100, top=40)
+    clk.at("rainfed", 11.0)
     hand.drag("#dc-fungicide_corn .dparams input[type=range]", 70, 1.0)
-    page.wait_for_timeout(700)
+    page.wait_for_timeout(600)
     hand.drag("#dc-fungicide_corn .dparams input[type=range]", -70, 0.9)
-    clk.at("rainfed", 25.6)
-    hand.to("#dc-fungicide_corn .dpill", 0.9)
+    clk.at("rainfed", 13.4)
+    hand.to("#dc-fungicide_corn .dpill", 0.8)
     clk.until_end("rainfed")
     return clk.marks
 
 
 def bigpicture(page, rec0):
-    """The big picture: forecast quality (six times normal), the lead over the Monitor, the dollar totals."""
+    """The big picture: the test years (5.6x normal), against the rule of thumb, the dollar totals."""
     page.goto(SITE + "region.html")
     page.wait_for_selector("#regionTotals:not(:empty)")
     page.wait_for_timeout(2500)
     hand = Hand(page)
     clk = Clock(page, "howgood", rec0)
     clk.go()
-    clk.at("howgood", 2.2)
-    scroll_to(page, "#flagKpis", 1400, top=140)
-    clk.at("howgood", 3.4)
-    hand.to("#flagKpis", 1.0, fx=0.2)
-    clk.at("howgood", 7.4)
+    clk.at("howgood", 0.8)
+    scroll_to(page, "#flagKpis", 1300, top=140)
+    clk.at("howgood", 2.0)
+    hand.to("#flagKpis", 1.0, fx=0.5)                 # the test-year card
+    clk.at("howgood", 6.6)
     hand.to("#flagChart", 1.0, fx=0.5)
-    clk.at("howgood", 13.4)
-    scroll_to(page, "#monitor", 1300, top=200)
-    hand.to("#monitor", 0.9, fx=0.25)
-    clk.at("howgood", 17.0)
-    scroll_to(page, "#regionTotals", 1400, top=160)
+    clk.at("howgood", 9.4)
+    scroll_to(page, "#regionTotals", 1300, top=160)
     hand.to("#regionTotals", 1.0, fx=0.3)
     clk.until_end("howgood")
     return clk.marks
@@ -372,9 +371,9 @@ def hood(page, rec0):
     clk.marks["zoom"] = {"at": round(time.monotonic() - clk.t0, 2),
                          **{k: round(v * W / vw) for k, v in box.items()}}
     hand.to(pre, 1.0, fx=0.25, fy=0.15)
-    clk.at("hood", 7.6)
+    clk.at("hood", 4.5)
     hand.to(pre, 1.0, fx=0.35, fy=0.45)
-    clk.at("hood", 13.6)
+    clk.at("hood", 7.5)
     hand.to(pre, 1.0, fx=0.3, fy=0.8)
     clk.until_end("hood")
     return clk.marks
@@ -385,7 +384,7 @@ PACED = [n for n in SHOTS if n != "july3"]
 
 
 def record(name: str):
-    OUT.mkdir(exist_ok=True)
+    OUT.mkdir(parents=True, exist_ok=True)
     raw = OUT / "raw"
     with sync_playwright() as p:
         browser = p.chromium.launch()
