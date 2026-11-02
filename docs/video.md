@@ -12,7 +12,7 @@ state you can reach from a URL or a click, so it can be recorded in one sitting.
 ## Narration as recorded (Nov 2): two cuts
 
 Two takes: `video/in/hack.m4a` (every line) and `video/in/general.m4a` (the general-purpose lines and a new
-"farmers" line, used in both cuts). The hackathon cut runs 2:40, the general one 2:43 (`video/edit.py`, CUT=hack or
+"farmers" line, used in both cuts). The hackathon cut runs 2:44, the general one 2:48 (`video/edit.py`, CUT=hack or
 general). Where a line was read twice, the second take is used unless noted.
 
 **Hackathon cut**
@@ -54,10 +54,17 @@ general). Where a line was read twice, the second take is used unless noted.
   them on what to do about it.
 - 11. Farmers can also query FlashWatch directly.
 - 12. To set up a farm, FlashWatch finds the pivots in an aerial photo and measures each field.
-- 15. Farmers can also send a voice note, and FlashWatch turns it into a report based on the right pivot.
+- 15. Farmers can also send a voice note, and FlashWatch turns it into a report on the correct pivot. *(first take)*
 - 18. Under the hood, ERA5-Land soil data and ECMWF weather forecasts feed a proprietary machine-learning model and
   calculate a water balance that in turn is used to power the recommendations.
 - 19. I'm Jamie Twiss, and I'm building FlashWatch to help American farmers. See how it works at the link below.
+
+Pictures added on Nov 2, in both cuts: under line 3, a caption over the 2012 risk map ("Flash drought: the soil goes
+from normal to drought in a few weeks, not months, usually under heat and little rain."); under line 4, the U.S.
+Drought Monitor's national maps for July 3, 10, 17 and 24, 2012 (droughtmonitor.unl.edu, credited on screen), with
+"In 2006-2021 the soil reached drought a median 22 days before this map showed it. FlashWatch warns one to two
+weeks before that." (README; evidence.json, monitor.crossing_vs_d1). Not used: the Monitor at the demo farm itself,
+which showed moderate drought (D1) from July 3 to mid-August 2012 and never worse.
 
 Numbers: line 8, farm page 2012-07-03 (5.3x normal, start today); line 17, test years 2022-2024 scored once on Nov 2
 (5.6x normal against 1.9x for the rule of thumb); about $140M a year = $28M irrigated + $109M rain-fed (2006-2021,

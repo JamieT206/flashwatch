@@ -18,6 +18,7 @@ the moment its first beat starts.
 
 from __future__ import annotations
 
+import base64
 import json
 import os
 import shutil
@@ -37,8 +38,8 @@ HACK = [
     ("lead", None, 1.5),
     ("hello", [("hack", 1.8, 10.5)], 0.8),
     ("farmers", [("general", 72.3, 80.1)], 1.0),          # "we should be building more tools" (Nov 2 re-record)
-    ("drydown", [("hack", 22.5, 25.95)], 0.5),
-    ("monitor", [("hack", 26.45, 32.4)], 0.8),
+    ("drydown", [("hack", 22.5, 25.95)], ("min", 6.0)),   # time to read the definition caption
+    ("monitor", [("hack", 26.45, 32.4)], ("min", 9.0)),   # the Drought Monitor's weekly maps, and the 22-day lead
     ("mitigate", [("hack", 42.5, 46.0)], 0.8),             # second take
     ("predicts", [("hack", 47.2, 48.65, "hi"), ("hack", 49.13, 57.9, "lo")], 0.8),   # cut: "satellite"
     ("july1", [("hack", 59.8, 62.7)], 0.6),
@@ -59,7 +60,7 @@ GENERAL_LINES = {
     "hello": [("general", 2.2, 11.0)],
     "ask": [("general", 13.7, 16.5)],
     "setup": [("general", 19.3, 25.4)],
-    "voice": [("general", 35.4, 40.8)],                    # second take
+    "voice": [("general", 27.55, 33.85)],                  # first take ("on the correct pivot")
     "hood": [("general", 49.2, 61.4)],                     # second take
     "outro": [("general", 63.1, 69.6)],
 }
@@ -69,10 +70,12 @@ BEATS = {"hack": HACK,
 # Which picture runs under which beats: (source, first beat). A source runs until the next one starts.
 #   shot:<name>  video/out/<name>.mp4 from record.py (its .json says where the first beat starts in it)
 #   img:<path>   a still, slowly zoomed
+#   seq:usdm     the Drought Monitor's weekly maps, July 3-24 2012 (video/in/usdm/, from droughtmonitor.unl.edu)
 SHOTS = [
     ("img:title", "lead"),
     ("img:aerial", "farmers"),
     ("shot:region2012", "drydown"),
+    ("seq:usdm", "monitor"),
     ("shot:farm", "mitigate"),
     ("shot:ask", "ask"),
     ("shot:agents", "setup"),
@@ -175,6 +178,36 @@ CARDS = {
     "title": '<div class="sub">A week\'s warning of flash drought, and what to do about it.</div>',
     "end": '<div class="sub">Built by Jamie Twiss</div><div class="links"><b>Live demo</b>jamiet206.github.io/flashwatch<br><b>Code</b>github.com/JamieT206/flashwatch</div>',
 }
+# The Drought Monitor's national maps, one a week, like a page being updated; the lead (README; evidence.json
+# monitor.crossing_vs_d1: median 22 days over the 2006-2021 onsets) comes in with the third map.
+USDM = [("20120703", "July 3, 2012", 2.0), ("20120710", "July 10", 1.4), ("20120717", "July 17", 1.4),
+        ("20120724", "July 24", None)]
+USDM_PAGE = """<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+<style>html,body{margin:0;width:1920px;height:1080px;background:#fff;font-family:'Public Sans',sans-serif;color:#1b1b1b}
+img{position:absolute;left:40px;top:50px;height:960px}
+.col{position:absolute;left:1340px;top:120px;width:500px}
+.k{font-size:30px;font-weight:800;letter-spacing:1px;color:#3d4551}
+.s{font-size:30px;line-height:1.35;color:#3d4551;margin-top:14px}
+.d{font-size:76px;font-weight:800;margin-top:44px}
+.c{font-size:34px;line-height:1.35;margin-top:56px;border-left:10px solid #d83933;padding-left:22px}
+.cr{position:absolute;left:1340px;bottom:56px;font-size:20px;color:#71767a}
+.rule{position:absolute;left:0;right:0;bottom:0;height:18px;background:#d83933}</style></head>
+<body><img src="__IMG__"><div class="col"><div class="k">U.S. DROUGHT MONITOR</div>
+<div class="s">The government's drought map: one map a week, of drought already on the ground.</div>
+<div class="d">__DATE__</div>__CAP__</div>
+<div class="cr">Maps: U.S. Drought Monitor (NDMC, USDA, NOAA)</div><div class="rule"></div></body></html>"""
+USDM_CAP = ('<div class="c">In 2006-2021 the soil reached drought a median <b>22 days</b> before this map showed it. '
+            'FlashWatch warns one to two weeks before that.</div>')
+# Captions over a shot: shot name -> (png name, seconds in, HTML)
+CAPTIONS = {"region2012": ("cap_flash", 0.5, "<b>Flash drought:</b> the soil goes from normal to drought in a few "
+                                             "weeks, not months, usually under heat and little rain.")}
+CAP_PAGE = """<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+<style>html,body{margin:0;width:1920px;height:1080px;background:transparent;font-family:'Public Sans',sans-serif}
+div{position:absolute;left:70px;bottom:80px;max-width:1080px;background:rgba(255,255,255,.95);color:#1b1b1b;
+font-size:40px;line-height:1.35;padding:26px 34px;border-left:12px solid #d83933;box-shadow:0 4px 18px rgba(0,0,0,.18)}
+</style></head><body><div>__TEXT__</div></body></html>"""
 STILLS = {"aerial": Path(__file__).resolve().parents[1] / "data" / "agent" / "pivots" / "42.450_-98.600.jpg"}
 
 
@@ -187,7 +220,27 @@ def cards():
             page.set_content(CARD.replace("__BODY__", body))
             page.wait_for_timeout(1200)
             page.screenshot(path=str(OUT / f"{name}.png"))
+        for k, (day, label, _) in enumerate(USDM):
+            img = "data:image/png;base64," + base64.b64encode((IN / "usdm" / f"{day}_usdm.png").read_bytes()).decode()
+            page.set_content(USDM_PAGE.replace("__IMG__", img).replace("__DATE__", label)
+                             .replace("__CAP__", USDM_CAP if k >= 2 else ""))
+            page.wait_for_timeout(1200)
+            page.screenshot(path=str(OUT / f"usdm{k}.png"))
+        for png, _, text in CAPTIONS.values():
+            page.set_content(CAP_PAGE.replace("__TEXT__", text))
+            page.wait_for_timeout(1200)
+            page.screenshot(path=str(OUT / f"{png}.png"), omit_background=True)
         b.close()
+
+
+def usdm(dur: float, dst: Path):
+    """The weekly maps in turn, the last held to the end of the segment."""
+    times = [d for *_, d in USDM[:-1]]
+    times.append(dur - sum(times))
+    lst = OUT / "usdm.txt"
+    lst.write_text("".join(f"file 'usdm{k}.png'\nduration {d:.3f}\n" for k, d in enumerate(times))
+                   + f"file 'usdm{len(times) - 1}.png'\n")
+    encode(["-f", "concat", "-safe", 0, "-i", lst, "-vf", f"scale={W}:{H},fps={FPS}"], dst, dur)
 
 
 def encode(args: list, dst: Path, dur: float):
@@ -220,6 +273,12 @@ def shot(name: str, dur: float, dst: Path):
     vf = pad
     if "zoom" in marks:   # push in on part of the page once it has scrolled there (the README diagram)
         vf += "," + push_in(marks["zoom"])
+    if name in CAPTIONS:  # a caption box faded in over the shot
+        png, at, _ = CAPTIONS[name]
+        fc = f"[0:v]{vf}[b];[1:v]format=rgba,fade=in:st={at}:d=0.4:alpha=1[c];[b][c]overlay=0:0:shortest=1[v]"
+        encode(["-ss", f"{marks['t0']:.3f}", "-i", src, "-loop", 1, "-framerate", FPS, "-i", OUT / f"{png}.png",
+                "-filter_complex", fc, "-map", "[v]"], dst, dur)
+        return
     encode(["-ss", f"{marks['t0']:.3f}", "-i", src, "-vf", vf], dst, dur)
 
 
@@ -282,6 +341,8 @@ def video():
         kind, name = src.split(":")
         if kind == "img":
             still(name, t1 - t0, dst, zoom=name not in CARDS)
+        elif kind == "seq":
+            usdm(t1 - t0, dst)
         else:
             shot(name, t1 - t0, dst)
         if name == "agents":

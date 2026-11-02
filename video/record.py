@@ -186,7 +186,7 @@ def july3(page, rec0):
 
 
 def region2012(page, rec0):
-    """The 2012 risk map stepping through late June and July (beats drydown, monitor)."""
+    """The 2012 risk map stepping through late June into July (beat drydown; edit.py adds the definition caption)."""
     page.goto(SITE + "region.html")
     page.wait_for_selector("#year option", state="attached", timeout=20000)
     page.select_option("#year", "2012")
@@ -198,16 +198,14 @@ def region2012(page, rec0):
     hand = Hand(page)
     clk = Clock(page, "drydown", rec0)
     clk.go()
-    clk.at("drydown", 0.6)            # the section's title first
-    hand.to("#rmap", 1.0)
-    clk.at("drydown", 2.4)
+    clk.at("drydown", 0.3)
     hand.to("#next", 1.0)
-    clk.at("monitor", 0.0)
-    end = clk.tl["monitor"]["end"] - clk.base - 0.8
+    clk.at("drydown", 1.4)
+    end = clk.tl["drydown"]["end"] - clk.base - 0.6
     while time.monotonic() - clk.t0 < end:
         hand.tap()
         page.wait_for_timeout(420)
-    clk.until_end("monitor")
+    clk.until_end("drydown")
     return clk.marks
 
 
