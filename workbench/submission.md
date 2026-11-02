@@ -1,6 +1,7 @@
-# Submission form: draft answers (Oct 31)
+# Submission form: draft answers (final, Nov 2)
 
-Development years 2005-2021; test years 2022-2024 scored once on Nov 2.
+Development years 2005-2021; test years 2022-2024 scored once on Nov 2. Paste the YouTube link where it
+says [VIDEO LINK]. YouTube title and description are at the end.
 
 ---
 
@@ -14,14 +15,16 @@ a heat wave. So every summer morning an irrigator has to decide: start the pivot
 
 FlashWatch answers that question for a specific field. Every forecast date it gives the chance that the soil at the
 farm drops into flash drought in the next 7 days and in days 8-14, against normal for the date. It combines today's
-observed soil moisture, rain and heat (ERA5-Land) with ECMWF's ensemble weather forecasts, using a gradient-boosted
-model per grid cell and a convolutional network that sees the whole map. A water balance of the field then turns the
+observed soil moisture, rain and heat (ERA5-Land) with ECMWF's ensemble weather forecasts in a gradient-boosted model
+(where no archived forecast exists, a convolutional network that sees the whole map helps). A water balance of the field then turns the
 chance into dollars: what starting extra irrigation today is worth per acre, against waiting for the next forecast.
 The advice is one of three plain answers: start extra irrigation today, not yet, or irrigate as usual.
 
 On the tenth of farm-days FlashWatch rates riskiest, a flash drought begins in the next 7 days 6.3 times as often as
-normal in development (5.6 times in the test years 2022-2024, scored once after the model was frozen), and the soil crosses the drought line a median 22 days before the Drought Monitor first shows drought
-at that place. Across the High Plains and Midwest that's worth about $140 million a year: about $28 million on irrigated
+normal in development (5.6 times in the test years 2022-2024, scored once after the model was frozen); a hot-and-dry
+rule of thumb manages less than twice. The soil crosses the drought line a median 22 days before the Drought Monitor
+first shows drought at that place, and on the farms FlashWatch flags, the Monitor's own map gets worse within two weeks
+2.2 times as often as elsewhere. Across the High Plains and Midwest that's worth about $140 million a year: about $28 million on irrigated
 corn and $109 million on rain-fed farms, where the decisions are different (skip a fungicide pass, trim side-dress
 nitrogen, buy hay before prices rise).
 
@@ -35,8 +38,10 @@ The testing is strict: every prediction shown comes from a model that never saw 
 public on the forecast date (an automatic test perturbs the future to prove it); and the test years 2022-2024 are
 scored once, after the model is frozen. Null results are reported alongside the wins.
 
-Live demo: https://jamiet206.github.io/flashwatch/ (replays past seasons; the forecast archive it trains on is
-released three weeks late). Code: https://github.com/JamieT206/flashwatch
+FlashWatch runs live: each day it pulls the latest soil data and ECMWF's free real-time ensemble forecast and updates
+the site (out of season, as now, it shows July 3 of this year's season). Any past season can also be replayed day by day.
+
+Live demo: https://jamiet206.github.io/flashwatch/ Code: https://github.com/JamieT206/flashwatch Video: [VIDEO LINK]
 
 ---
 
@@ -49,7 +54,9 @@ released three weeks late). Code: https://github.com/JamieT206/flashwatch
     it answers through the advice and water-account tools and logs the irrigation it's told about;
   - the watcher, which follows a farm through the season and texts only when the advice or the soil changes;
   - the morning text, a weekly briefing for a county extension office, and turning voice notes into structured field
-    reports.
+    reports;
+  - FlashWatch's weekly regional outlook, written from its own forecast a week before the Drought Monitor reports on the
+    same places (the Agents page sets the two side by side).
 
   Every number Spark writes is checked against the tool results; an untraced figure sends the draft back, and is cut if
   it can't be fixed.
@@ -63,10 +70,8 @@ released three weeks late). Code: https://github.com/JamieT206/flashwatch
   - Run locally (4-bit, llama.cpp, one 12 GB graphics card) as an offline fallback for the agents, with the same tools,
     rules and checker. On the demo morning it made the same plan as Spark.
   - Fine-tuned with a LoRA adapter on Modal on 15 years of the Drought Monitor's weekly narratives, so it writes the
-    Monitor's kind of regional summary from FlashWatch's numbers: 18% of its wording shared with the real text,
-    against 9% for the base model.
-  - We also tried a version that writes before the Monitor's map comes out. It kept the style but drifted to places
-    outside its input, and we report that as a null result.
+    Monitor's kind of regional summary from FlashWatch's numbers. It learned the style; given only last week's map, it
+    drifted to places outside its input, which we report as a null result.
 - **WhatsApp Cloud API.** The farmer's side of the operator: the plan arrives with YES and NO buttons, YES starts the
   pivots, and the same thread takes questions and voice notes. Tested end to end on a real phone through Meta's test
   number.
@@ -127,3 +132,19 @@ farmers where they already are and acts on their behalf:
   - it runs the tests and long jobs itself;
   - it sticks to an agreed spec;
   - it reports results honestly, including the ones that didn't work.
+
+---
+
+## YouTube
+
+**Title:** FlashWatch: a week's warning of flash drought, and what to do about it
+
+**Description (hackathon cut):**
+FlashWatch predicts flash droughts one and two weeks ahead for each farm and turns the forecast into a decision: start
+extra irrigation today, or wait. Agents built on Meta's models (Muse Spark, SAM 3.1, Muse Voice Transcribe) carry the
+advice to the farmer on WhatsApp and run the pivots only on a YES. Built for the hackathon on public data.
+
+Live demo: https://jamiet206.github.io/flashwatch/
+Code: https://github.com/JamieT206/flashwatch
+
+**Description (general cut):** the same without the last sentence of the first paragraph.
