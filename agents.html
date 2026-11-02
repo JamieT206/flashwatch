@@ -57,12 +57,15 @@
     <div id="brief" class="agrid"></div>
   </section>
 
-  <section class="card agent" id="aGlimmer">
-    <div class="ahead"><h3>Writes like the Drought Monitor</h3><span class="badge">Muse Glimmer 30B, open weights</span></div>
-    <p class="adoes">The US Drought Monitor's weekly narrative is the text farmers and agencies already read. FlashWatch fine-tunes Meta's
-      open-weights Muse Glimmer on 15 years of those narratives, paired with each week's numbers, so it writes the same kind of regional
-      summary from the data.</p>
-    <div id="glimmer"></div>
+  <section class="card agent" id="aAhead">
+    <div class="ahead"><h3>A week ahead of the Drought Monitor</h3><span class="badge">Muse Spark</span></div>
+    <p class="adoes">The US Drought Monitor's weekly map and narrative are what farmers and agencies read, but they describe drought
+      that has already arrived. FlashWatch writes its regional outlook from its own forecast, a week before the Monitor reports on the
+      same places. Here is what FlashWatch said, what the Monitor said a week later, and how often the Monitor's map got worse where
+      FlashWatch pointed.</p>
+    <div id="aheadBox"></div>
+    <p class="note">We also fine-tuned Meta's open-weights Muse Glimmer 30B on 15 years of the Monitor's narratives. It learned the
+      Monitor's style, but sounding like the Monitor isn't the point: being early, and right, is.</p>
   </section>
 
   <footer>Aerial imagery: USDA NAIP via the USGS National Map (public domain). Data: ERA5-Land (Copernicus Climate Change Service),
