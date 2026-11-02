@@ -132,6 +132,9 @@ python -m flashwatch.live.run train              # once: B0, M1 and the live M2 
 python -m flashwatch.live.run today --publish    # daily: ERA5-Land, Drought Monitor, ECMWF open data, forecast, publish
 ```
 
+`flashwatch\live\daily.cmd` runs the daily step for Windows Task Scheduler (here: "FlashWatch live feed", 21:00 Sydney,
+after ECMWF's 00 UTC run is out; it catches up when the PC is next on) and logs to `data\logs\live_daily.log`.
+
 `today` fetches ERA5-Land up to the latest day Earth Engine has (it runs 5-10 days behind) and issues the forecast five
 days after it, the latency the models were trained with, so the newest forecast is a few days old. In season it reads
 that day's ECMWF open-data ensemble (50 members, 15 days, CC BY 4.0; about 5 GB read, a few MB kept) from the Google

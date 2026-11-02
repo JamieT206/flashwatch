@@ -353,21 +353,22 @@ def bigpicture(page, rec0):
 
 
 def hood(page, rec0):
-    """Under the hood: the README's architecture diagram on GitHub."""
+    """Under the hood: the README's architecture diagram on GitHub, opened on the diagram itself: the file list and
+    the sidebar (contributors) are at the top of the page, out of the frame."""
     page.goto(REPO)
     pre = page.locator("article.markdown-body pre", has_text="Muse").first
     pre.wait_for(timeout=30000)
+    jump = "p => scrollTo(0, p.getBoundingClientRect().top + scrollY - 110)"   # below the sticky README tabs
+    pre.evaluate(jump)
     page.wait_for_timeout(1500)
+    pre.evaluate(jump)                                 # again, once late images have moved the page
+    page.wait_for_timeout(500)
     hand = Hand(page)
     clk = Clock(page, "hood", rec0)
     clk.go()
-    clk.at("hood", 1.5)
-    y = pre.evaluate("p => p.getBoundingClientRect().top + scrollY - 40")
-    page.evaluate(SCROLL, [y, 2000])
     vw = page.viewport_size["width"]                 # where the diagram is, in the 1920x1080 frame (edit.py zooms in)
-    box = {**pre.bounding_box(), "y": 40}              # scrolled to 40 px from the top
-    clk.marks["zoom"] = {"at": round(time.monotonic() - clk.t0, 2),
-                         **{k: round(v * W / vw) for k, v in box.items()}}
+    clk.marks["zoom"] = {"at": 0.8, **{k: round(v * W / vw) for k, v in pre.bounding_box().items()}}
+    clk.at("hood", 1.5)
     hand.to(pre, 1.0, fx=0.25, fy=0.15)
     clk.at("hood", 4.5)
     hand.to(pre, 1.0, fx=0.35, fy=0.45)
