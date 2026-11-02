@@ -19,7 +19,7 @@ from pathlib import Path
 from flashwatch.site.build import SITE
 
 ROOT = SITE.parent
-SKIP = ("data/live.json",)   # a local Today feed, if one exists
+SKIP = ()                    # files never published (none since the live feed, Nov 2)
 
 
 def git(*args, env=None, inp=None) -> str:
