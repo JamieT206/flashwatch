@@ -9,19 +9,16 @@ says [VIDEO LINK]. YouTube title and description are at the end.
 
 A flash drought dries a field out in two or three weeks, usually in a summer heat wave. By the time the US Drought
 Monitor shows it, the damage is often done: in USDA county yields from 2005 to 2021, rain-fed corn yielded about 20%
-below trend where a summer flash drought hit, while irrigated corn in the same counties lost only about 2%. Irrigation
-saves the crop, but only if the pivot is already running. A centre pivot can't catch up once the root zone is empty in
+below trend where a summer flash drought hit, while irrigated corn in the same counties lost only about 2%. Irrigation saves the crop, but only if the irrigation pivot is already running--a pivot can't catch up once the root zone is empty in
 a heat wave. So every summer morning an irrigator has to decide: start the pivot today, or wait?
 
-FlashWatch answers that question for a specific field. Every forecast date it gives the chance that the soil at the
-farm drops into flash drought in the next 7 days and in days 8-14, against normal for the date. It combines today's
+FlashWatch answers that question at the level of an individual farm. Every forecast date it gives the chance that the soil at the
+farm drops into flash drought in the next 7 and 14 days against normal for the date. It combines today's
 observed soil moisture, rain and heat (ERA5-Land) with ECMWF's ensemble weather forecasts in a gradient-boosted model
-(where no archived forecast exists, a convolutional network that sees the whole map helps). A water balance of the field then turns the
-chance into dollars: what starting extra irrigation today is worth per acre, against waiting for the next forecast.
-The advice is one of three plain answers: start extra irrigation today, not yet, or irrigate as usual.
+(where no archived forecast exists, a convolutional network that sees the whole map helps). A water balance of the field then calculates the recommended actions: what starting extra irrigation today is worth per acre, against waiting for the next forecast.
 
 On the tenth of farm-days FlashWatch rates riskiest, a flash drought begins in the next 7 days 6.3 times as often as
-normal in development (5.6 times in the test years 2022-2024, scored once after the model was frozen); a hot-and-dry
+normal in development (5.6 times in the test years 2022-2024); a hot-and-dry
 rule of thumb manages less than twice. The soil crosses the drought line a median 22 days before the Drought Monitor
 first shows drought at that place, and on the farms FlashWatch flags, the Monitor's own map gets worse within two weeks
 2.2 times as often as elsewhere. Across the High Plains and Midwest that's worth about $140 million a year: about $28 million on irrigated
@@ -34,32 +31,32 @@ allocation, season), asks the farmer on WhatsApp, and starts the pivots only on 
 send a voice note from the field, and a watcher texts only when something changes. Every figure an agent writes is
 traced back to FlashWatch's own numbers before it reaches the farmer.
 
-The testing is strict: every prediction shown comes from a model that never saw that year; features only read what was
+The testing is strict: every prediction shown comes from a model that never saw that year's data; features only read what was
 public on the forecast date (an automatic test perturbs the future to prove it); and the test years 2022-2024 are
 scored once, after the model is frozen. Null results are reported alongside the wins.
 
 FlashWatch runs live: each day it pulls the latest soil data and ECMWF's free real-time ensemble forecast and updates
-the site (out of season, as now, it shows July 3 of this year's season). Any past season can also be replayed day by day.
+the site (out of season, as now, it shows July 3 of this year's season to demonstrate). Any past season can also be replayed day by day.
 
-Live demo: https://jamiet206.github.io/flashwatch/ Code: https://github.com/JamieT206/flashwatch Video: [VIDEO LINK]
+Live demo: https://jamiet206.github.io/flashwatch/ Code: https://github.com/JamieT206/flashwatch Video: https://youtu.be/6vjVoGmpSy4
 
 ---
 
 ## Describe your use of Meta products to build the submitted project
 
-- **Muse Spark 1.1 (Meta Model API).** The main agent model, used through tool calls on FlashWatch's own data:
+- **Muse Spark 1.1 (Meta Model API).** The main agent model, used through tool calls on FlashWatch's data:
   - the irrigation operator, which plans pivot starts and stops for a farm with several pivots, revises when the farm's
     rules refuse a command, and writes the approval message;
   - Ask FlashWatch, a chat on the farm page and on WhatsApp ("I put an inch on yesterday. Do I still need to start?"):
     it answers through the advice and water-account tools and logs the irrigation it's told about;
   - the watcher, which follows a farm through the season and texts only when the advice or the soil changes;
-  - the morning text, a weekly briefing for a county extension office, and turning voice notes into structured field
+  - the morning text, a weekly briefing for a county extension office or other local authority, and turning voice notes into structured field
     reports;
   - FlashWatch's weekly regional outlook, written from its own forecast a week before the Drought Monitor reports on the
     same places (the Agents page sets the two side by side).
 
-  Every number Spark writes is checked against the tool results; an untraced figure sends the draft back, and is cut if
-  it can't be fixed.
+  Every number Spark writes is checked against the tool results.
+
 - **SAM 3.1.** The pivot finder: given the farm's location, FlashWatch fetches a USDA aerial photo and SAM 3.1 outlines
   every centre-pivot circle. A second prompt ("crop field shaped like a circle or part of a circle") finds the part and
   half circles. Each circle becomes a pivot with its acres in the farm file the operator uses, so setting up a farm
@@ -80,15 +77,14 @@ Live demo: https://jamiet206.github.io/flashwatch/ Code: https://github.com/Jami
 
 ## Why are Meta's models important to your solution?
 
-The forecast alone doesn't save a crop; a farmer acting on it in time does. Meta's models are how FlashWatch reaches
+To be effective, FlashWatch needs not only to predict a flash drought but to communicate effectively with the farmer. Meta's models are how FlashWatch reaches
 farmers where they already are and acts on their behalf:
 
-- **WhatsApp and voice fit farm work.** A farmer in a field won't open a dashboard, but will read a text, tap YES, or
-  leave a voice note with dirty hands. Spark, Voice Transcribe and the WhatsApp API together make that loop work.
+- **WhatsApp and voice fit farm work.** A farmer in a field won't always be in a position to open a laptop, but will read a text, tap YES, or
+  leave a voice note. Spark, Voice Transcribe and the WhatsApp API together make that loop work.
 - **Tool use makes the agents trustworthy.** Spark works through FlashWatch's tools rather than from memory, so every
-  dollar figure and probability it writes can be traced and checked, and the farm's rules can refuse a bad command
-  before anything moves.
-- **SAM removes the setup barrier.** Finding and measuring pivots from a photo means a farm is set up from its address.
+  dollar figure and probability it writes can be traced and checked, and the farm's rules can refuse a bad command.
+- **SAM removes the setup barrier.** Finding and measuring pivots from a photo means a farm is set up from its address alone, with no lengthy configuration process.
 - **Open weights cover what an API can't.** Glimmer runs on a farm office PC with no connection, keeps farm data local,
   and can be fine-tuned on public data such as the Drought Monitor's narratives. One model family covers both the API
   and the open weights, through the same client code.
@@ -100,14 +96,13 @@ farmers where they already are and acts on their behalf:
 **Modal** (fine-tuning Muse Glimmer 30B):
 
 - **Good:**
-  - Setup was quick: `modal setup`, a Hugging Face token stored as a secret, and a Python file that defines the image,
-    GPU and volume.
+  - Setup was quick
   - A QLoRA run on one A100 80 GB took about an hour and cost about $4.
   - Caching the model weights (about 60 GB) on a volume meant the second training run and every scoring run skipped the
     download.
   - Logs streamed back to the terminal, which made it easy to watch the loss.
 - **Problems:**
-  - We tried serving the model with a vLLM web endpoint. The engine needed a CUDA compiler the slim image lacked, so the
+  - We tried serving the model with a vLLM web endpoint. The engine needed a CUDA compiler, so the
     server crashed, and every incoming request started another GPU container. About 10 GPUs and $6 went before we
     noticed.
   - We fixed it with one container at most and a hard timeout on every function. A default limit on GPU containers for
@@ -119,8 +114,6 @@ farmers where they already are and acts on their behalf:
 
 ## Please specify below what matters most when choosing an AI model or coding tool
 
-*(Your view; a starting point.)*
-
 - **For a model:**
   - reliable tool calling and following an output format;
   - not inventing numbers. We still check every figure, but fewer redrafts means faster answers;
@@ -131,7 +124,7 @@ farmers where they already are and acts on their behalf:
   - it can work across a whole repository for long stretches;
   - it runs the tests and long jobs itself;
   - it sticks to an agreed spec;
-  - it reports results honestly, including the ones that didn't work.
+  - it reports results accurately, including the ones that didn't work.
 
 ---
 

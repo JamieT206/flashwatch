@@ -7,6 +7,8 @@ hay before prices rise. AI agents built on Meta's models deliver the advice by t
 pivots from aerial photos, answer the farmer's questions, and with the farmer's YES pass commands to
 the pivots.
 
+**Video:** https://youtu.be/6vjVoGmpSy4 &nbsp;·&nbsp; **Live site:** https://jamiet206.github.io/flashwatch/
+
 It covers the Corn Belt and northern Plains (36-49 N, 104-80 W): 143 million acres of corn and soybeans,
 13 million of them irrigated.
 
