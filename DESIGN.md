@@ -266,7 +266,7 @@ survives); M1 skill week 1 **4.3%**, week 2 **1.2%**, any-28 **4.6%** (before: 4
   2018 -$34M, 2021 +$56M); with the field's deficit (`m2fc53_water`) $28.8M; against a July 1 start -$4.1M / -$4.3M (in July
   that farmer's pivot is already on). Rain-fed unchanged, $94M. The demo farm's July 3 says start again (4.1x normal; a
   false start would cost $1.24). "Start" now fires on 1-7 days a season there; caught 2012 and 2021, false starts 2006 and 2018.
-  **Final development run on all 101 start dates (Nov 2, `m2full`; Apr 1 - Oct 15; `workbench/burst.sh`).** M2 week 1
+  **Final development run on all 101 start dates (Nov 2, `m2full`; Apr 1 - Oct 15; rebuilt by script once the downloads finished).** M2 week 1
   **16.2%** (13.3-18.9), week 2 **3.9%** (3.1-4.6), any 28 days 11.7% (8.5-14.5); M1 4.3 / 1.2 / 4.6; H1 0.5 / -0.2 / -0.1.
   Top tenth: week 1 6.3x (23.8% against 3.8%, 63% of onsets), week 2 3.5x; H1 1.6x / 1.0x. West of 98 W 19.0% (15.7-21.5)
   against east of 90 W 14.1% (10.2-18.1): expectation 4 holds. Skill barely moves with the late dates; value rises because
@@ -1009,8 +1009,8 @@ Plan the story first, then make sure the pipeline writes the data it needs.
 
 **Prototype (Oct 28):** `python -m flashwatch.viz.replay --oof <stem> --year 2012` writes
 `data/viz/replay_2012.html` (map per issue date: week-2 risk, cells already in drought, actual onsets,
-Drought Monitor D1+ outline; play/scrub; season chart of mean forecast vs actual onset rate). Serve with
-the `viz` entry in `.claude/launch.json`. **Finding for the story:** in 2012 the actual week-2 onset rate
+Drought Monitor D1+ outline; play/scrub; season chart of mean forecast vs actual onset rate). Serve it with
+`python -m http.server --directory data/viz`. **Finding for the story:** in 2012 the actual week-2 onset rate
 spikes to ~35% of eligible cells in early May and ~20% in August, while the light M1's mean forecast stays
 at 3-5%: it ranks cells sensibly but does not see the regional bursts coming. Forecast features (M2) are
 the obvious test of whether they can; the replay should probably show relative risk (vs normal for the
