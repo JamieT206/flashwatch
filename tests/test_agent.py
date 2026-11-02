@@ -184,6 +184,8 @@ def test_server_answers_tunnelled_requests_on_whatsapp_only():
             return urllib.request.urlopen(req, timeout=10).status
         except urllib.error.HTTPError as e:
             return e.code
+        except (ConnectionAbortedError, ConnectionResetError):   # refused before the body was read (Windows)
+            return 403
     try:
         assert code("/ask", b"{}", tunnel=True) == 403 and code("/pivots", b"{}", tunnel=True) == 403
         assert code("/health", tunnel=True) == 403
