@@ -5,6 +5,7 @@
     python video/edit.py audio        # narration.wav + timeline.json (the beats on the final clock)
     python video/record.py all        # the browser shots, paced to timeline.json
     python video/edit.py video        # flashwatch_<cut>.mp4
+    python video/edit.py thumb        # video/out/thumbnail.jpg (YouTube, both cuts)
 
 The narration is two takes: video/in/hack.m4a (every line, hackathon wording) and general.m4a (the lines that
 differ, plus a re-recorded "farmers" line used in both cuts). Each beat is one or more (take, start, end) ranges in
@@ -233,6 +234,45 @@ def cards():
         b.close()
 
 
+# The YouTube thumbnail (1280x720, both cuts): the aerial pivots, the tagline, and the July 3 advice card in the farm
+# page's own colours (site/assets/style.css: --act, --act-bg).
+THUMB = """<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+<style>html,body{margin:0;width:1280px;height:720px;overflow:hidden;font-family:'Public Sans',sans-serif;color:#1b1b1b}
+.bg{position:absolute;inset:0;background:url(__IMG__) right center/cover}
+.fade{position:absolute;inset:0;background:linear-gradient(90deg,#fff 0%,#fff 38%,rgba(255,255,255,.85) 52%,rgba(255,255,255,0) 72%)}
+.txt{position:absolute;left:64px;top:62px;width:640px}
+.brand{display:flex;align-items:center;gap:18px;font-size:58px;font-weight:800;letter-spacing:-1px}
+.dot{width:40px;height:40px;background:#d83933}
+h1{font-size:76px;line-height:1.02;font-weight:800;margin:34px 0 0;letter-spacing:-1.5px}
+.card{position:absolute;left:64px;bottom:78px;background:#fbeceb;border-left:14px solid #b50909;
+  padding:22px 28px 24px;box-shadow:0 10px 34px rgba(0,0,0,.35)}
+.q{font-size:26px;color:#3d4551;font-weight:600}
+.big{font-size:46px;line-height:1.05;font-weight:800;color:#b50909;margin:8px 0 10px}
+.sub{font-size:26px;font-weight:600}
+.rule{position:absolute;left:0;right:0;bottom:0;height:16px;background:#d83933}</style></head>
+<body><div class="bg"></div><div class="fade"></div>
+<div class="txt"><div class="brand"><span class="dot"></span>FlashWatch</div><h1>A week's warning of flash drought</h1></div>
+<div class="card"><div class="q">Extra irrigation today?</div><div class="big">Start extra irrigation today</div>
+<div class="sub">Flash-drought risk 5.3 times normal</div></div><div class="rule"></div></body></html>"""
+
+
+def thumbnail():
+    from PIL import Image
+    from playwright.sync_api import sync_playwright
+    img = "data:image/jpeg;base64," + base64.b64encode(STILLS["aerial"].read_bytes()).decode()
+    png, jpg = OUT.parent / "thumbnail.png", OUT.parent / "thumbnail.jpg"
+    with sync_playwright() as p:
+        b = p.chromium.launch()
+        page = b.new_page(viewport={"width": 1280, "height": 720})
+        page.set_content(THUMB.replace("__IMG__", img))
+        page.wait_for_timeout(1500)
+        page.screenshot(path=str(png))
+        b.close()
+    Image.open(png).convert("RGB").save(jpg, quality=92)       # YouTube: 1280x720, under 2 MB
+    print(jpg)
+
+
 def usdm(dur: float, dst: Path):
     """The weekly maps in turn, the last held to the end of the segment."""
     times = [d for *_, d in USDM[:-1]]
@@ -361,4 +401,4 @@ def video():
 
 
 if __name__ == "__main__":
-    {"audio": audio, "video": lambda: video()}[sys.argv[1]]()
+    {"audio": audio, "video": lambda: video(), "thumb": thumbnail}[sys.argv[1]]()
