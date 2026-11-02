@@ -1,0 +1,12 @@
+{
+ "year": 2026,
+ "date": "07-03",
+ "offseason": true,
+ "today": "2026-11-02",
+ "issued": "2026-07-03",
+ "era5_through": "2026-10-24",
+ "forecast_dates": [
+  "07-03"
+ ],
+ "model": "M2, weeks 1-2 forecast inputs (ECMWF open data); M1 on dates without a forecast"
+}
