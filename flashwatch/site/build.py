@@ -29,21 +29,25 @@ def _r(a, d=3):
     return [None if not np.isfinite(v) else round(float(v), d) for v in a]
 
 
-def build(oof: pd.DataFrame, model: str, out: Path = SITE / "data", note: str = "") -> dict:
+def build(oof: pd.DataFrame, model: str, out: Path = SITE / "data", note: str = "", md=None, cells=None,
+          ons=None, usdm=None, write_meta=True) -> dict:
+    """md, cells: the site's dates and cells (default: those in oof); ons: onsets (date, iy, ix), default the
+    reference labels; usdm: (map dates, categories), default the archive. The live feed (live/run.py) passes
+    all four for its year and write_meta=False, so the replay years' files are left as they are."""
     from flashwatch.eval.lead import onsets_table
     from flashwatch.features.asof import as_of
     from flashwatch.labels.crosscheck import usdm_cube
 
     oof = oof[~oof.year.isin(TEST_YEARS)]
     years = sorted(int(y) for y in oof.year.unique())
-    md = sorted(pd.DatetimeIndex(oof.issue).strftime("%m-%d").unique())
-    cells = oof[["iy", "ix"]].drop_duplicates().sort_values(["iy", "ix"])
+    md = md or sorted(pd.DatetimeIndex(oof.issue).strftime("%m-%d").unique())
+    cells = oof[["iy", "ix"]].drop_duplicates().sort_values(["iy", "ix"]) if cells is None else cells
     thin = int(np.gcd.reduce(np.r_[cells.iy.to_numpy(), cells.ix.to_numpy()])) or 1
     members = sum(1 for c in oof.columns if c.startswith(f"{model}_week1_m"))
-    udates, ucat = usdm_cube(list(range(min(years) - 1, max(years) + 1)))
+    udates, ucat = usdm or usdm_cube(list(range(min(years) - 1, max(years) + 1)))
     frozen = frozen_days(years, md)
     water = daily_water(years)
-    ons = onsets_table()
+    ons = onsets_table() if ons is None else ons
     ons = ons[ons.date.dt.year.isin(years)]
     (out / "tiles").mkdir(parents=True, exist_ok=True)
     for y in years:
@@ -88,6 +92,8 @@ def build(oof: pd.DataFrame, model: str, out: Path = SITE / "data", note: str = 
         (out / "tiles" / str(y)).mkdir(parents=True, exist_ok=True)
         for (ty, tx), recs in tiles.items():
             (out / "tiles" / str(y) / f"{ty}_{tx}.json").write_text(json.dumps(recs, separators=(",", ":")))
+    if not write_meta:
+        return {}
     meta = {"model": model, "note": note, "years": years, "dates": md, "thin": thin, "tile": TILE, "water_days": list(WATER_DAYS),
             "lat0": float(LAT[0]), "lon0": float(LON[0]), "res": float(LAT[0] - LAT[1]),
             "cells": [[int(a), int(b)] for a, b in cells.itertuples(index=False, name=None)],

@@ -339,10 +339,16 @@ training while the design moves; heavy burst ~Nov 2 Sydney (DESIGN.md B).
      M2 week 1 18.5% (16.8-20.5), week 2 5.5%; top tenth 5.6x (31% vs 5.7%), 56% of onsets; H1 1.9x; by year 5.5/4.8/6.5x.
      Expectation 1 holds; 4 holds for M1, weakly for M2. Dollar roll-up not run on test years (backtest excludes
      TEST_YEARS by design). Full narration script for Jamie's re-record in docs/video.md.
-   - Pending, after Nov 4 unless time allows (Jamie, Oct 30): (a) **live feed**: ECMWF open data (free, CC BY 4.0, 15 days,
-     50 members) covers weeks 1-2; retrain M2 on week 1-2 forecast inputs, check soil moisture is among the open fields,
-     daily job (ERA5-Land from Earth Engine, forecast, model, `site.publish`); no switch to GEFS needed. (b) **Glimmer
-     without the Drought Monitor's map in its inputs**, so its summary arrives with or before the Monitor's (DESIGN G2).
+   - Nov 2 (afternoon): video in two cuts (hackathon 2:44, general 2:48) from Jamie's takes, with a flash-drought
+     definition caption and the Drought Monitor's weekly maps (July 3-24, 2012). **Live feed built** (Jamie: now, not
+     after Nov 4): `flashwatch.live` (README "Run it"). ECMWF open data from the Google Cloud mirror (has vsw, so sm100
+     is rebuilt exactly), ERA5-Land from Earth Engine (runs ~9 days behind: issue = last day + 5), live M2 without
+     week 3-4 inputs (CV m2w12: week 1 16.4%, week 2 3.8%; m2full 16.2%, 3.9%), trained on 2005-2024
+     (data/live/models.joblib). First run: July 3, 2026 off-season view (live.json). Not yet: the daily scheduled
+     task (asked Jamie). Default farm now Burt County NE (warned before each drought in 2012 and 2026); demo caveats
+     removed. Agents page: the Glimmer section replaced by "A week ahead of the Drought Monitor" (agent/ahead.py):
+     Spark outlook from out-of-fold numbers vs the Monitor's narrative a week later; flagged farms see the Monitor
+     worsen within 2 weeks 2.2x as often (13% vs 6%).
 
 **Priorities (James, Oct 28): (1) anything that meaningfully improves prediction, (2) the farmer tool,
 (3) modelling nice-to-haves. Nothing is cut; what misses Nov 4 continues after.**

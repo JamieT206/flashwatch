@@ -70,36 +70,33 @@ function brief(b) {
     <p class="note">${b.drafts} draft${b.drafts === 1 ? "" : "s"}; ${b.cut_untraced && b.cut_untraced.length ? `untraced figures removed: ${b.cut_untraced.join(", ")}` : "every figure traced to a tool result"}. Model: ${esc(b.model)}.</p></div>`;
 }
 
-function glimmer(g) {
-  if (!g) { $("aGlimmer").hidden = true; return; }
-  const s = g.stats || {}, ex = g.example;
-  const name = r => `${r.tuned ? "Muse Glimmer 30B, fine-tuned" : r.local ? "Muse Glimmer 30B, run locally" : "Muse Spark, API"}${r.shots ? `, shown ${r.shots} past weeks` : ""}`;
-  const rows = g.rows.map(r => `<tr><td>${name(r)}</td><td>${Math.round(100 * r.rouge_l)}%</td><td>${Math.round(100 * r.states)}%</td>
-    <td>${Math.round(100 * r.untraced)}%</td><td>${r.words}</td></tr>`).join("");
-  $("glimmer").innerHTML = `<div class="kpis three">
-      <div><div class="bignum">${s.train ?? "-"}</div><div class="note">weeks of real Drought Monitor narrative to learn from (2005-2019)</div></div>
-      <div><div class="bignum">${s.val ?? "-"}</div><div class="note">held-out weeks to score against (2020-2021)</div></div>
-      <div><div class="bignum">1 hour</div><div class="note">to fine-tune Glimmer (a LoRA adapter) on one cloud GPU</div></div></div>
-    <div style="overflow-x:auto;margin-top:16px"><table><thead><tr><th>Writer, from the week's numbers</th><th>Wording shared with the real text</th>
-      <th>States named right</th><th>Figures not in the input</th><th>Words</th></tr></thead><tbody>${rows}</tbody></table></div>
-    <div class="tt" style="margin-top:20px">Both written about the week of ${day(ex.date)}</div>
-    <div class="agrid"><div><div class="tt">${name({local: ex.model.includes("glimmer"), tuned: ex.model.includes("lora"), shots: ex.shots})}</div><blockquote>${esc(ex.draft)}</blockquote></div>
-      <div><div class="tt">The Drought Monitor</div><blockquote>${esc(ex.real)}</blockquote></div></div>` + nomap(g.nomap, name);
-}
-
-// The same writers given last week's Drought Monitor map instead of this week's, so the summary can come out first.
-function nomap(n, name) {
-  if (!n) return "";
-  const rows = n.rows.map(r => `<tr><td>${name(r)}</td><td>${Math.round(100 * r.direction)}%</td><td>${Math.round(100 * r.rouge_l)}%</td>
-    <td>${Math.round(100 * r.states)}%</td><td>${Math.round(100 * r.untraced)}%</td></tr>`).join("");
-  return `<div class="tt" style="margin-top:24px">Before the Monitor's map is out</div>
-    <p class="note">The same task with last week's Drought Monitor map instead of this week's, so the summary can be written as soon as the
-      week's weather data is in. The writer now has to judge whether drought spread or eased. ${n.weeks} held-out weeks.</p>
-    <p class="note">Glimmer, fine-tuned again on these inputs, keeps the Monitor's style but drifts to places it wasn't given (Texas and
-      Oklahoma, which older narratives often covered), and neither writer calls the direction better than half the time.
-      So FlashWatch's summary still waits for the Monitor's map.</p>
-    <div style="overflow-x:auto"><table><thead><tr><th>Writer, from the week's numbers and last week's map</th><th>Got right whether drought spread or eased</th>
-      <th>Wording shared with the real text</th><th>States named right</th><th>Figures not in the input</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+// A week ahead of the Drought Monitor (flashwatch/agent/ahead.py): FlashWatch's outlook on a date, the Monitor's
+// narrative for the map a week later, and that map's change in each state the outlook named.
+function ahead(a) {
+  if (!a) { $("aAhead").hidden = true; return; }
+  const s = a.scores, wk = n => s.weeks.find(w => w.weeks === n);
+  const kpi = n => { const w = wk(n);
+    return `<div><div class="bignum">${(w.flagged / w.others).toFixed(1)}x</div><div class="note">as often, the Monitor's map got
+      worse within ${n === 1 ? "a week" : `${n} weeks`} on the farms FlashWatch flagged (${Math.round(100 * w.flagged)}% against
+      ${Math.round(100 * w.others)}% elsewhere)</div></div>`; };
+  const ex = e => {
+    const call = Object.fromEntries(e.numbers.states.map(r => [r.state, r.pct_of_this_states_farms_at_high_risk >= 10 ? "Likely" : "Low"]));
+    const rows = e.named_states_then.map(r => `<tr><td>${esc(r.state)}</td><td>${call[r.state] || "-"}</td>
+      <td>${r.worse_pct}%</td><td>${r.d1_before_pct}% → ${r.d1_after_pct}%</td></tr>`).join("");
+    return `<div class="tt" style="margin-top:20px">${day(e.issue)}</div>
+      <div class="agrid"><div><div class="tt">What FlashWatch said</div><blockquote>${esc(e.outlook)}</blockquote></div>
+        <div><div class="tt">What the Drought Monitor said a week later (map of ${day(e.monitor_date)})</div>
+          <blockquote>${e.monitor.length ? e.monitor.map(esc).join(" ") : "The narrative didn't mention these states."}</blockquote></div></div>
+      <div style="overflow-x:auto"><table><thead><tr><th>State</th><th>FlashWatch: flash drought</th>
+        <th>Farms where the Monitor's map got worse that week</th><th>Farms in moderate drought or worse</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>`;
+  };
+  $("aheadBox").innerHTML = `<div class="kpis three">${kpi(1)}${kpi(2)}${kpi(3)}</div>
+    <p class="note">Held-out seasons ${s.years.join(", ")} (June to mid-September, ${s.farm_days.toLocaleString("en-US")} farm-days):
+      each season forecast by models that never saw it. Flagged: the riskiest tenth of farms that day.</p>` +
+    a.examples.map(ex).join("") +
+    `<p class="note">The outlooks are written by Muse Spark from FlashWatch's numbers for the day, and every figure is checked
+      against them. Narrative: US Drought Monitor (NDMC, USDA, NOAA).</p>`;
 }
 
 function then(o, warn) {
@@ -146,5 +143,5 @@ function scorecard(c) {
 }
 
 fetch("data/agents.json").then(r => r.json()).then(d => {
-  pivots(d.pivots); operator(d.operator, d.ask, d.voice); watch(d.alerts); scorecard(d.scorecard); voice(d.voice); brief(d.brief); glimmer(d.glimmer);
+  pivots(d.pivots); operator(d.operator, d.ask, d.voice); watch(d.alerts); scorecard(d.scorecard); voice(d.voice); brief(d.brief); ahead(d.ahead);
 }).catch(() => { document.querySelector(".intro").insertAdjacentHTML("afterend", "<p class='note'>Agent runs not built yet (python -m flashwatch.site.agents).</p>"); });

@@ -85,7 +85,11 @@ dry are forecast. Places under snow or frozen ground are left out.
   left as is.
 - **Data:** the soil moisture is ERA5-Land reanalysis, a model of the soil checked against observations, not a
   probe in the field. At 25 km, one cell holds many farms with different soils.
-- **Replay only.** A live service needs current ERA5-Land and ECMWF's real-time forecasts, which need a licence.
+- **The live feed** uses ECMWF's free open-data ensemble (CC BY 4.0), which runs 15 days, so the live M2 is trained
+  (on 2005-2024) without the week 3-4 forecast features. Cross-validated on the development years it scores the
+  same on weeks 1-2 (week 1 skill 16.4%, week 2 3.8%). It has not been scored on the test years, which were
+  scored once with the frozen M2. Each live forecast is issued five days after the latest ERA5-Land day, as in
+  training, so it is a few days old when published.
 - **The dollar values** come from a textbook water balance and extension-service costs, calibrated to USDA
   county yields, not from field trials. Rain-fed values are rougher.
 

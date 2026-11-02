@@ -29,7 +29,8 @@ def root_zone(ds):
     return sum(ds[v] * (w / total) for v, w in RZ_LAYERS.items()).rename("rzsm")
 
 
-def build(years=OBS_YEARS):
+def build(years=OBS_YEARS, store=None):
+    """store: where to write (default OBS_STORE; the live feed keeps its own, live/run.py)."""
     import xarray as xr
     from flashwatch.ingest.era5land import VARIABLES
 
@@ -60,14 +61,15 @@ def build(years=OBS_YEARS):
                     credit="Contains modified Copernicus Climate Change Service information",
                     missing=", ".join(missing))
     enc = {v: {"chunks": (366, len(LAT), len(LON))} for v in ds.data_vars if "time" in ds[v].dims}
-    ds.to_zarr(OBS_STORE, mode="w", encoding=enc)
-    print(f"wrote {OBS_STORE}: {dict(ds.sizes)}; {len(missing)} variable-years missing")
+    store = store or OBS_STORE
+    ds.to_zarr(store, mode="w", encoding=enc)
+    print(f"wrote {store}: {dict(ds.sizes)}; {len(missing)} variable-years missing")
     return ds
 
 
 def open_obs():
     import xarray as xr
-    return xr.open_zarr(OBS_STORE)
+    return xr.open_zarr(OBS_STORE)     # module attribute, read at call time: the live run points it at its store
 
 
 def land_mask(ds, min_land: float = 0.2) -> np.ndarray:

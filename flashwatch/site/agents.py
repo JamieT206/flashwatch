@@ -2,7 +2,7 @@
 
     python -m flashwatch.site.agents
 
-Reads what the agents wrote (data/agent/, site/data/ops/, site/data/notes/, data/glimmer/) and writes
+Reads what the agents wrote (data/agent/, site/data/ops/, site/data/notes/) and writes
 site/data/agents.json. Nothing here calls a model.
 """
 
@@ -16,27 +16,6 @@ from flashwatch.site.build import SITE
 
 def _load(path):
     return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
-
-
-def glimmer_table(evals: dict) -> dict:
-    """Each narrative writer scored on the held-out weeks every one of them finished (some API calls time
-    out), plus one growing-season week from the best-styled run next to the real text."""
-    weeks = {k: {w["date"]: w for w in e["weeks"]} for k, e in evals.items()}
-    common = sorted(set.intersection(*[set(w) for w in weeks.values()]))
-    rows = []
-    for k, e in evals.items():
-        ws = [weeks[k][d] for d in common]
-        rows.append({"model": e["model"], "local": "glimmer" in e["model"], "tuned": "lora" in e["model"],
-                     "shots": e.get("shots", 0),
-                     **{m: round(sum(w[m] for w in ws) / len(ws), 3) for m in ("untraced", "states", "direction", "rouge_l")},
-                     "words": round(sum(len(w["draft"].split()) for w in ws) / len(ws))})
-    best = max(rows, key=lambda r: r["rouge_l"])
-    key = next(k for k, e in evals.items() if e["model"] == best["model"] and e.get("shots", 0) == best["shots"])
-    # The example: a growing-season week (May-September) with no untraced figure, the most wording shared.
-    clean = [w for w in weeks[key].values() if not w["untraced_figures"] and "05" <= w["date"][5:7] <= "09"]         or [w for w in weeks[key].values() if not w["untraced_figures"]] or list(weeks[key].values())
-    wk = max(clean, key=lambda w: w["rouge_l"])
-    return {"weeks": len(common), "rows": rows, "example": {"model": best["model"], "shots": best["shots"],
-            **{k: wk[k] for k in ("date", "draft", "real")}}}
 
 
 def main():
@@ -66,14 +45,11 @@ def main():
         out["brief"] = {k: b.get(k) for k in ("issue", "place", "model", "briefing", "cut_untraced", "tool_calls")}
         out["brief"]["drafts"] = len(b.get("drafts") or [])
         out["brief"]["tool_calls"] = [{"tool": c["tool"], "args": c.get("args", {})} for c in b.get("tool_calls") or []]
-    g = {f.stem[5:]: _load(f) for f in sorted((DATA / "glimmer").glob("eval_*.json"))}
-    if g:
-        out["glimmer"] = glimmer_table(g)
-        out["glimmer"]["stats"] = _load(DATA / "glimmer" / "stats.json")
-        # Without this week's Drought Monitor map (last week's instead): written before the Monitor comes out.
-        gn = {f.stem[5:]: _load(f) for f in sorted((DATA / "glimmer" / "nomap").glob("eval_*.json"))}
-        if gn:
-            out["glimmer"]["nomap"] = glimmer_table(gn)
+    # A week ahead of the Drought Monitor: FlashWatch's outlook next to the Monitor's narrative a week later (agent/ahead.py).
+    ah = _load(DATA / "agent" / "ahead.json")
+    if ah:
+        out["ahead"] = {"scores": ah["scores"], "examples": [{k: e[k] for k in ("issue", "monitor_date", "monitor_before",
+                        "model", "outlook", "monitor", "named_states_then", "numbers")} for e in ah["examples"] if e["outlook"]]}
     # Ask FlashWatch on the demo farm's 3 July 2012 (Muse Spark), for the WhatsApp thread on the page.
     ask = _load(DATA / "agent" / "ask_compare_muse-spark-1.1.json")
     if ask:

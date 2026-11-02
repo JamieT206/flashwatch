@@ -12,8 +12,8 @@ It covers the Corn Belt and northern Plains (36-49 N, 104-80 W): 143 million acr
 
 ## The site
 
-Live at **https://jamiet206.github.io/flashwatch/** (development years only, replayed; Ask FlashWatch and the
-pivot finder need the local agent server, so the live site shows their saved runs on the Agents page).
+Live at **https://jamiet206.github.io/flashwatch/** (Today from the live feed, below; Replay over the development years;
+Ask FlashWatch and the pivot finder need the local agent server, so the live site shows their saved runs on the Agents page).
 To run it yourself, build its data first (Get the data and keys, then Run it, below), then `python -m http.server 8812 --directory site`
 and open http://localhost:8812. `python -m flashwatch.site.publish` pushes it to the `gh-pages` branch.
 
@@ -21,7 +21,7 @@ and open http://localhost:8812. `python -m flashwatch.site.publish` pushes it to
 | --- | --- |
 | **Your farm** | Pick the farm on a map (or search an address). **Irrigated**: "Extra irrigation today?" with the dollars of starting now against waiting for the next forecast, what would change the answer, the field's water account (root zone % full, days to stress, irrigation logged or read from the pivot), the season replayed. **Rain-fed**: a card per decision (fungicide, side-dress nitrogen, silage, hay) with a gauge of today's chance against the chance at which acting pays, adjustable assumptions and the season replayed. **Today** follows the latest forecast; **Replay** steps through a past season. Starting values are local (USDA prices, county yields) and labelled. |
 | **The big picture** | What FlashWatch is worth to a typical irrigated and rain-fed farm, how good the forecasts are, value by corn price, a regional risk map, and the lead over the US Drought Monitor. |
-| **Agents** | Real runs of each agent: SAM 3.1 finding pivots (full, part and half circles), the Muse Spark operator planning a morning (with the farm-rule checks and the farmer's approval), the watcher's texts through a season with how often they were right, a voice note, a weekly briefing, and the Glimmer narrative writer. |
+| **Agents** | Real runs of each agent: SAM 3.1 finding pivots (full, part and half circles), the Muse Spark operator planning a morning (with the farm-rule checks and the farmer's approval), the watcher's texts through a season with how often they were right, a voice note, a weekly briefing, and FlashWatch's regional outlook next to what the Drought Monitor said a week later. |
 | **Help, About** | What every number means; contact. |
 
 ## Results so far
@@ -124,6 +124,20 @@ python -m flashwatch.decide.rollup --oof <oof> --model M2 --tag <name> --set spe
 python -m flashwatch.site.agents                 # agent runs for the Agents page
 python -m pytest
 ```
+
+The live feed (the farm page's **Today**), after the steps above:
+
+```powershell
+python -m flashwatch.live.run train              # once: B0, M1 and the live M2 on 2005-2024 (about 20 minutes, 11 GB)
+python -m flashwatch.live.run today --publish    # daily: ERA5-Land, Drought Monitor, ECMWF open data, forecast, publish
+```
+
+`today` fetches ERA5-Land up to the latest day Earth Engine has (it runs 5-10 days behind) and issues the forecast five
+days after it, the latency the models were trained with, so the newest forecast is a few days old. In season it reads
+that day's ECMWF open-data ensemble (50 members, 15 days, CC BY 4.0; about 5 GB read, a few MB kept) from the Google
+Cloud mirror. The open data has no weeks 3-4, so the live M2 is trained without the week 3-4 forecast features; in
+cross-validation that costs nothing on weeks 1-2 (week 1 skill 16.4% against 16.2% with them, week 2 3.8% against 3.9%;
+`eval.cv ... --tag m2w12`). From mid-October to April the page shows July 3 of the latest season.
 
 Agents (need `META_API_KEY`):
 

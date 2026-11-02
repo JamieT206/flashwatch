@@ -3,7 +3,7 @@
 
 const S = {
   meta: null, defaults: null, tileCache: {}, cell: null, rec: null, year: 2012, i: 0,
-  lat: 40.87, lon: -97.99,            // York County, Nebraska: centre-pivot country
+  lat: 41.88, lon: -96.38,            // Burt County, Nebraska: pivots; warned before every drought in the 2012 replay and 2026
   over: {}, farm: null, cty: null, mode: "today", live: null, allYears: {},
   map: null, marker: null, mapMode: "street", droughtLayer: null, regionRecs: {},
 };
@@ -14,7 +14,8 @@ const usd = (v, d = 0) => (v < 0 ? "-$" : "+$") + Math.abs(v).toLocaleString("en
 const USDM = { "-1": "None", 0: "D0 abnormally dry", 1: "D1 moderate drought", 2: "D2 severe drought",
                3: "D3 extreme drought", 4: "D4 exceptional drought" };
 const SEASON = ["06-01", "09-15"];   // the irrigation season (decide/backtest.py SEASON)
-const DEMO_TODAY = { year: 2012, date: "07-03", demo: true };
+const DEMO_TODAY = { year: 2012, date: "07-03", demo: true };   // only if data/live.json is missing (flashwatch/live/run.py)
+const REPLAY_YEAR = 2012;
 
 // ---------- the farm: local starting values, the farmer's own changes on top ----------
 
@@ -153,6 +154,15 @@ async function loadLive() {
   } catch (e) { /* no feed */ }
   return DEMO_TODAY;
 }
+// What the Today view is showing, from data/live.json.
+function todayNote(l) {
+  const long = iso => new Date(iso + "T00:00:00Z").toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "UTC" });
+  if (l.demo) return `Showing ${fmtDate(l.date, l.year)} from the archive.`;
+  if (l.offseason) return `Showing ${fmtDate(l.date, l.year)}, in this year's growing season: today (${long(l.today)}) is outside
+    flash-drought season. Daily forecasts start again on April 1.`;
+  return `Latest forecast, issued ${fmtDate(l.issued.slice(5), +l.issued.slice(0, 4))} from soil data through
+    ${long(l.era5_through)} (ERA5-Land, the soil record, runs about a week behind).`;
+}
 function todayIndex() {
   const d = S.meta.dates;
   let i = 0;
@@ -188,6 +198,8 @@ async function setMode(mode) {
     S.live = await loadLive();
     S.year = S.live.year;
     S.i = todayIndex();
+  } else if (!S.meta.years.includes(S.year)) {
+    S.year = REPLAY_YEAR;                 // from the live year: the same date in the replay season
   }
   $("year").value = S.year;
   if (S.cell) { S.rec = await loadTile(S.year, S.cell); renderAll(); }
@@ -285,11 +297,8 @@ function renderAll() {
   renderMapState();
   $("wIrr").setAttribute("aria-pressed", irrigated());
   $("wRain").setAttribute("aria-pressed", !irrigated());
-  const demo = S.mode === "today" && S.live && S.live.demo;
-  $("banner").hidden = !(demo || S.mode === "replay");
-  $("banner").innerHTML = demo
-    ? `<strong>Demo.</strong> "Today" is ${fmtDate(S.live.date, S.live.year)}, replayed from the archive: the live feed isn't connected yet.`
-    : `Replaying the ${S.year} season, one forecast at a time.`;
+  $("banner").hidden = false;
+  $("banner").innerHTML = S.mode === "replay" ? `Replaying the ${S.year} season, one forecast at a time.` : todayNote(S.live);
   writeHash();
 }
 

@@ -136,7 +136,10 @@ ERA5-Land soil, rain, heat (as of each forecast date)     ECMWF extended-range e
   week-1 skill 6.1% against 4.3% when the two are averaged (paired gain 1.8 points, 90% range 1.3-2.4).
   The farm page uses this pair on dates with no archived ECMWF forecast, and the forecast model on the rest.
 - **Ahead of the Drought Monitor.** The soil crosses the drought line a median 22 days before the
-  Monitor first shows moderate drought (D1) at that place. FlashWatch is first in 86% of cases.
+  Monitor first shows moderate drought (D1) at that place. FlashWatch is first in 86% of cases. On the farms
+  FlashWatch flags (riskiest tenth, week 1), the Monitor's map gets worse within two weeks 2.2 times as often as
+  elsewhere (13% against 6%; held-out seasons, `agent/ahead.py`), and the Agents page sets FlashWatch's outlook
+  next to what the Monitor said a week later.
 - **Flash droughts cost crops** (county yields, above). Onsets the Monitor never flags cost no yield
   on average: those spells broke in time.
 - **What a warning is worth.**
@@ -184,7 +187,11 @@ ERA5-Land soil, rain, heat (as of each forecast date)     ECMWF extended-range e
 
 ## Limitations
 
-- Replay only: a live version needs current ERA5-Land (5-day delay) and live ECMWF ensembles.
+- The live feed (`flashwatch.live`) uses ECMWF's free open-data ensemble, which runs 15 days, so its M2 has no
+  week 3-4 forecast inputs (in cross-validation this costs nothing on weeks 1-2: week 1 skill 16.4%, week 2 3.8%).
+  Its anomalies are measured against the Cy49r1 reforecasts while the live runs come from the current IFS cycle,
+  and its 50 members are compared with 11. ERA5-Land on Earth Engine runs 5-10 days behind, so each forecast is
+  issued five days after the latest soil data (as in training) and is a few days old when it appears.
 - The irrigation economics are textbook physics calibrated to county yields, not field trials.
 - About half of the onsets FlashWatch warns about break before they cost anything. A stricter
   "damaging drought" label is the first experiment after the hackathon.
