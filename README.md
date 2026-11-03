@@ -9,8 +9,7 @@ the pivots.
 
 **Video:** https://youtu.be/6vjVoGmpSy4 &nbsp;·&nbsp; **Live site:** https://jamiet206.github.io/flashwatch/
 
-It covers the Corn Belt and northern Plains (36-49 N, 104-80 W): 143 million acres of corn and soybeans,
-13 million of them irrigated.
+It covers the Corn Belt and northern Plains (36-49 N, 104-80 W): 143 million acres of corn and soybeans
 
 ## The site
 
@@ -21,18 +20,18 @@ and open http://localhost:8812. `python -m flashwatch.site.publish` pushes it to
 
 | Page | What's on it |
 | --- | --- |
-| **Your farm** | Pick the farm on a map (or search an address). **Irrigated**: "Extra irrigation today?" with the dollars of starting now against waiting for the next forecast, what would change the answer, the field's water account (root zone % full, days to stress, irrigation logged or read from the pivot), the season replayed. **Rain-fed**: a card per decision (fungicide, side-dress nitrogen, silage, hay) with a gauge of today's chance against the chance at which acting pays, adjustable assumptions and the season replayed. **Today** follows the latest forecast; **Replay** steps through a past season. Starting values are local (USDA prices, county yields) and labelled. |
-| **The big picture** | What FlashWatch is worth to a typical irrigated and rain-fed farm, how good the forecasts are, value by corn price, a regional risk map, and the lead over the US Drought Monitor. |
-| **Agents** | Real runs of each agent: SAM 3.1 finding pivots (full, part and half circles), the Muse Spark operator planning a morning (with the farm-rule checks and the farmer's approval), the watcher's texts through a season with how often they were right, a voice note, a weekly briefing, and FlashWatch's regional outlook next to what the Drought Monitor said a week later. |
-| **Help, About** | What every number means; contact. |
+| **Your farm** | Pick the farm on a map (or search an address). **Irrigated**: "Extra irrigation today?" with the value of starting now against waiting for the next forecast, what would change the answer, the field's water account (root zone % full, days to stress, irrigation logged or read from the pivot), the season replayed. **Rain-fed**: a card per possible decision (fungicide, side-dress nitrogen, silage, hay) and adjustable assumptions. **Today** follows the latest forecast; **Replay** steps through a past season. Starting values are local (USDA prices, county yields) and labelled. |
+| **The big picture** | Value to a typical irrigated and rain-fed farm, forecast-quality measures, value by corn price, a regional risk map, and the lead over the US Drought Monitor. |
+| **Agents** | Real runs of each agent: SAM 3.1 finding pivots (full, part and half circles), the Muse Spark operator planning a morning (with the farm-rule checks and the farmer's approval), the watcher's texts through a season, a voice note, a weekly briefing, and FlashWatch's regional outlook compared to what the Drought Monitor said a week later. |
+| **Help, About** | Glossary and contact. |
 
 ## Results so far
 
-**Test years 2022-2024, scored once after the model was frozen (Nov 2):** on the riskiest tenth of farm-days a flash
+**Test years 2022-2024 (Nov 2):** on the riskiest tenth of farm-days a flash
 drought began in the next 7 days 5.6 times as often as normal (31% against 5.7%), against 1.9 times for the rule of
 thumb; week-1 skill 18.5% against the seasonal normal. The numbers below are the development years.
 
-Development years 2005-2021, each scored by a model that never saw that year.
+Development years 2005-2021:
 
 - **Forecasts.** On the tenth of farm-days FlashWatch rates riskiest, a flash drought begins in the
   next 7 days 6.3 times as often as normal (24% against 3.8%); those flags hold 63% of all flash
@@ -46,12 +45,11 @@ Development years 2005-2021, each scored by a model that never saw that year.
   pointless). Averaged over all years, including the many without a flash drought at a given farm,
   and acting on the real ECMWF forecasts: about $28M a year across the region's irrigated acres ($3.17
   an acre of corn; big gains in 2006, 2012 and 2021, a loss to false starts in 2018; $38M where the farm's
-  irrigation data gives the field's water) and about $109M across its rain-fed acres (rougher). Dry spells
-  are set to 21 days, matching USDA county yield losses. A false start is charged the water it actually
-  wastes, measured on 17 years of real weather (`decide/falsestart.py`): about $1 an acre in July, $3 in
+  irrigation data gives the field's water) and about $109M across rain-fed farms. Dry spells
+  are set to 21 days, matching USDA county yield losses. A false start is valued based on the water it
+  wastes, measured on 17 years of real weather: about $1 an acre in July, $3 in
   August, $5 in June, $10 in September.
-- **Null results we kept:** Drought Monitor features, directional neighbourhood features, training on
-  each forecast run separately (no gain); year-level climate indices (worse, removed).
+  
 
 ## How it works
 
@@ -73,15 +71,12 @@ ERA5-Land soil, rain, heat (as known on the forecast date)      ECMWF extended-r
    (signed webhook, Lindsay FieldNET data through Leaf, or a to-do in the maker's app)
 ```
 
-Every number an agent writes is traced back to a tool result before it's sent; untraced figures go
-back for a redraft and are cut if they can't be fixed. Farm rules are code, not prompts.
 
-## Get the data and keys
+## Get the data and provide you keys
 
-The repository has the code, not the data: the data is about 9 GB, comes from several providers under their
-own licences, and the ECMWF forecasts may not be redistributed. All of it is free to download with your own
-accounts. Copy `flashwatch.env.example` to `flashwatch.env` and fill in the keys below; `flashwatch.env` is
-never committed.
+The data is about 9 GB and comes from several providers under their
+own licences. All of it is free to download with your own
+accounts directly from the relevant providers. Copy `flashwatch.env.example` to `flashwatch.env` and fill in the keys below.
 
 | Account | What FlashWatch downloads or does with it | How to get it | Setting |
 | --- | --- | --- | --- |
@@ -98,7 +93,7 @@ the US Census gazetteer and OpenStreetMap.
 
 Machine: about 15 GB of disk for the raw and built data, 16 GB of RAM (cross-validation peaks near 11 GB).
 A graphics card is optional: the map model (M3) and running Glimmer locally want an NVIDIA card with 12 GB.
-`python -m flashwatch.ingest status` shows what has downloaded; every download resumes where it stopped.
+`python -m flashwatch.ingest status` shows what has downloaded
 
 ## Run it
 
@@ -187,8 +182,7 @@ US Census Gazetteer, OpenStreetMap. ECMWF-derived data files are not redistribut
 - This work is based on S2S data. S2S is a joint initiative of the World Weather Research Programme (WWRP)
   and the World Climate Research Programme (WCRP). The original S2S database is hosted at ECMWF as an
   extension of the TIGGE database (Vitart et al. 2017, BAMS 98(1), 163-176, doi:10.1175/BAMS-D-16-0017.1).
-  ECMWF data are licensed CC BY-NC 4.0 and come with no warranty; FlashWatch uses weekly averages of them
-  over its region.
+  ECMWF data are licensed CC BY-NC 4.0 and come with no warranty.
 - Contains modified Copernicus Climate Change Service information (ERA5-Land), accessed through Google Earth Engine.
 - US Drought Monitor: National Drought Mitigation Center, USDA and NOAA.
 - SMVI flash-drought events: Osman et al. (2024), HydroShare, doi:10.4211/hs.b6d1d853b82247e1aeaf907ac254c99e.
